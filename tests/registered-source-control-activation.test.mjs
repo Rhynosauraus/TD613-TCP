@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { copyFileSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { ASSAY_ACTIVATION_RUN_IDS, ASSAY_REQUEST_SCHEMA, sha256, validateAssayPolicy, buildAssayProviderWire } from '../server/loom-assay-contract.js';
 import { createLoomAssayHandler, loadApprovedRunConfiguration } from '../server/loom-assay.js';
 import { loadServerManifest, prepareServerRequest } from '../research/portable-loom-server-transport-20261009/server-client.mjs';
@@ -64,7 +65,7 @@ test('positive-control prompt, source registry, exact trial and bounded request 
 });
 
 
-test('production route selects the new manifest and completes one fixture-only request', async () => {
+async function fixtureRequest(runtimeRoot = process.cwd()) {
   const { manifest } = loadServerManifest(process.cwd(), runId);
   const p = policy(manifest);
   const { request } = prepareServerRequest(p, trial, { root: process.cwd() });
@@ -91,8 +92,16 @@ test('production route selects the new manifest and completes one fixture-only r
     VERCEL_GIT_COMMIT_SHA: protocolCommit
   }, fetchImpl, budget });
   const res = { headers: {}, setHeader(k, v) { this.headers[k] = v; }, end(body) { this.body = body; } };
-  await handler({ method: 'POST', headers: { authorization: `Bearer ${token}`,
-    'x-vercel-oidc-token': 'test-oidc-token', 'x-td613-expected-credential-sha256': sha256(apiKey) }, body: request }, res);
+  const previousRoot = process.cwd();
+  try {
+    process.chdir(runtimeRoot);
+    await handler({ method: 'POST', headers: { authorization: `Bearer ${token}`,
+      'x-vercel-oidc-token': 'test-oidc-token', 'x-td613-expected-credential-sha256': sha256(apiKey) }, body: request }, res);
+  } finally { process.chdir(previousRoot); }
+  return { res, operations, providerCalls };
+}
+
+function assertCaptured({ res, operations, providerCalls }) {
   const result = JSON.parse(res.body);
   assert.equal(res.statusCode, 200);
   assert.equal(result.status, 'CAPTURED_NOT_ADMITTED');
@@ -101,4 +110,37 @@ test('production route selects the new manifest and completes one fixture-only r
   assert.equal(result.retries, 0);
   assert.equal(providerCalls, 1);
   assert.deepEqual(operations, ['inspect', 'reserve', 'complete']);
+}
+
+test('production route selects the new manifest and completes one fixture-only request', async () => {
+  assertCaptured(await fixtureRequest());
+});
+
+test('missing runtime assets hold before reservation and provider dispatch', async () => {
+  const root = mkdtempSync(resolve(tmpdir(), 'registered-control-missing-assets-'));
+  try {
+    const { res, operations, providerCalls } = await fixtureRequest(root);
+    assert.equal(res.statusCode, 409);
+    assert.equal(JSON.parse(res.body).error, 'ASSAY_PREFLIGHT_HELD');
+    assert.equal(JSON.parse(res.body).provider_requests, 0);
+    assert.equal(providerCalls, 0);
+    assert.deepEqual(operations, ['inspect']);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('Vercel-selected runtime assets permit the registered-control fixture request', async () => {
+  const root = mkdtempSync(resolve(tmpdir(), 'registered-control-packaged-assets-'));
+  const config = JSON.parse(readFileSync('vercel.json', 'utf8'));
+  const includeFiles = config.functions['api/khonapolit.js'].includeFiles;
+  assert.ok(includeFiles.length <= 256, 'Vercel includeFiles must stay within schema limit');
+  const selected = new Set(globSync(includeFiles));
+  try {
+    for (const path of [`${sourcePath}/TRIAL_MANIFEST.json`, `${sourcePath}/PROMPT.txt`]) {
+      if (!selected.has(path)) continue;
+      const destination = resolve(root, path);
+      mkdirSync(dirname(destination), { recursive: true });
+      copyFileSync(path, destination);
+    }
+    assertCaptured(await fixtureRequest(root));
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
