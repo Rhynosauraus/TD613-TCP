@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import {
   ASSAY_A20_RUN_ID, ASSAY_A20_PROGRAM, ASSAY_A19_PROGRAM,
@@ -42,16 +42,19 @@ function req(p,caseId,turnIndex,predecessor='SYNTHETIC_NOT_PROVIDER_OUTPUT') {
 test('Vercel A20 bundle includes the manifest-selected reviewed candidate, and no stale path',()=>{
   const config=JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url),'utf8'));
   const included=config.functions['api/khonapolit.js'].includeFiles;
-  const listed=included.slice(1,-1).split(',');
+  const listed=globSync(included);
   const manifestPath='research/portable-loom-a20-activation-20261010/TRIAL_MANIFEST_A20.json';
   const a20Prefix='research/portable-loom-a20-activation-20261010/';
   assert(included.length<=256,'Vercel includeFiles must remain under platform schema bound');
-  assert.deepEqual(listed.slice(0,3),['server/loom-assay-run-config.json','research/portable-loom-server-transport-20261009/TRIAL_MANIFEST.json','research/portable-loom-receiver-repair-20261010/candidate-artifact/portable-loom-standard.md']);
-  assert.equal(listed[3],a20Prefix+'**','A20 candidate must be carried by bounded research-directory glob');
-  assert.equal(listed.length,4,'Do not widen file carriage beyond the reviewed scope');
+  const literalFiles=['server/loom-assay-run-config.json','research/portable-loom-server-transport-20261009/TRIAL_MANIFEST.json','research/portable-loom-receiver-repair-20261010/candidate-artifact/portable-loom-standard.md'];
+  const controlPrefix='research/portable-loom-registered-source-control-20261011/';
+  assert(listed.every(p=>literalFiles.includes(p)||p===a20Prefix.slice(0,-1)||p.startsWith(a20Prefix)||p===controlPrefix.slice(0,-1)||p.startsWith(controlPrefix)), 'Do not widen file carriage beyond the reviewed scope');
   assert(manifestPath.startsWith(a20Prefix));
   assert(manifest.artifact_path.startsWith(a20Prefix));
-  for(const p of [...listed.slice(0,3),manifestPath,manifest.artifact_path])assert.doesNotThrow(()=>readFileSync(new URL('../'+p,import.meta.url)),'missing Vercel-carried file: '+p);
+  for(const p of [...literalFiles,manifestPath,manifest.artifact_path]) {
+    assert(listed.includes(p),'file excluded from Vercel carriage: '+p);
+    assert.doesNotThrow(()=>readFileSync(new URL('../'+p,import.meta.url)),'missing Vercel-carried file: '+p);
+  }
   assert.equal(sha256(readFileSync(new URL('../'+manifest.artifact_path,import.meta.url))),manifest.artifact_sha256);
 });
 
