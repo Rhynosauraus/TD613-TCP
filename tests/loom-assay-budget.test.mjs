@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { reserveCall, completeCall, inspectRun } from '../neon/functions/loom-assay-budget/ledger.mjs';
 import { verifyVercelOidc } from '../neon/functions/loom-assay-budget/vercel-identity.mjs';
-import { sha256, canonicalJson, ASSAY_A18_PROGRAM, ASSAY_A19_PROGRAM, ASSAY_RECOVERY_POLICY_SCHEMA, ASSAY_RECOVERY_PROGRAM, ASSAY_RECOVERY_RUN_IDS, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256 } from '../server/loom-assay-contract.js';
+import { sha256, canonicalJson, ASSAY_A18_PROGRAM, ASSAY_A19_PROGRAM, ASSAY_RECOVERY_POLICY_SCHEMA, ASSAY_RECOVERY_PROGRAM, ASSAY_RECOVERY_RUN_IDS, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_PRIORITY_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256 } from '../server/loom-assay-contract.js';
 const require = createRequire(new URL('../neon/functions/loom-assay-budget/package.json', import.meta.url));
 const { PGlite } = require('@electric-sql/pglite');
 const digest = 'a'.repeat(64), head = 'b'.repeat(40);
@@ -339,5 +339,25 @@ test('r05 permits exactly one frozen USD 0.27288 reservation under its independe
     assert.equal((await db.query('SELECT count(*) AS n FROM td613_assay_calls')).rows[0].n, 1);
     await db.query('UPDATE td613_assay_runs SET status=$1 WHERE run_id=$2', ['CLOSED',p.run_id]);
     await assert.rejects(inspectRun(pool,{run_id:p.run_id,credential_sha256:digest}), /ASSAY_RUN_UNAVAILABLE/);
+  } finally { await db.close(); }
+});
+
+
+test('r06 ledger retains one Priority-priced reservation, rejects replay, and holds a closed run', async () => {
+  const p = JSON.parse(readFileSync('research/portable-loom-registered-source-control-20261011/priority-v1/POLICY.template.json'));
+  p.protocol_commit = p.binding.protocol_commit = head; p.expires_at = '2026-12-31T23:59:59Z';
+  const { db, pool } = await setup(p);
+  try {
+    const i = input('FIRST_CONFIGURED_RECEIVER-R01-1');
+    Object.assign(i, { run_id: p.run_id, artifact_sha256: p.artifact_sha256, output_limit: 32768 });
+    i.trial.case_id = 'R01';
+    const r = await reserveCall(pool, i); assert.equal(r.reserved_cost_nanos, '491184000');
+    await assert.rejects(reserveCall(pool,i), /CALL_ALREADY_RESERVED/);
+    await completeCall(pool, {...complete(r,'HELD_EVIDENCE_GAP'), run_id:p.run_id});
+    const row = (await db.query('SELECT * FROM td613_assay_runs WHERE run_id=$1',[p.run_id])).rows[0];
+    assert.equal(row.calls_reserved,1);assert.equal(String(row.reserved_cost_nanos),'491184000');
+    await db.query('UPDATE td613_assay_runs SET status=$1 WHERE run_id=$2',['CLOSED',p.run_id]);
+    await assert.rejects(inspectRun(pool,{run_id:p.run_id,credential_sha256:digest}),/ASSAY_RUN_UNAVAILABLE/);
+    assert.equal((await db.query('SELECT count(*) AS n FROM td613_assay_calls')).rows[0].n,1);
   } finally { await db.close(); }
 });

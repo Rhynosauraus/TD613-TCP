@@ -14,11 +14,14 @@ export const ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID = 'portable-loo
 export const ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID = 'portable-loom-registered-source-control-20261011-r03';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID = 'portable-loom-registered-source-control-20261011-r04';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID = 'portable-loom-registered-source-control-20261011-r05';
+export const ASSAY_REGISTERED_SOURCE_CONTROL_PRIORITY_RUN_ID = 'portable-loom-registered-source-control-20261011-r06';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS = Object.freeze([ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID]);
+export const ASSAY_REGISTERED_SOURCE_CONTROL_PRIORITY_RUN_IDS = Object.freeze(Array.from({ length: 5 }, (_, i) => `portable-loom-registered-source-control-20261011-r${String(i + 6).padStart(2, '0')}`));
+export const ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS = Object.freeze([...ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS, ...ASSAY_REGISTERED_SOURCE_CONTROL_PRIORITY_RUN_IDS]);
 export const ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256 = 'd703dcebb9869152df5d95541bbe5400d1ed9b92d1f11565aa10c9382cfd35c6';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256 = '51efc3d87cdffc4fb2869519ff4fa12b10ce179ba79d3976f6094cf741681c39';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_CALLER_CREDENTIAL_SHA256 = 'baaa5a59eff5540a9061554ae92beafa3ede5c279ce6e2ae18fc21c2a0c8122b';
-export const ASSAY_ACTIVATION_RUN_IDS = Object.freeze([...ASSAY_RECOVERY_RUN_IDS, `${recoveryBase}-a19`, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ...ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS]);
+export const ASSAY_ACTIVATION_RUN_IDS = Object.freeze([...ASSAY_RECOVERY_RUN_IDS, `${recoveryBase}-a19`, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ...ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS]);
 export const ASSAY_RECOVERY_PROGRAM = Object.freeze({
   id: recoveryBase,
   run_ids: Object.freeze([recoveryBase, `${recoveryBase}-a2`, `${recoveryBase}-a3`, ...ASSAY_RECOVERY_RUN_IDS.slice(0, -1)]),
@@ -75,6 +78,9 @@ export function validateAssayPolicy(p, at = Date.now()) {
     && Array.isArray(b.response_model_ids) && b.response_model_ids.length > 0
     && b.response_model_ids.every(x => typeof x === 'string' && /^[a-zA-Z0-9._-]{1,100}$/.test(x)), 'ASSAY_MODEL_BINDING');
   const l = b.limits, g = b.generation_parameters, pricing = b.pricing;
+  const priorityCapture = ASSAY_REGISTERED_SOURCE_CONTROL_PRIORITY_RUN_IDS.includes(p.run_id);
+  // Historic wire bytes omit this field. No old policy acquires a new tier.
+  requireThat(priorityCapture ? b.service_tier === 'priority' : !Object.hasOwn(b, 'service_tier'), 'ASSAY_SERVICE_TIER_UNBOUND');
   requireThat(p.run_id !== `${recoveryBase}-a17` || l?.max_calls === 3
     && l.max_cost_usd <= 0.54216, 'ASSAY_A17_SCOPE_UNBOUND');
   requireThat(p.run_id !== `${recoveryBase}-a18` || l?.max_calls === 5
@@ -93,18 +99,20 @@ export function validateAssayPolicy(p, at = Date.now()) {
     'ASSAY_RECOVERY_MEASUREMENT_CHANGED');
   // Separate corrected acquisition; historical runs retain their 8192 ceiling.
   const correctedCapture = p.run_id === ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID;
-  const nextIntervention = ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(p.run_id);
+  const nextIntervention = ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS.includes(p.run_id);
   requireThat(!nextIntervention || b.trial_family === 'FIRST_CONFIGURED_RECEIVER'
     && p.artifact_sha256 === ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256
     && b.model === 'gemini-3.8-flash'
     && canonicalJson(b.response_model_ids) === canonicalJson(['gemini-3.8-flash'])
     && canonicalJson(g) === canonicalJson({ temperature: null, top_p: null, thinking_level: 'medium' })
-    && l.max_calls === 1 && l.max_cost_usd <= 0.3
+    && l.max_calls === 1 && l.max_cost_usd <= (priorityCapture ? 0.5 : 0.3)
     && l.max_input_tokens_per_call === 200000 && l.max_output_tokens_per_call === 32768
     && p.receiver_output_tokens === 32768 && l.timeout_ms === ASSAY_MAX_PROVIDER_TIMEOUT_MS
     && l.max_response_bytes === 2000000
-    && pricing.input_usd_per_million === 0.75 && pricing.output_usd_per_million === 3.75,
+    && pricing.input_usd_per_million === (priorityCapture ? 1.35 : 0.75)
+    && pricing.output_usd_per_million === (priorityCapture ? 6.75 : 3.75),
     'ASSAY_REGISTERED_SOURCE_NEXT_SCOPE_UNBOUND');
+  requireThat(!priorityCapture || Date.parse(p.expires_at) < Date.parse('2027-01-01T00:00:00Z'), 'ASSAY_PRIORITY_PRICE_WINDOW_EXPIRED');
   requireThat(!correctedCapture || b.trial_family === 'FIRST_CONFIGURED_RECEIVER'
     && b.model === 'gemini-3.8-flash'
     && canonicalJson(b.response_model_ids) === canonicalJson(['gemini-3.8-flash'])
@@ -141,7 +149,7 @@ export function validateTrial(t) {
 }
 export function outputLimit(p, t) { return t.role === 'RECEIVER' ? p.receiver_output_tokens : t.role === 'MONOLITH' ? 8192 : 2048; }
 export function requireTrialFamily(p, t) {
-  requireThat(!ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(p.run_id) || t?.trial_id === 'FIRST_CONFIGURED_RECEIVER-R01-1'
+  requireThat(!ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS.includes(p.run_id) || t?.trial_id === 'FIRST_CONFIGURED_RECEIVER-R01-1'
     && t.case_id === 'R01' && t.role === 'RECEIVER' && t.turn_index === 0,
     'ASSAY_REGISTERED_SOURCE_NEXT_TRIAL_UNBOUND');
   requireThat(p.run_id !== ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID || t?.role === 'RECEIVER'
@@ -203,7 +211,8 @@ export function buildAssayProviderWire(request, policy, manifest, artifactText) 
   const body = JSON.stringify({ contents: messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
     generationConfig: { candidateCount: 1, maxOutputTokens,
       ...(g.temperature === null ? {} : { temperature: g.temperature }), ...(g.top_p === null ? {} : { topP: g.top_p }),
-      ...(g.thinking_level === null ? {} : { thinkingConfig: { thinkingLevel: g.thinking_level } }) } });
+      ...(g.thinking_level === null ? {} : { thinkingConfig: { thinkingLevel: g.thinking_level } }) },
+    ...(policy.binding.service_tier === undefined ? {} : { serviceTier: policy.binding.service_tier }) });
   const byteBound = Buffer.byteLength(body) + 8192;
   requireThat(byteBound <= policy.binding.limits.max_input_tokens_per_call, 'ASSAY_INPUT_RESERVATION_EXCEEDED');
   // Retain the existing conservative one-token-per-wire-byte plus framing
@@ -228,6 +237,24 @@ export function inspectAssayResponse(bytes, p, limit, inputBound = p.binding.lim
   requireThat(text.length > 0, 'ASSAY_EMPTY_ANSWER');
   return { text, answer_sha256: sha256(text), model: body.modelVersion, usage: u,
     output_tokens_including_thinking: u.totalTokenCount - u.promptTokenCount };
+}
+
+// A requested tier and a provider-reported serving tier are separate facts.
+// A downgrade never discards an otherwise complete answer or triggers a retry.
+export function observeAssayServiceTier(bytes, headerTier, policy) {
+  const normalize = value => value === null || value === undefined ? null
+    : ['unspecified', 'standard', 'flex', 'priority'].includes(value) ? value : 'UNRECOGNIZED';
+  let usageTier = null;
+  try { usageTier = normalize(JSON.parse(bytes.toString('utf8')).usageMetadata?.serviceTier); } catch {}
+  const responseHeader = normalize(headerTier), reports = [responseHeader, usageTier].filter(x => x !== null);
+  const requested = policy.binding.service_tier ?? 'standard';
+  const status = reports.length === 0 ? 'UNCONFIRMED'
+    : reports.includes('UNRECOGNIZED') || reports.includes('unspecified') ? 'UNCONFIRMED'
+    : new Set(reports).size > 1 ? 'CONFLICT'
+    : reports[0] === requested ? 'CONFIRMED_REQUESTED_TIER'
+    : requested === 'priority' && reports[0] === 'standard' ? 'DECLARED_STANDARD_DOWNGRADE' : 'UNEXPECTED_TIER';
+  return { requested, response_header: responseHeader, response_usage: usageTier, status,
+    evidence_scope: 'Provider-reported tier; not independent verification of internal scheduling or billing' };
 }
 
 
