@@ -22,9 +22,16 @@ export const ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256 = 'd703dcebb9869
 export const ASSAY_SOURCE_REGISTRATION_NEGATIVE_RUN_ID = 'portable-loom-source-registration-negative-20261011-n01';
 export const ASSAY_SOURCE_REGISTRATION_NEGATIVE_PROMPT_SHA256 = '670d18f3a8015c982bd1365fa00bda5c1ab42af0dac82b2881b3f2f78dd849ae';
 export const ASSAY_SOURCE_REGISTRATION_NEGATIVE_MANIFEST_PATH = 'research/portable-loom-registered-source-control-20261011/source-negative-v1/TRIAL_MANIFEST.json';
+export const ASSAY_SOURCE_REGISTRATION_ALIGNED_RUN_ID = 'portable-loom-source-registration-negative-20261011-n02';
+export const ASSAY_SOURCE_REGISTRATION_ALIGNED_PROMPT_SHA256 = 'fe9b67427a4abe49566daf94373abef212c85df2b1bb608efaf491fe5279abe2';
+export const ASSAY_SOURCE_REGISTRATION_ALIGNED_MANIFEST_PATH = 'research/portable-loom-registered-source-control-20261011/source-negative-v1_1/TRIAL_MANIFEST.json';
+export const ASSAY_SOURCE_REGISTRATION_NEGATIVE_RUN_CONFIGS = Object.freeze({
+  [ASSAY_SOURCE_REGISTRATION_NEGATIVE_RUN_ID]: Object.freeze({ prompt_sha256: ASSAY_SOURCE_REGISTRATION_NEGATIVE_PROMPT_SHA256, manifest_path: ASSAY_SOURCE_REGISTRATION_NEGATIVE_MANIFEST_PATH }),
+  [ASSAY_SOURCE_REGISTRATION_ALIGNED_RUN_ID]: Object.freeze({ prompt_sha256: ASSAY_SOURCE_REGISTRATION_ALIGNED_PROMPT_SHA256, manifest_path: ASSAY_SOURCE_REGISTRATION_ALIGNED_MANIFEST_PATH })
+});
 export const ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256 = '51efc3d87cdffc4fb2869519ff4fa12b10ce179ba79d3976f6094cf741681c39';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_CALLER_CREDENTIAL_SHA256 = 'baaa5a59eff5540a9061554ae92beafa3ede5c279ce6e2ae18fc21c2a0c8122b';
-export const ASSAY_ACTIVATION_RUN_IDS = Object.freeze([...ASSAY_RECOVERY_RUN_IDS, `${recoveryBase}-a19`, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ...ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS, ASSAY_SOURCE_REGISTRATION_NEGATIVE_RUN_ID]);
+export const ASSAY_ACTIVATION_RUN_IDS = Object.freeze([...ASSAY_RECOVERY_RUN_IDS, `${recoveryBase}-a19`, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ...ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS, ASSAY_SOURCE_REGISTRATION_NEGATIVE_RUN_ID, ASSAY_SOURCE_REGISTRATION_ALIGNED_RUN_ID]);
 export const ASSAY_RECOVERY_PROGRAM = Object.freeze({
   id: recoveryBase,
   run_ids: Object.freeze([recoveryBase, `${recoveryBase}-a2`, `${recoveryBase}-a3`, ...ASSAY_RECOVERY_RUN_IDS.slice(0, -1)]),
@@ -81,7 +88,8 @@ export function validateAssayPolicy(p, at = Date.now()) {
     && Array.isArray(b.response_model_ids) && b.response_model_ids.length > 0
     && b.response_model_ids.every(x => typeof x === 'string' && /^[a-zA-Z0-9._-]{1,100}$/.test(x)), 'ASSAY_MODEL_BINDING');
   const l = b.limits, g = b.generation_parameters, pricing = b.pricing;
-  const sourceNegative = p.run_id === ASSAY_SOURCE_REGISTRATION_NEGATIVE_RUN_ID;
+  const sourceNegativeConfig = ASSAY_SOURCE_REGISTRATION_NEGATIVE_RUN_CONFIGS[p.run_id];
+  const sourceNegative = Boolean(sourceNegativeConfig);
   const priorityCapture = ASSAY_REGISTERED_SOURCE_CONTROL_PRIORITY_RUN_IDS.includes(p.run_id) || sourceNegative;
   // Historic wire bytes omit this field. No old policy acquires a new tier.
   requireThat(priorityCapture ? b.service_tier === 'priority' : !Object.hasOwn(b, 'service_tier'), 'ASSAY_SERVICE_TIER_UNBOUND');
@@ -105,7 +113,7 @@ export function validateAssayPolicy(p, at = Date.now()) {
   const correctedCapture = p.run_id === ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID;
   const nextIntervention = ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS.includes(p.run_id) || sourceNegative;
   requireThat(!nextIntervention || b.trial_family === 'FIRST_CONFIGURED_RECEIVER'
-    && p.artifact_sha256 === (sourceNegative ? ASSAY_SOURCE_REGISTRATION_NEGATIVE_PROMPT_SHA256 : ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256)
+    && p.artifact_sha256 === (sourceNegative ? sourceNegativeConfig.prompt_sha256 : ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256)
     && b.model === 'gemini-3.8-flash'
     && canonicalJson(b.response_model_ids) === canonicalJson(['gemini-3.8-flash'])
     && canonicalJson(g) === canonicalJson({ temperature: null, top_p: null, thinking_level: 'medium' })
@@ -154,7 +162,7 @@ export function validateTrial(t) {
 }
 export function outputLimit(p, t) { return t.role === 'RECEIVER' ? p.receiver_output_tokens : t.role === 'MONOLITH' ? 8192 : 2048; }
 export function requireTrialFamily(p, t) {
-  requireThat(!(ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS.includes(p.run_id) || p.run_id === ASSAY_SOURCE_REGISTRATION_NEGATIVE_RUN_ID) || t?.trial_id === 'FIRST_CONFIGURED_RECEIVER-R01-1'
+  requireThat(!(ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS.includes(p.run_id) || Object.hasOwn(ASSAY_SOURCE_REGISTRATION_NEGATIVE_RUN_CONFIGS, p.run_id)) || t?.trial_id === 'FIRST_CONFIGURED_RECEIVER-R01-1'
     && t.case_id === 'R01' && t.role === 'RECEIVER' && t.turn_index === 0,
     'ASSAY_REGISTERED_SOURCE_NEXT_TRIAL_UNBOUND');
   requireThat(p.run_id !== ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID || t?.role === 'RECEIVER'
