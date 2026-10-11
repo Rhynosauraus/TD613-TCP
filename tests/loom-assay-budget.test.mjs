@@ -309,7 +309,7 @@ test('r04 permits exactly one frozen USD 0.27288 reservation under its independe
     const state = await inspectRun(pool, { run_id: p.run_id, credential_sha256: digest });
     assert.equal(state.calls_reserved, 1);
     assert.equal(state.reserved_cost_nanos, '272880000');
-    await assert.rejects(reserveCall(pool, i), /BUDGET_EXHAUSTED/);
+    await assert.rejects(reserveCall(pool, i), /CALL_ALREADY_RESERVED/);
     assert.equal((await db.query('SELECT count(*) AS n FROM td613_assay_calls')).rows[0].n, 1);
   } finally { await db.close(); }
 });
