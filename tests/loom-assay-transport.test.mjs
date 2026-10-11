@@ -1,7 +1,7 @@
 import './loom-assay-credential.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { globSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createLoomAssayHandler, loadApprovedRunConfiguration } from '../server/loom-assay.js';
@@ -218,7 +218,7 @@ test('canonical API dispatch and deployment packaging preserve dedicated bounded
   assert.match(config.functions['api/khonapolit.js'].includeFiles, /TRIAL_MANIFEST\.json/);
   assert.match(config.functions['api/khonapolit.js'].includeFiles, /candidate-artifact\/portable-loom-standard\.md/);
   assert.match(config.functions['api/khonapolit.js'].includeFiles, /server\/loom-assay-run-config\.json/);
-  assert.equal(config.functions['api/khonapolit.js'].includeFiles.includes(manifest.artifact_path), true,
+  assert.equal(globSync(config.functions['api/khonapolit.js'].includeFiles).includes(manifest.artifact_path), true,
     'The source-selected assay artifact must be carried by the deployed function.');
 });
 test('source-bound public activation admits only its run and does not contain provider or caller secrets', async () => {

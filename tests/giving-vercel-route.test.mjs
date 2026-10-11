@@ -38,12 +38,11 @@ baselineProjection.headers = baselineProjection.headers.filter(entry=>!resetRout
 // function-duration budget. Normalize the separately tested Kʰonapolit duration
 // before hashing so every other Vercel byte remains protected by the baseline.
 if (baselineProjection.functions?.['api/khonapolit.js']) {
-  // The source-selected portable Loom assay carries exactly these three immutable
-  // inputs in the existing function. Reject additions or substitutions before
-  // normalizing this separately governed file-carriage allowance.
+  // Admit only the reviewed assay inputs and bounded A20/control subtrees.
+  // Reject other additions or substitutions before normalizing file carriage.
   assert.equal(baselineProjection.functions['api/khonapolit.js'].includeFiles,
-    '{server/loom-assay-run-config.json,research/portable-loom-server-transport-20261009/TRIAL_MANIFEST.json,research/portable-loom-receiver-repair-20261010/candidate-artifact/portable-loom-standard.md,research/portable-loom-a20-activation-20261010/**}',
-    'the bounded Loom transport carries the historical reviewed three files plus the bounded A20 artifact directory (manifest and exact candidate included)');
+    '{server/loom-assay-run-config.json,research/portable-loom-{server-transport-20261009/TRIAL_MANIFEST.json,receiver-repair-20261010/candidate-artifact/portable-loom-standard.md,a20-activation-20261010/**,registered-source-control-20261011/**}}',
+    'the bounded Loom transport carries the reviewed historical inputs and A20/registered-control subtrees');
   delete baselineProjection.functions['api/khonapolit.js'].includeFiles;
   baselineProjection.functions['api/khonapolit.js'].maxDuration = 60;
 }

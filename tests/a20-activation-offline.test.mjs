@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { globSync, readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -70,14 +70,17 @@ test('A20 call builder yields bounded provider wire without contacting provider'
 
 test('Vercel function bundle contains manifest-selected A20 candidate and exact file paths',()=>{
  const cfg=JSON.parse(readFileSync(resolve(root,'vercel.json'),'utf8'));
- const listed=cfg.functions['api/khonapolit.js'].includeFiles.slice(1,-1).split(',');
+ const listed=globSync(cfg.functions['api/khonapolit.js'].includeFiles, {cwd: root});
  assert.ok(cfg.functions['api/khonapolit.js'].includeFiles.length<=256,'Vercel includeFiles must stay within schema limit');
  const a20Prefix='research/portable-loom-a20-activation-20261010/';
- assert.deepEqual(listed.slice(0,3),['server/loom-assay-run-config.json','research/portable-loom-server-transport-20261009/TRIAL_MANIFEST.json','research/portable-loom-receiver-repair-20261010/candidate-artifact/portable-loom-standard.md']);
- assert.equal(listed[3],a20Prefix+'**','A20 must be carried inside its own bounded subtree');
- assert.equal(listed.length,4,'No unrelated carriage globs');
+ const literalFiles=['server/loom-assay-run-config.json','research/portable-loom-server-transport-20261009/TRIAL_MANIFEST.json','research/portable-loom-receiver-repair-20261010/candidate-artifact/portable-loom-standard.md'];
+ const controlPrefix='research/portable-loom-registered-source-control-20261011/';
+ assert.ok(listed.every(file=>literalFiles.includes(file)||file===a20Prefix.slice(0,-1)||file.startsWith(a20Prefix)||file===controlPrefix.slice(0,-1)||file.startsWith(controlPrefix)), 'No unrelated runtime carriage');
  assert.ok(('research/portable-loom-a20-activation-20261010/TRIAL_MANIFEST_A20.json').startsWith(a20Prefix));
  assert.ok(manifest.artifact_path.startsWith(a20Prefix));
- for(const file of [...listed.slice(0,3),a20Prefix+'TRIAL_MANIFEST_A20.json',manifest.artifact_path]) assert.doesNotThrow(()=>readFileSync(resolve(root,file)), 'missing Vercel-carried file: '+file);
+ for(const file of [...literalFiles,a20Prefix+'TRIAL_MANIFEST_A20.json',manifest.artifact_path]) {
+  assert.ok(listed.includes(file), 'file excluded from Vercel carriage: '+file);
+  assert.doesNotThrow(()=>readFileSync(resolve(root,file)), 'missing Vercel-carried file: '+file);
+ }
  assert.equal(sha256(readFileSync(resolve(root,manifest.artifact_path))),manifest.artifact_sha256);
 });

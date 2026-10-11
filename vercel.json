@@ -9,7 +9,7 @@
     },
     "api/khonapolit.js": {
       "maxDuration": 300,
-      "includeFiles": "{server/loom-assay-run-config.json,research/portable-loom-server-transport-20261009/TRIAL_MANIFEST.json,research/portable-loom-receiver-repair-20261010/candidate-artifact/portable-loom-standard.md,research/portable-loom-a20-activation-20261010/**}"
+      "includeFiles": "{server/loom-assay-run-config.json,research/portable-loom-{server-transport-20261009/TRIAL_MANIFEST.json,receiver-repair-20261010/candidate-artifact/portable-loom-standard.md,a20-activation-20261010/**,registered-source-control-20261011/**}}"
     },
     "api/giving.js": {
       "maxDuration": 30
