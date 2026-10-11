@@ -9,6 +9,7 @@ import { inspectPortableLoomReceiverConformance, LOOM_DECLARED_RECEIPT_STATUS, L
 import { portableLoomFooterText, PORTABLE_LOOM_RECEIVER_OUTPUT_GUIDANCE } from '../app/engine/portable-loom-output.js';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/portable-loom-conformance-captures-20261010.json', import.meta.url)));
+const registeredCapture = JSON.parse(readFileSync(new URL('./fixtures/portable-loom-registered-source-capture-20261011.json', import.meta.url))).cases[0];
 const hash = text => createHash('sha256').update(text).digest('hex');
 function render(input, body = 'The receipt is unverified and unadmitted.', status = LOOM_DECLARED_RECEIPT_STATUS) {
   input.answer = body + '\n\n```json\n' + JSON.stringify(input.receipt, null, 2) + '\n```\n\n' + portableLoomFooterText({ receiptStatus: status });
@@ -215,6 +216,79 @@ test('trailing whitespace cannot move the footer qualifier into the body check',
   const report = inspectPortableLoomReceiverConformance(input);
   assert.equal(report.checks.footer_receipt_qualified, true);
   assert.ok(report.findings.includes('RECEIPT_REVIEW_BODY_QUALIFICATION_MISSING'));
+});
+test('the unchanged registered-source capture retains its HOLD with placement and body diagnoses', () => {
+  const before = JSON.stringify(registeredCapture), report = inspectPortableLoomReceiverConformance(registeredCapture);
+  assert.equal(hash(registeredCapture.answer), registeredCapture.answer_sha256);
+  assert.equal(registeredCapture.answer_sha256, 'cf05162f1e7c0da88c281dfe5aaf42251edd5e07a137ef81e330dda8e4a7da3c');
+  assert.equal(report.status, 'HOLD');
+  assert.equal(report.checks.footer_receipt_qualified, false); assert.equal(report.checks.review_body_qualified, false);
+  assert.equal(report.checks.receipt_bound_to_answer, true); assert.equal(report.checks.receipt_shape, true);
+  assert.equal(report.checks.reference_match, true); assert.equal(report.checks.source_accounting, 'ORIGIN_DECLARED_SOURCE_MATCH');
+  assert.deepEqual(report.findings, ['RECEIPT_FOOTER_QUALIFICATION_MISSING_OR_OVERCLAIMED', 'RECEIPT_FOOTER_NOT_TERMINAL', 'RECEIPT_REVIEW_BODY_QUALIFICATION_MISSING']);
+  assert.equal(JSON.stringify(registeredCapture), before); assert.equal(report.provider_requests, 0);
+});
+test('synthetic r03 ordering controls keep footer qualification separate from required body qualification', () => {
+  const footer = registeredCapture.answer.split('\n').find(line => line.startsWith('Phase:'));
+  const moved = registeredCapture.answer.replace(footer, '').trimEnd() + '\n\n' + footer;
+  const input = { ...registeredCapture, answer: moved };
+  const report = inspectPortableLoomReceiverConformance(input);
+  assert.equal(report.status, 'HOLD'); assert.equal(report.checks.footer_receipt_qualified, true);
+  assert.deepEqual(report.findings, ['RECEIPT_REVIEW_BODY_QUALIFICATION_MISSING']);
+  assert.equal(inspectPortableLoomReceiverConformance({ ...input, review_body_required: false }).status, 'PARTIAL_DECLARATION_INSPECTION');
+  input.answer = 'The receipt is `DECLARED_UNVERIFIED_UNADMITTED`.\n\n' + moved;
+  assert.equal(inspectPortableLoomReceiverConformance(input).status, 'QUALIFIED_DECLARATION');
+  input.answer = 'The receipt is unverified and unadmitted.\n\n' + registeredCapture.answer;
+  assert.equal(inspectPortableLoomReceiverConformance(input).checks.review_body_qualified, true);
+  assert.ok(inspectPortableLoomReceiverConformance(input).findings.includes('RECEIPT_FOOTER_NOT_TERMINAL'));
+});
+for (const format of ['PROSE', 'STRICT_JSON_TASK_RESULT']) {
+  for (const split of [false, true]) {
+    test(`${format}: duplicated ${split ? 'two-line' : 'one-line'} footer cannot supply body qualification`, () => {
+      const input = render(valid(), 'Task complete.');
+      let footer = portableLoomFooterText({ receiptStatus: LOOM_DECLARED_RECEIPT_STATUS });
+      if (split) footer = footer.replace(' · Gate:', '\nGate:');
+      let presentation = footer + '\n\n' + input.answer;
+      if (format === 'STRICT_JSON_TASK_RESULT') {
+        presentation = footer + '\n\nTask complete.\n\n' + footer;
+        input.answer = JSON.stringify({ answer: presentation, loom_session_receipt: input.receipt });
+      } else input.answer = presentation;
+      input.presentation_format = format;
+      const report = inspectPortableLoomReceiverConformance(input);
+      assert.equal(report.status, 'HOLD'); assert.equal(report.checks.footer_receipt_qualified, true);
+      assert.equal(report.checks.review_body_qualified, false); assert.equal(report.checks.receipt_bound_to_answer, true);
+    });
+  }
+}
+test('both footer formats accept a terminal two-line footer with CRLF and trailing whitespace', () => {
+  for (const footer of [portableLoomFooterText({ receiptStatus: LOOM_DECLARED_RECEIPT_STATUS }).replace(' · Gate:', '\nGate:'),
+    'Phase: responding | Receipt: DECLARED_UNVERIFIED_UNADMITTED\n米 Check Loom Gate ⟐']) {
+    const input = valid(); input.answer = input.answer.slice(0, input.answer.lastIndexOf('𝌋 Loom')) + footer;
+    input.answer = input.answer.replaceAll('\n', '\r\n') + '\r\n  \t';
+    assert.equal(inspectPortableLoomReceiverConformance(input).status, 'QUALIFIED_DECLARATION');
+  }
+});
+for (const fence of ['```text', '````text', '~~~text']) {
+  test(`footer examples inside ${fence} fences cannot qualify the body or become a terminal footer`, () => {
+    const close = fence.replace('text', ''), footer = portableLoomFooterText({ receiptStatus: LOOM_DECLARED_RECEIPT_STATUS });
+    const example = `${fence}\n${footer}\n${close}`;
+    const input = render(valid(), example);
+    assert.equal(inspectPortableLoomReceiverConformance(input).checks.review_body_qualified, false);
+    input.answer = input.answer.slice(0, input.answer.lastIndexOf('𝌋 Loom')) + example;
+    const report = inspectPortableLoomReceiverConformance(input);
+    assert.equal(report.checks.footer_receipt_qualified, false);
+    assert.equal(report.findings.includes('RECEIPT_FOOTER_NOT_TERMINAL'), false);
+  });
+}
+test('footer removal retains adjacent direct and anaphoric contradictory body claims', () => {
+  const footer = portableLoomFooterText({ receiptStatus: LOOM_DECLARED_RECEIPT_STATUS });
+  for (const claim of ['The receipt is independently verified and admitted.', 'It has been independently verified and admitted.']) {
+    const input = render(valid(), 'The receipt is unverified and unadmitted.\n' + footer + '\n' + claim);
+    const report = inspectPortableLoomReceiverConformance(input);
+    assert.equal(report.status, 'HOLD'); assert.equal(report.checks.review_body_qualified, false);
+  }
+  const input = render(valid(), 'The receipt is unverified.\n' + footer.replace('米 Check Loom Gate ⟐', '') + '\nIt is independently verified. 米 Check Loom Gate ⟐');
+  assert.equal(inspectPortableLoomReceiverConformance(input).checks.review_body_qualified, false);
 });
 test('conflicting footer receipt labels cannot select a clean first label', () => {
   const input = valid(); input.answer = input.answer.replace(' · HOLD:', ' · Receipt: VERIFIED · HOLD:');

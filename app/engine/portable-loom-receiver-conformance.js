@@ -87,7 +87,7 @@ function receiptBodyQualification(body) {
   // A bounded textual check, not semantic adjudication: preserve words inside
   // inline code, and require the qualification to concern a receipt sentence.
   const prose = body.replace(/```[\s\S]*?```/g, '').replaceAll('`', '').replaceAll('_', ' ');
-  const allSentences = prose.split(/[.!?\n]/).map(sentence => sentence.trim());
+  const allSentences = prose.split(/[.!?\n]/).map(sentence => sentence.trim()).filter(Boolean);
   const receiptIndex = allSentences.map((sentence, index) => /\b(?:receipts?|receiver declarations?)\b/i.test(sentence) ? index : -1).filter(index => index >= 0);
   const scopedIndices = new Set(receiptIndex);
   for (const index of receiptIndex) {
@@ -101,6 +101,36 @@ function receiptBodyQualification(body) {
     return directClaim.test(sentence) || adversativeClaim.test(sentence) || anaphoricClaim.test(sentence);
   })) return false;
   return sentences.some(qualified);
+}
+
+function presentationSections(presentation) {
+  const lines = presentation.trimEnd().split(/\r?\n/), prose = [], footers = [];
+  let fence = null;
+  const outside = lines.map(line => {
+    const marker = line.match(/^\s*(`{3,}|~{3,})(.*)$/);
+    if (fence) {
+      if (marker && marker[1][0] === fence[0] && marker[1].length >= fence.length && !marker[2].trim()) fence = null;
+      return false;
+    }
+    if (marker) { fence = marker[1]; return false; }
+    return true;
+  });
+  const start = /^\s*(?:Phase:|𝌋 Loom(?:[ ·]|$))/;
+  const continuation = /^\s*(?:[|·]\s*)?(?:Session:|Route:|Posture:|Auth:|Receipt:|HOLD:|Gate:|Scope:|米 Check Loom Gate ⟐)/;
+  const sealed = text => /米 Check Loom Gate ⟐\s*$/.test(text);
+  for (let i = 0; i < lines.length; i++) {
+    if (!outside[i]) continue;
+    if (!start.test(lines[i])) { prose.push(lines[i]); continue; }
+    const first = i;
+    if (!sealed(lines[i]) && outside[i + 1] && continuation.test(lines[i + 1])) i++;
+    footers.push({ text: lines.slice(first, i + 1).join('\n'), end: i + 1, complete: sealed(lines[i]) });
+  }
+  // Footer labels never qualify the body, even when misplaced or duplicated.
+  // Keep adjacent prose in order so removing a footer cannot erase a claim or
+  // break an anaphoric contradiction into an unrelated sentence.
+  const terminal = footers.find(footer => footer.end === lines.length);
+  return { body: prose.join('\n'), footer: terminal?.text ?? '',
+    displaced: footers.some(footer => footer.complete) && !terminal?.complete };
 }
 
 export function inspectPortableLoomReceiverConformance(input) {
@@ -130,20 +160,18 @@ export function inspectPortableLoomReceiverConformance(input) {
   checks.task_binding_observed = expected.operator_task !== null;
   checks.reference_match = checks.receipt_shape && ['session_root_ref', 'policy_commitment', 'anchor_work_unit_ref'].every(k => receipt[k] === expected[k])
     && (expected.operator_task === null || receipt.operator_task === expected.operator_task);
-  const lines = captured.presentation.trimEnd().split(/\r?\n/), tailStart = Math.max(0, lines.length - 2);
-  const relativeStart = lines.slice(tailStart).findIndex(line => /^\s*(?:Phase:|𝌋 Loom(?:[ ·]|$))/.test(line));
-  const footerStart = relativeStart < 0 ? lines.length : tailStart + relativeStart;
-  const footer = lines.slice(footerStart).join('\n');
+  const { body, footer, displaced } = presentationSections(captured.presentation);
   const labels = [...footer.matchAll(/(?:^|[|·\n])\s*Receipt:\s*([^|·\n]+)/gi)].map(match => match[1].trim());
   const receiptLabel = labels.length === 1 ? labels[0] : null;
   checks.footer_receipt_qualified = receiptLabel !== null && qualified(receiptLabel) && !claimsVerified(receiptLabel)
     && /米 Check Loom Gate ⟐$/.test(footer);
-  checks.review_body_qualified = review_body_required ? receiptBodyQualification(lines.slice(0, footerStart).join('\n')) : null;
+  checks.review_body_qualified = review_body_required ? receiptBodyQualification(body) : null;
   if (inspectReceipt) {
     if (!checks.receipt_shape) fail('RECEIPT_SHAPE_INVALID');
     else if (!checks.reference_match) fail('RECEIPT_ORIGIN_REFERENCE_MISMATCH');
     if (!checks.task_binding_observed) fail('ORIGIN_TASK_BINDING_UNOBSERVED');
     if (!checks.footer_receipt_qualified) fail('RECEIPT_FOOTER_QUALIFICATION_MISSING_OR_OVERCLAIMED');
+    if (displaced) fail('RECEIPT_FOOTER_NOT_TERMINAL');
     if (review_body_required && !checks.review_body_qualified) fail('RECEIPT_REVIEW_BODY_QUALIFICATION_MISSING');
   }
   let sourceStatus = 'NOT_APPLICABLE', unresolvedSourceMarkerPresent = null;
