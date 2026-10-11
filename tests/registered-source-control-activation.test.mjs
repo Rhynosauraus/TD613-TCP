@@ -3,19 +3,21 @@ import assert from 'node:assert/strict';
 import { copyFileSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { ASSAY_ACTIVATION_RUN_IDS, ASSAY_REQUEST_SCHEMA, sha256, validateAssayPolicy, requireTrialFamily, buildAssayProviderWire } from '../server/loom-assay-contract.js';
+import { ASSAY_ACTIVATION_RUN_IDS, ASSAY_REQUEST_SCHEMA, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, validateAssayPolicy, requireTrialFamily, buildAssayProviderWire } from '../server/loom-assay-contract.js';
 import { createLoomAssayHandler, loadApprovedRunConfiguration } from '../server/loom-assay.js';
 import { loadServerManifest, prepareServerRequest } from '../research/portable-loom-server-transport-20261009/server-client.mjs';
 
 const runId = 'portable-loom-registered-source-control-20261011-r01';
 const continuationRunId = 'portable-loom-registered-source-control-20261011-r02';
 const captureRunId = 'portable-loom-registered-source-control-20261011-r03';
+const nextRunId = ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID;
 const protocolCommit = '82d73f92e8c560753d2604446269f01f2f856061';
 const sourcePath = 'research/portable-loom-registered-source-control-20261011';
 const trial = { trial_id: 'FIRST_CONFIGURED_RECEIVER-R01-1', case_id: 'R01', role: 'RECEIVER', turn_index: 0 };
 function policy(manifest, selectedRunId = runId, thinkingLevel = 'medium') {
   const corrected = selectedRunId === captureRunId;
-  const outputCap = corrected ? 32768 : 8192;
+  const next = selectedRunId === nextRunId;
+  const outputCap = corrected || next ? 32768 : 8192;
   return validateAssayPolicy({
     schema: 'td613.loom.server-assay-policy/v0.2', run_id: selectedRunId, protocol_commit: protocolCommit,
     artifact_sha256: manifest.artifact_sha256, expires_at: '2099-01-01T00:00:00Z',
@@ -26,11 +28,11 @@ function policy(manifest, selectedRunId = runId, thinkingLevel = 'medium') {
       credential_env: 'GEMINI_API_KEY',
       generation_parameters: { temperature: null, top_p: null, thinking_level: thinkingLevel },
       limits: { max_calls: 1, max_input_tokens_per_call: 200000, max_output_tokens_per_call: outputCap,
-        max_cost_usd: corrected ? 1 : 0.25, timeout_ms: corrected ? 240000 : 120000, max_response_bytes: 2000000 },
+        max_cost_usd: next ? 0.3 : corrected ? 1 : 0.25, timeout_ms: corrected || next ? 240000 : 120000, max_response_bytes: 2000000 },
       pricing: { input_usd_per_million: 0.75, output_usd_per_million: 3.75,
         source: 'https://ai.google.dev/gemini-api/docs/pricing', verified_at: '2026-10-11T00:00:00Z' },
-      authorization: { record: 'research/portable-loom-registered-source-control-20261011/AUTHORIZATION.json',
-        scope: 'One provider request, one durable reservation, maximum $0.25; no retries, tools, retrieval or custody admission.' },
+      authorization: { record: `research/portable-loom-registered-source-control-20261011/${next ? 'next-protocol-v1/EXECUTION_AUTHORIZATION.json' : 'AUTHORIZATION.json'}`,
+        scope: next ? 'One provider request, one durable reservation, maximum $0.30; no retries, tools, retrieval or custody admission.' : 'One provider request, one durable reservation, maximum $0.25; no retries, tools, retrieval or custody admission.' },
       tools: 'DISABLED', retrieval: 'DISABLED', retries: 0
     }, receiver_output_tokens: outputCap
   });
@@ -44,7 +46,46 @@ test('new one-call run is explicitly allowlisted without reenrolling A20', () =>
   assert.ok(config.run_ids.includes(continuationRunId));
   assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(captureRunId));
   assert.ok(config.run_ids.includes(captureRunId));
+  assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(nextRunId));
+  assert.ok(config.run_ids.includes(nextRunId));
   assert.ok(config.run_ids.includes('portable-loom-first-receiver-20261010-a20'));
+});
+
+test('r04 freezes one intervention asset, exact receiver trial, and the USD 0.30 reservation ceiling', () => {
+  const { manifest, artifact } = loadServerManifest(process.cwd(), nextRunId);
+  const p = policy(manifest, nextRunId);
+  const registration = JSON.parse(readFileSync(resolve(sourcePath, 'next-protocol-v1/ORIGIN_SOURCE_REGISTRATION.json'), 'utf8'));
+  const scoring = JSON.parse(readFileSync(resolve(sourcePath, 'next-protocol-v1/SCORING_CONTRACT.json'), 'utf8'));
+  const source = readFileSync(resolve(sourcePath, 'next-protocol-v1/SOURCE.txt'), 'utf8');
+  const { request, provider_wire } = prepareServerRequest(p, trial, { root: process.cwd() });
+  assert.equal(Buffer.byteLength(artifact, 'utf8'), 109285);
+  assert.equal(manifest.artifact_sha256, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256);
+  assert.equal(registration.origin_document.id, 'registered_fee_source_v1');
+  assert.equal(registration.raw_utf8_sha256, sha256(source));
+  assert.deepEqual(scoring.origin_source_context.registered_document_ids, ['registered_fee_source_v1']);
+  assert.deepEqual(scoring.acceptance.used_document_ids, ['registered_fee_source_v1']);
+  assert.deepEqual(scoring.acceptance.missing_information, []);
+  assert.equal(provider_wire.output_limit, 32768);
+  assert.equal(provider_wire.reserved_cost_nanos, 272880000);
+  assert.equal(request.trial.trial_id, 'FIRST_CONFIGURED_RECEIVER-R01-1');
+  assert.throws(() => requireTrialFamily(p, { ...trial, trial_id: 'FIRST_CONFIGURED_RECEIVER-R01-2' }), /ASSAY_REGISTERED_SOURCE_NEXT_TRIAL_UNBOUND/);
+  const changed = structuredClone(p); changed.binding.limits.max_calls = 2;
+  assert.throws(() => validateAssayPolicy(changed), /ASSAY_REGISTERED_SOURCE_NEXT_SCOPE_UNBOUND/);
+  for (const mutate of [
+    x => { x.artifact_sha256 = '0'.repeat(64); },
+    x => { x.binding.model = 'gemini-3.8-pro'; },
+    x => { x.binding.generation_parameters.thinking_level = 'low'; },
+    x => { x.binding.limits.max_output_tokens_per_call = x.receiver_output_tokens = 8192; },
+    x => { x.binding.limits.timeout_ms = 120000; },
+    x => { x.binding.limits.max_cost_usd = 0.31; }
+  ]) {
+    const bad = structuredClone(p); mutate(bad);
+    assert.throws(() => validateAssayPolicy(bad), /ASSAY_REGISTERED_SOURCE_NEXT_SCOPE_UNBOUND/);
+  }
+  const wrongArtifact = structuredClone(request); wrongArtifact.artifact_sha256 = '0'.repeat(64);
+  assert.throws(() => buildAssayProviderWire(wrongArtifact, p, manifest, artifact), /ASSAY_COORDINATE_MISMATCH/);
+  const expired = structuredClone(p); expired.expires_at = '2020-01-01T00:00:00Z';
+  assert.throws(() => validateAssayPolicy(expired), /ASSAY_POLICY_UNBOUND_OR_EXPIRED/);
 });
 
 test('positive-control prompt, source registry, exact trial and bounded request are source-bound', () => {
@@ -84,7 +125,7 @@ async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId
     operations.push(operation);
     if (operation === 'inspect') return { policy: p, calls_reserved: 0, reserved_cost_nanos: '0' };
     if (operation === 'reserve') return { durable_reservation: true, request_sha256: input.request_sha256,
-      call_key: `${trial.trial_id}:${trial.role}:${trial.turn_index}`, reserved_cost_nanos: selectedRunId === captureRunId ? '272880000' : '180720000' };
+      call_key: `${trial.trial_id}:${trial.role}:${trial.turn_index}`, reserved_cost_nanos: selectedRunId === captureRunId || selectedRunId === nextRunId ? '272880000' : '180720000' };
     if (operation === 'complete') return { retained: true, call_key: input.call_key, status: input.status };
     throw new Error('unexpected budget operation');
   };
@@ -107,7 +148,8 @@ async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId
   try {
     process.chdir(runtimeRoot);
     await handler({ method: 'POST', headers: { authorization: `Bearer ${token}`,
-      'x-vercel-oidc-token': 'test-oidc-token', 'x-td613-expected-credential-sha256': sha256(apiKey) }, body: request }, res);
+      'x-vercel-oidc-token': 'test-oidc-token', 'x-td613-expected-credential-sha256': selectedRunId === nextRunId
+        ? ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256 : sha256(apiKey) }, body: request }, res);
   } finally { process.chdir(previousRoot); }
   return { res, operations, providerCalls };
 }
@@ -148,6 +190,12 @@ test('corrected capture preserves medium and the frozen prompt with a larger out
   assertCaptured(await fixtureRequest(process.cwd(), captureRunId, 'medium'));
 });
 
+test('r04 fixture follows the new manifest through one complete mocked request', async () => {
+  const loaded = loadServerManifest(process.cwd(), nextRunId);
+  assert.equal(loaded.manifest.artifact_sha256, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256);
+  assertCaptured(await fixtureRequest(process.cwd(), nextRunId, 'medium'));
+});
+
 test('missing runtime assets hold before reservation and provider dispatch', async () => {
   const root = mkdtempSync(resolve(tmpdir(), 'registered-control-missing-assets-'));
   try {
@@ -167,13 +215,13 @@ test('Vercel-selected runtime assets permit the registered-control fixture reque
   assert.ok(includeFiles.length <= 256, 'Vercel includeFiles must stay within schema limit');
   const selected = new Set(globSync(includeFiles));
   try {
-    for (const path of [`${sourcePath}/TRIAL_MANIFEST.json`, `${sourcePath}/PROMPT.txt`]) {
+    for (const path of [`${sourcePath}/next-protocol-v1/TRIAL_MANIFEST.json`, `${sourcePath}/next-protocol-v1/PROMPT.txt`]) {
       if (!selected.has(path)) continue;
       const destination = resolve(root, path);
       mkdirSync(dirname(destination), { recursive: true });
       copyFileSync(path, destination);
     }
-    assertCaptured(await fixtureRequest(root));
+    assertCaptured(await fixtureRequest(root, nextRunId, 'medium'));
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -197,4 +245,21 @@ test('larger output allowance cannot widen earlier runs or change corrected deco
   }
   const p = policy(manifest, captureRunId);
   assert.throws(() => requireTrialFamily(p, { ...trial, case_id: 'R02', trial_id: 'FIRST_CONFIGURED_RECEIVER-R02-1' }), /ASSAY_CORRECTED_CAPTURE_TRIAL_UNBOUND/);
+});
+
+test('r04 cannot reach reservation when its required credential expectation is missing', async () => {
+  const { manifest } = loadServerManifest(process.cwd(), nextRunId);
+  const p = policy(manifest, nextRunId);
+  const { request } = prepareServerRequest(p, trial, { root: process.cwd() });
+  const token = 'A'.repeat(40), operations = []; let providerCalls = 0;
+  const handler = createLoomAssayHandler({ environment: { TD613_LOOM_ASSAY_ACCESS_SHA256: sha256(token),
+    GEMINI_API_KEY: 'test-provider-key', VERCEL_GIT_COMMIT_SHA: protocolCommit },
+    fetchImpl: async () => { providerCalls++; throw new Error('unexpected provider request'); },
+    budget: async operation => { operations.push(operation); return { policy: p, calls_reserved: 0, reserved_cost_nanos: '0' }; } });
+  const res = { headers: {}, setHeader(k,v){this.headers[k]=v;}, end(body){this.body=body;} };
+  await handler({ method:'POST', headers:{ authorization:`Bearer ${token}`, 'x-vercel-oidc-token':'fixture-oidc' }, body:request },res);
+  assert.equal(res.statusCode,409);
+  assert.equal(JSON.parse(res.body).error,'ASSAY_PROVIDER_CREDENTIAL_EXPECTATION_REQUIRED');
+  assert.deepEqual(operations,[]);
+  assert.equal(providerCalls,0);
 });
