@@ -10,7 +10,8 @@ const recoveryBase = 'portable-loom-first-receiver-20261009';
 export const ASSAY_RECOVERY_RUN_IDS = Object.freeze(Array.from({ length: 15 }, (_, i) => `${recoveryBase}-a${i + 4}`));
 export const ASSAY_A20_RUN_ID = 'portable-loom-first-receiver-20261010-a20';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID = 'portable-loom-registered-source-control-20261011-r01';
-export const ASSAY_ACTIVATION_RUN_IDS = Object.freeze([...ASSAY_RECOVERY_RUN_IDS, `${recoveryBase}-a19`, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID]);
+export const ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID = 'portable-loom-registered-source-control-20261011-r02';
+export const ASSAY_ACTIVATION_RUN_IDS = Object.freeze([...ASSAY_RECOVERY_RUN_IDS, `${recoveryBase}-a19`, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID]);
 export const ASSAY_RECOVERY_PROGRAM = Object.freeze({
   id: recoveryBase,
   run_ids: Object.freeze([recoveryBase, `${recoveryBase}-a2`, `${recoveryBase}-a3`, ...ASSAY_RECOVERY_RUN_IDS.slice(0, -1)]),
