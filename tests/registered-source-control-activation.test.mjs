@@ -8,12 +8,13 @@ import { createLoomAssayHandler, loadApprovedRunConfiguration } from '../server/
 import { loadServerManifest, prepareServerRequest } from '../research/portable-loom-server-transport-20261009/server-client.mjs';
 
 const runId = 'portable-loom-registered-source-control-20261011-r01';
+const continuationRunId = 'portable-loom-registered-source-control-20261011-r02';
 const protocolCommit = '82d73f92e8c560753d2604446269f01f2f856061';
 const sourcePath = 'research/portable-loom-registered-source-control-20261011';
 const trial = { trial_id: 'FIRST_CONFIGURED_RECEIVER-R01-1', case_id: 'R01', role: 'RECEIVER', turn_index: 0 };
-function policy(manifest) {
+function policy(manifest, selectedRunId = runId) {
   return validateAssayPolicy({
-    schema: 'td613.loom.server-assay-policy/v0.2', run_id: runId, protocol_commit: protocolCommit,
+    schema: 'td613.loom.server-assay-policy/v0.2', run_id: selectedRunId, protocol_commit: protocolCommit,
     artifact_sha256: manifest.artifact_sha256, expires_at: '2099-01-01T00:00:00Z',
     binding: {
       schema: 'td613.loom.bound-model-transport/v0.1', protocol_commit: protocolCommit,
@@ -36,6 +37,8 @@ test('new one-call run is explicitly allowlisted without reenrolling A20', () =>
   const config = loadApprovedRunConfiguration();
   assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(runId));
   assert.ok(config.run_ids.includes(runId));
+  assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(continuationRunId));
+  assert.ok(config.run_ids.includes(continuationRunId));
   assert.ok(config.run_ids.includes('portable-loom-first-receiver-20261010-a20'));
 });
 
@@ -65,9 +68,9 @@ test('positive-control prompt, source registry, exact trial and bounded request 
 });
 
 
-async function fixtureRequest(runtimeRoot = process.cwd()) {
-  const { manifest } = loadServerManifest(process.cwd(), runId);
-  const p = policy(manifest);
+async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId) {
+  const { manifest } = loadServerManifest(process.cwd(), selectedRunId);
+  const p = policy(manifest, selectedRunId);
   const { request } = prepareServerRequest(p, trial, { root: process.cwd() });
   const token = 'A'.repeat(40), apiKey = 'test-provider-key';
   const operations = [];
@@ -114,6 +117,15 @@ function assertCaptured({ res, operations, providerCalls }) {
 
 test('production route selects the new manifest and completes one fixture-only request', async () => {
   assertCaptured(await fixtureRequest());
+});
+
+test('separate continuation run selects the unchanged registered-control prompt', async () => {
+  const original = loadServerManifest(process.cwd(), runId);
+  const continuation = loadServerManifest(process.cwd(), continuationRunId);
+  assert.equal(continuation.artifact, original.artifact);
+  assert.deepEqual(continuation.manifest, original.manifest);
+  const capture = await fixtureRequest(process.cwd(), continuationRunId);
+  assertCaptured(capture);
 });
 
 test('missing runtime assets hold before reservation and provider dispatch', async () => {
