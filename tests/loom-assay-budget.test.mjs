@@ -264,3 +264,26 @@ test('a19 admits two same-run R09 turns after 81 reservations and stops at the 8
     } finally { await db.close(); }
   }
 });
+
+
+test('corrected capture reserves its larger allowance in the durable SQL ledger', async () => {
+  const p = policy();
+  p.run_id = 'portable-loom-registered-source-control-20261011-r03';
+  Object.assign(p.binding, { model: 'gemini-3.8-flash', response_model_ids: ['gemini-3.8-flash'],
+    generation_parameters: { temperature: null, top_p: null, thinking_level: 'medium' } });
+  Object.assign(p.binding.limits, { max_calls: 3, max_cost_usd: 1, max_input_tokens_per_call: 200000,
+    max_output_tokens_per_call: 32768, max_response_bytes: 2000000, timeout_ms: 240000 });
+  Object.assign(p.binding.pricing, { input_usd_per_million: 0.75, output_usd_per_million: 3.75 });
+  p.receiver_output_tokens = 32768;
+  const { db, pool } = await setup(p);
+  try {
+    const i = input('FIRST_CONFIGURED_RECEIVER-R01-1');
+    Object.assign(i, { run_id: p.run_id, output_limit: 32768 }); i.trial.case_id = 'R01';
+    const reserved = await reserveCall(pool, i);
+    assert.equal(reserved.reserved_cost_nanos, '272880000');
+    const state = await inspectRun(pool, { run_id: p.run_id, credential_sha256: digest });
+    assert.equal(state.calls_reserved, 1); assert.equal(state.reserved_cost_nanos, '272880000');
+    await assert.rejects(reserveCall(pool, { ...i, output_limit: 8192 }), /RESERVATION_BINDING/);
+    assert.equal((await db.query('SELECT count(*) AS n FROM td613_assay_calls')).rows[0].n, 1);
+  } finally { await db.close(); }
+});

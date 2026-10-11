@@ -3,16 +3,19 @@ import assert from 'node:assert/strict';
 import { copyFileSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { ASSAY_ACTIVATION_RUN_IDS, ASSAY_REQUEST_SCHEMA, sha256, validateAssayPolicy, buildAssayProviderWire } from '../server/loom-assay-contract.js';
+import { ASSAY_ACTIVATION_RUN_IDS, ASSAY_REQUEST_SCHEMA, sha256, validateAssayPolicy, requireTrialFamily, buildAssayProviderWire } from '../server/loom-assay-contract.js';
 import { createLoomAssayHandler, loadApprovedRunConfiguration } from '../server/loom-assay.js';
 import { loadServerManifest, prepareServerRequest } from '../research/portable-loom-server-transport-20261009/server-client.mjs';
 
 const runId = 'portable-loom-registered-source-control-20261011-r01';
 const continuationRunId = 'portable-loom-registered-source-control-20261011-r02';
+const captureRunId = 'portable-loom-registered-source-control-20261011-r03';
 const protocolCommit = '82d73f92e8c560753d2604446269f01f2f856061';
 const sourcePath = 'research/portable-loom-registered-source-control-20261011';
 const trial = { trial_id: 'FIRST_CONFIGURED_RECEIVER-R01-1', case_id: 'R01', role: 'RECEIVER', turn_index: 0 };
-function policy(manifest, selectedRunId = runId) {
+function policy(manifest, selectedRunId = runId, thinkingLevel = 'medium') {
+  const corrected = selectedRunId === captureRunId;
+  const outputCap = corrected ? 32768 : 8192;
   return validateAssayPolicy({
     schema: 'td613.loom.server-assay-policy/v0.2', run_id: selectedRunId, protocol_commit: protocolCommit,
     artifact_sha256: manifest.artifact_sha256, expires_at: '2099-01-01T00:00:00Z',
@@ -21,15 +24,15 @@ function policy(manifest, selectedRunId = runId) {
       provider: 'GEMINI_GENERATE_CONTENT', trial_family: 'FIRST_CONFIGURED_RECEIVER',
       model: 'gemini-3.8-flash', response_model_ids: ['gemini-3.8-flash'],
       credential_env: 'GEMINI_API_KEY',
-      generation_parameters: { temperature: null, top_p: null, thinking_level: 'medium' },
-      limits: { max_calls: 1, max_input_tokens_per_call: 200000, max_output_tokens_per_call: 8192,
-        max_cost_usd: 0.25, timeout_ms: 120000, max_response_bytes: 2000000 },
+      generation_parameters: { temperature: null, top_p: null, thinking_level: thinkingLevel },
+      limits: { max_calls: 1, max_input_tokens_per_call: 200000, max_output_tokens_per_call: outputCap,
+        max_cost_usd: corrected ? 1 : 0.25, timeout_ms: corrected ? 240000 : 120000, max_response_bytes: 2000000 },
       pricing: { input_usd_per_million: 0.75, output_usd_per_million: 3.75,
         source: 'https://ai.google.dev/gemini-api/docs/pricing', verified_at: '2026-10-11T00:00:00Z' },
       authorization: { record: 'research/portable-loom-registered-source-control-20261011/AUTHORIZATION.json',
         scope: 'One provider request, one durable reservation, maximum $0.25; no retries, tools, retrieval or custody admission.' },
       tools: 'DISABLED', retrieval: 'DISABLED', retries: 0
-    }, receiver_output_tokens: 8192
+    }, receiver_output_tokens: outputCap
   });
 }
 
@@ -39,6 +42,8 @@ test('new one-call run is explicitly allowlisted without reenrolling A20', () =>
   assert.ok(config.run_ids.includes(runId));
   assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(continuationRunId));
   assert.ok(config.run_ids.includes(continuationRunId));
+  assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(captureRunId));
+  assert.ok(config.run_ids.includes(captureRunId));
   assert.ok(config.run_ids.includes('portable-loom-first-receiver-20261010-a20'));
 });
 
@@ -68,9 +73,9 @@ test('positive-control prompt, source registry, exact trial and bounded request 
 });
 
 
-async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId) {
+async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId, thinkingLevel = 'medium') {
   const { manifest } = loadServerManifest(process.cwd(), selectedRunId);
-  const p = policy(manifest, selectedRunId);
+  const p = policy(manifest, selectedRunId, thinkingLevel);
   const { request } = prepareServerRequest(p, trial, { root: process.cwd() });
   const token = 'A'.repeat(40), apiKey = 'test-provider-key';
   const operations = [];
@@ -79,11 +84,14 @@ async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId
     operations.push(operation);
     if (operation === 'inspect') return { policy: p, calls_reserved: 0, reserved_cost_nanos: '0' };
     if (operation === 'reserve') return { durable_reservation: true, request_sha256: input.request_sha256,
-      call_key: `${trial.trial_id}:${trial.role}:${trial.turn_index}`, reserved_cost_nanos: '180720000' };
+      call_key: `${trial.trial_id}:${trial.role}:${trial.turn_index}`, reserved_cost_nanos: selectedRunId === captureRunId ? '272880000' : '180720000' };
     if (operation === 'complete') return { retained: true, call_key: input.call_key, status: input.status };
     throw new Error('unexpected budget operation');
   };
-  const fetchImpl = async () => {
+  const fetchImpl = async (_url, options) => {
+    const wire = JSON.parse(options.body);
+    assert.equal(wire.generationConfig.thinkingConfig.thinkingLevel, thinkingLevel);
+    assert.equal(wire.generationConfig.maxOutputTokens, p.receiver_output_tokens);
     providerCalls++;
     return new Response(JSON.stringify({ modelVersion: 'gemini-3.8-flash',
       usageMetadata: { promptTokenCount: 1, totalTokenCount: 5 },
@@ -128,6 +136,18 @@ test('separate continuation run selects the unchanged registered-control prompt'
   assertCaptured(capture);
 });
 
+test('corrected capture preserves medium and the frozen prompt with a larger output allowance', async () => {
+  const original = loadServerManifest(process.cwd(), runId);
+  const next = loadServerManifest(process.cwd(), captureRunId);
+  assert.equal(next.artifact, original.artifact);
+  assert.deepEqual(next.manifest, original.manifest);
+  const p = policy(next.manifest, captureRunId, 'medium');
+  const { provider_wire } = prepareServerRequest(p, trial, { root: process.cwd() });
+  assert.equal(provider_wire.output_limit, 32768);
+  assert.equal(provider_wire.reserved_cost_nanos, 272880000);
+  assertCaptured(await fixtureRequest(process.cwd(), captureRunId, 'medium'));
+});
+
 test('missing runtime assets hold before reservation and provider dispatch', async () => {
   const root = mkdtempSync(resolve(tmpdir(), 'registered-control-missing-assets-'));
   try {
@@ -155,4 +175,26 @@ test('Vercel-selected runtime assets permit the registered-control fixture reque
     }
     assertCaptured(await fixtureRequest(root));
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+
+test('larger output allowance cannot widen earlier runs or change corrected decoding', () => {
+  const { manifest } = loadServerManifest(process.cwd(), runId);
+  for (const id of [runId, continuationRunId, 'unrelated']) {
+    const p = structuredClone(policy(manifest, id));
+    p.binding.limits.max_output_tokens_per_call = p.receiver_output_tokens = 32768;
+    assert.throws(() => validateAssayPolicy(p), /ASSAY_NUMERICAL_LIMITS/);
+  }
+  for (const mutate of [
+    p => { p.binding.generation_parameters.thinking_level = 'low'; },
+    p => { p.binding.limits.max_calls = 4; },
+    p => { p.binding.limits.max_cost_usd = 1.01; },
+    p => { p.binding.limits.max_output_tokens_per_call = p.receiver_output_tokens = 65536; },
+    p => { p.binding.model = 'gemini-3.8-pro'; }
+  ]) {
+    const p = structuredClone(policy(manifest, captureRunId)); mutate(p);
+    assert.throws(() => validateAssayPolicy(p), /ASSAY_CORRECTED_CAPTURE_SCOPE_UNBOUND/);
+  }
+  const p = policy(manifest, captureRunId);
+  assert.throws(() => requireTrialFamily(p, { ...trial, case_id: 'R02', trial_id: 'FIRST_CONFIGURED_RECEIVER-R02-1' }), /ASSAY_CORRECTED_CAPTURE_TRIAL_UNBOUND/);
 });
