@@ -13,10 +13,12 @@ export const ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID = 'portable-loom-registered-
 export const ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID = 'portable-loom-registered-source-control-20261011-r02';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID = 'portable-loom-registered-source-control-20261011-r03';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID = 'portable-loom-registered-source-control-20261011-r04';
+export const ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID = 'portable-loom-registered-source-control-20261011-r05';
+export const ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS = Object.freeze([ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID]);
 export const ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256 = 'd703dcebb9869152df5d95541bbe5400d1ed9b92d1f11565aa10c9382cfd35c6';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256 = '51efc3d87cdffc4fb2869519ff4fa12b10ce179ba79d3976f6094cf741681c39';
 export const ASSAY_REGISTERED_SOURCE_CONTROL_CALLER_CREDENTIAL_SHA256 = 'baaa5a59eff5540a9061554ae92beafa3ede5c279ce6e2ae18fc21c2a0c8122b';
-export const ASSAY_ACTIVATION_RUN_IDS = Object.freeze([...ASSAY_RECOVERY_RUN_IDS, `${recoveryBase}-a19`, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID]);
+export const ASSAY_ACTIVATION_RUN_IDS = Object.freeze([...ASSAY_RECOVERY_RUN_IDS, `${recoveryBase}-a19`, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ...ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS]);
 export const ASSAY_RECOVERY_PROGRAM = Object.freeze({
   id: recoveryBase,
   run_ids: Object.freeze([recoveryBase, `${recoveryBase}-a2`, `${recoveryBase}-a3`, ...ASSAY_RECOVERY_RUN_IDS.slice(0, -1)]),
@@ -91,7 +93,7 @@ export function validateAssayPolicy(p, at = Date.now()) {
     'ASSAY_RECOVERY_MEASUREMENT_CHANGED');
   // Separate corrected acquisition; historical runs retain their 8192 ceiling.
   const correctedCapture = p.run_id === ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID;
-  const nextIntervention = p.run_id === ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID;
+  const nextIntervention = ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(p.run_id);
   requireThat(!nextIntervention || b.trial_family === 'FIRST_CONFIGURED_RECEIVER'
     && p.artifact_sha256 === ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256
     && b.model === 'gemini-3.8-flash'
@@ -139,7 +141,7 @@ export function validateTrial(t) {
 }
 export function outputLimit(p, t) { return t.role === 'RECEIVER' ? p.receiver_output_tokens : t.role === 'MONOLITH' ? 8192 : 2048; }
 export function requireTrialFamily(p, t) {
-  requireThat(p.run_id !== ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID || t?.trial_id === 'FIRST_CONFIGURED_RECEIVER-R01-1'
+  requireThat(!ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(p.run_id) || t?.trial_id === 'FIRST_CONFIGURED_RECEIVER-R01-1'
     && t.case_id === 'R01' && t.role === 'RECEIVER' && t.turn_index === 0,
     'ASSAY_REGISTERED_SOURCE_NEXT_TRIAL_UNBOUND');
   requireThat(p.run_id !== ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID || t?.role === 'RECEIVER'
