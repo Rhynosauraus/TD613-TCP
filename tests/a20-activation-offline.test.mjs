@@ -47,7 +47,7 @@ test('enrollment preparation chooses the same A20 manifest as acquisition and sp
 
 test('A20 is an explicit future route; legacy 88/$10 frozen program survives',()=>{
  assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(ASSAY_A20_RUN_ID));
- assert.deepEqual(ASSAY_ACTIVATION_RUN_IDS.slice(ASSAY_ACTIVATION_RUN_IDS.indexOf(ASSAY_A20_RUN_ID) + 1), ['portable-loom-registered-source-control-20261011-r01', 'portable-loom-registered-source-control-20261011-r02', 'portable-loom-registered-source-control-20261011-r03', 'portable-loom-registered-source-control-20261011-r04', 'portable-loom-registered-source-control-20261011-r05', ...Array.from({length:5},(_,i)=>`portable-loom-registered-source-control-20261011-r${String(i+6).padStart(2,'0')}`)]);
+ assert.deepEqual(ASSAY_ACTIVATION_RUN_IDS.slice(ASSAY_ACTIVATION_RUN_IDS.indexOf(ASSAY_A20_RUN_ID) + 1), ['portable-loom-registered-source-control-20261011-r01', 'portable-loom-registered-source-control-20261011-r02', 'portable-loom-registered-source-control-20261011-r03', 'portable-loom-registered-source-control-20261011-r04', 'portable-loom-registered-source-control-20261011-r05', ...Array.from({length:5},(_,i)=>`portable-loom-registered-source-control-20261011-r${String(i+6).padStart(2,'0')}`), 'portable-loom-source-registration-negative-20261011-n01']);
  assert.equal(ASSAY_A19_PROGRAM.max_calls,88);assert.equal(ASSAY_A19_PROGRAM.max_cost_usd,10);
  assert.equal(ASSAY_A20_PROGRAM.max_calls,88);assert.equal(ASSAY_A20_PROGRAM.max_cost_usd,11);
  assert.deepEqual(ASSAY_A20_PROGRAM.run_ids.slice(0,-1),ASSAY_A19_PROGRAM.run_ids);

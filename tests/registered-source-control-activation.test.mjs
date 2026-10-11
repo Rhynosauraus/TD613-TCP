@@ -1,4 +1,5 @@
 import './loom-assay-priority.test.mjs';
+import './source-registration-negative-activation.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { copyFileSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
