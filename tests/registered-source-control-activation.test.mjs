@@ -9,10 +9,11 @@ import { loadServerManifest, prepareServerRequest } from '../research/portable-l
 
 const runId = 'portable-loom-registered-source-control-20261011-r01';
 const continuationRunId = 'portable-loom-registered-source-control-20261011-r02';
+const captureRunId = 'portable-loom-registered-source-control-20261011-r03';
 const protocolCommit = '82d73f92e8c560753d2604446269f01f2f856061';
 const sourcePath = 'research/portable-loom-registered-source-control-20261011';
 const trial = { trial_id: 'FIRST_CONFIGURED_RECEIVER-R01-1', case_id: 'R01', role: 'RECEIVER', turn_index: 0 };
-function policy(manifest, selectedRunId = runId) {
+function policy(manifest, selectedRunId = runId, thinkingLevel = 'medium') {
   return validateAssayPolicy({
     schema: 'td613.loom.server-assay-policy/v0.2', run_id: selectedRunId, protocol_commit: protocolCommit,
     artifact_sha256: manifest.artifact_sha256, expires_at: '2099-01-01T00:00:00Z',
@@ -21,7 +22,7 @@ function policy(manifest, selectedRunId = runId) {
       provider: 'GEMINI_GENERATE_CONTENT', trial_family: 'FIRST_CONFIGURED_RECEIVER',
       model: 'gemini-3.8-flash', response_model_ids: ['gemini-3.8-flash'],
       credential_env: 'GEMINI_API_KEY',
-      generation_parameters: { temperature: null, top_p: null, thinking_level: 'medium' },
+      generation_parameters: { temperature: null, top_p: null, thinking_level: thinkingLevel },
       limits: { max_calls: 1, max_input_tokens_per_call: 200000, max_output_tokens_per_call: 8192,
         max_cost_usd: 0.25, timeout_ms: 120000, max_response_bytes: 2000000 },
       pricing: { input_usd_per_million: 0.75, output_usd_per_million: 3.75,
@@ -39,6 +40,8 @@ test('new one-call run is explicitly allowlisted without reenrolling A20', () =>
   assert.ok(config.run_ids.includes(runId));
   assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(continuationRunId));
   assert.ok(config.run_ids.includes(continuationRunId));
+  assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(captureRunId));
+  assert.ok(config.run_ids.includes(captureRunId));
   assert.ok(config.run_ids.includes('portable-loom-first-receiver-20261010-a20'));
 });
 
@@ -68,9 +71,9 @@ test('positive-control prompt, source registry, exact trial and bounded request 
 });
 
 
-async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId) {
+async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId, thinkingLevel = 'medium') {
   const { manifest } = loadServerManifest(process.cwd(), selectedRunId);
-  const p = policy(manifest, selectedRunId);
+  const p = policy(manifest, selectedRunId, thinkingLevel);
   const { request } = prepareServerRequest(p, trial, { root: process.cwd() });
   const token = 'A'.repeat(40), apiKey = 'test-provider-key';
   const operations = [];
@@ -83,7 +86,10 @@ async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId
     if (operation === 'complete') return { retained: true, call_key: input.call_key, status: input.status };
     throw new Error('unexpected budget operation');
   };
-  const fetchImpl = async () => {
+  const fetchImpl = async (_url, options) => {
+    const wire = JSON.parse(options.body);
+    assert.equal(wire.generationConfig.thinkingConfig.thinkingLevel, thinkingLevel);
+    assert.equal(wire.generationConfig.maxOutputTokens, 8192);
     providerCalls++;
     return new Response(JSON.stringify({ modelVersion: 'gemini-3.8-flash',
       usageMetadata: { promptTokenCount: 1, totalTokenCount: 5 },
@@ -126,6 +132,18 @@ test('separate continuation run selects the unchanged registered-control prompt'
   assert.deepEqual(continuation.manifest, original.manifest);
   const capture = await fixtureRequest(process.cwd(), continuationRunId);
   assertCaptured(capture);
+});
+
+test('fresh capture run carries low thinking with the identical prompt and output ceiling', async () => {
+  const original = loadServerManifest(process.cwd(), runId);
+  const next = loadServerManifest(process.cwd(), captureRunId);
+  assert.equal(next.artifact, original.artifact);
+  assert.deepEqual(next.manifest, original.manifest);
+  const p = policy(next.manifest, captureRunId, 'low');
+  const { provider_wire } = prepareServerRequest(p, trial, { root: process.cwd() });
+  assert.equal(provider_wire.output_limit, 8192);
+  assert.equal(provider_wire.reserved_cost_nanos, 180720000);
+  assertCaptured(await fixtureRequest(process.cwd(), captureRunId, 'low'));
 });
 
 test('missing runtime assets hold before reservation and provider dispatch', async () => {
