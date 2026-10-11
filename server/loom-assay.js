@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { timingSafeEqual } from 'node:crypto';
-import { ASSAY_RESPONSE_SCHEMA, ASSAY_RECOVERY_POLICY_SCHEMA, ASSAY_ACTIVATION_RUN_IDS, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, canonicalJson, exactFields, requireThat, buildAssayProviderWire, inspectAssayResponse } from './loom-assay-contract.js';
+import { ASSAY_RESPONSE_SCHEMA, ASSAY_RECOVERY_POLICY_SCHEMA, ASSAY_ACTIVATION_RUN_IDS, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, canonicalJson, exactFields, requireThat, buildAssayProviderWire, inspectAssayResponse, observeAssayServiceTier } from './loom-assay-contract.js';
 import { createAssayBudgetClient } from './loom-assay-budget-client.js';
 import { readLoomDemoVercelOidcToken } from './loom-demo-custody-client.js';
 
@@ -49,7 +49,7 @@ export function createLoomAssayHandler({ environment = process.env, fetchImpl = 
       requireThat(![environment.GEMINI_API_KEY, auth.token, workloadToken].filter(Boolean)
         .some(secret => raw.includes(Buffer.from(secret))), 'ASSAY_PROTECTED_CREDENTIAL_IN_PAYLOAD');
       request = JSON.parse(raw.toString('utf8'));
-      requireThat(!ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(request.run_id)
+      requireThat(!ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS.includes(request.run_id)
         || expectedCredential === ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256,
         'ASSAY_PROVIDER_CREDENTIAL_EXPECTATION_REQUIRED');
       requireThat(allowedRunId === null || request.run_id === allowedRunId, 'ASSAY_RUN_OUTSIDE_ACTIVATION');
@@ -61,7 +61,7 @@ export function createLoomAssayHandler({ environment = process.env, fetchImpl = 
         ? 'research/portable-loom-a20-activation-20261010/TRIAL_MANIFEST_A20.json'
         : [ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID].includes(request.run_id)
           ? 'research/portable-loom-registered-source-control-20261011/TRIAL_MANIFEST.json'
-          : ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(request.run_id)
+          : ASSAY_REGISTERED_SOURCE_CONTROL_FROZEN_PROMPT_RUN_IDS.includes(request.run_id)
             ? 'research/portable-loom-registered-source-control-20261011/next-protocol-v1/TRIAL_MANIFEST.json'
           : resolve(estate, 'TRIAL_MANIFEST.json');
       const m = manifest ?? JSON.parse(readFileSync(resolve(manifestPath)));
@@ -126,6 +126,8 @@ export function createLoomAssayHandler({ environment = process.env, fetchImpl = 
       provider_request_sha256: wire.request_sha256, provider_response_sha256: sha256(rawResponse),
       provider_response_base64: credentialEcho ? null : rawResponse.toString('base64'),
       response_complete: bodyComplete,
+      ...(policy.binding.service_tier === undefined ? {} : { service_tier: observeAssayServiceTier(credentialEcho ? Buffer.alloc(0) : rawResponse,
+        response?.headers?.get?.('x-gemini-service-tier') ?? null, policy) }),
       provider_deadline_ms: policy.binding.limits.timeout_ms, provider_deadline_expired: deadlineExpired,
       http_status: response?.status ?? null, returned, reservation, completion: completion ?? null,
       receipt_authority: 'Byte and budget record; no custody admission or external empirical promotion' });

@@ -1,9 +1,10 @@
+import './loom-assay-priority.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { copyFileSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { ASSAY_ACTIVATION_RUN_IDS, ASSAY_REQUEST_SCHEMA, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, validateAssayPolicy, requireTrialFamily, buildAssayProviderWire } from '../server/loom-assay-contract.js';
+import { ASSAY_ACTIVATION_RUN_IDS, ASSAY_REQUEST_SCHEMA, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_PRIORITY_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, validateAssayPolicy, requireTrialFamily, buildAssayProviderWire } from '../server/loom-assay-contract.js';
 import { createLoomAssayHandler, loadApprovedRunConfiguration } from '../server/loom-assay.js';
 import { loadServerManifest, prepareServerRequest } from '../research/portable-loom-server-transport-20261009/server-client.mjs';
 
@@ -12,25 +13,27 @@ const continuationRunId = 'portable-loom-registered-source-control-20261011-r02'
 const captureRunId = 'portable-loom-registered-source-control-20261011-r03';
 const nextRunId = ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID;
 const replicationRunId = ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID;
+const priorityRunId = ASSAY_REGISTERED_SOURCE_CONTROL_PRIORITY_RUN_ID;
 const protocolCommit = '82d73f92e8c560753d2604446269f01f2f856061';
 const sourcePath = 'research/portable-loom-registered-source-control-20261011';
 const trial = { trial_id: 'FIRST_CONFIGURED_RECEIVER-R01-1', case_id: 'R01', role: 'RECEIVER', turn_index: 0 };
 function policy(manifest, selectedRunId = runId, thinkingLevel = 'medium') {
   const corrected = selectedRunId === captureRunId;
-  const next = [nextRunId, replicationRunId].includes(selectedRunId);
+  const priority = selectedRunId === priorityRunId;
+  const next = [nextRunId, replicationRunId, priorityRunId].includes(selectedRunId);
   const outputCap = corrected || next ? 32768 : 8192;
   return validateAssayPolicy({
     schema: 'td613.loom.server-assay-policy/v0.2', run_id: selectedRunId, protocol_commit: protocolCommit,
-    artifact_sha256: manifest.artifact_sha256, expires_at: '2099-01-01T00:00:00Z',
+    artifact_sha256: manifest.artifact_sha256, expires_at: priority ? '2026-12-31T23:59:59Z' : '2099-01-01T00:00:00Z',
     binding: {
       schema: 'td613.loom.bound-model-transport/v0.1', protocol_commit: protocolCommit,
       provider: 'GEMINI_GENERATE_CONTENT', trial_family: 'FIRST_CONFIGURED_RECEIVER',
       model: 'gemini-3.8-flash', response_model_ids: ['gemini-3.8-flash'],
-      credential_env: 'GEMINI_API_KEY',
+      credential_env: 'GEMINI_API_KEY', ...(priority ? { service_tier: 'priority' } : {}),
       generation_parameters: { temperature: null, top_p: null, thinking_level: thinkingLevel },
       limits: { max_calls: 1, max_input_tokens_per_call: 200000, max_output_tokens_per_call: outputCap,
-        max_cost_usd: next ? 0.3 : corrected ? 1 : 0.25, timeout_ms: corrected || next ? 240000 : 120000, max_response_bytes: 2000000 },
-      pricing: { input_usd_per_million: 0.75, output_usd_per_million: 3.75,
+        max_cost_usd: priority ? 0.5 : next ? 0.3 : corrected ? 1 : 0.25, timeout_ms: corrected || next ? 240000 : 120000, max_response_bytes: 2000000 },
+      pricing: { input_usd_per_million: priority ? 1.35 : 0.75, output_usd_per_million: priority ? 6.75 : 3.75,
         source: 'https://ai.google.dev/gemini-api/docs/pricing', verified_at: '2026-10-11T00:00:00Z' },
       authorization: { record: `research/portable-loom-registered-source-control-20261011/${next ? 'next-protocol-v1/EXECUTION_AUTHORIZATION.json' : 'AUTHORIZATION.json'}`,
         scope: next ? 'One provider request, one durable reservation, maximum $0.30; no retries, tools, retrieval or custody admission.' : 'One provider request, one durable reservation, maximum $0.25; no retries, tools, retrieval or custody admission.' },
@@ -128,7 +131,7 @@ async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId
     operations.push(operation);
     if (operation === 'inspect') return { policy: p, calls_reserved: 0, reserved_cost_nanos: '0' };
     if (operation === 'reserve') return { durable_reservation: true, request_sha256: input.request_sha256,
-      call_key: `${trial.trial_id}:${trial.role}:${trial.turn_index}`, reserved_cost_nanos: selectedRunId === captureRunId || [nextRunId, replicationRunId].includes(selectedRunId) ? '272880000' : '180720000' };
+      call_key: `${trial.trial_id}:${trial.role}:${trial.turn_index}`, reserved_cost_nanos: selectedRunId === priorityRunId ? '491184000' : selectedRunId === captureRunId || [nextRunId, replicationRunId].includes(selectedRunId) ? '272880000' : '180720000' };
     if (operation === 'complete') return { retained: true, call_key: input.call_key, status: input.status };
     throw new Error('unexpected budget operation');
   };
@@ -151,7 +154,7 @@ async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId
   try {
     process.chdir(runtimeRoot);
     await handler({ method: 'POST', headers: { authorization: `Bearer ${token}`,
-      'x-vercel-oidc-token': 'test-oidc-token', 'x-td613-expected-credential-sha256': [nextRunId, replicationRunId].includes(selectedRunId)
+      'x-vercel-oidc-token': 'test-oidc-token', 'x-td613-expected-credential-sha256': [nextRunId, replicationRunId, priorityRunId].includes(selectedRunId)
         ? ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256 : sha256(apiKey) }, body: request }, res);
   } finally { process.chdir(previousRoot); }
   return { res, operations, providerCalls };
@@ -226,6 +229,7 @@ test('Vercel-selected runtime assets permit the registered-control fixture reque
     }
     assertCaptured(await fixtureRequest(root, nextRunId, 'medium'));
     assertCaptured(await fixtureRequest(root, replicationRunId, 'medium'));
+    assertCaptured(await fixtureRequest(root, priorityRunId, 'medium'));
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
