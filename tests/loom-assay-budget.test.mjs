@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { reserveCall, completeCall, inspectRun } from '../neon/functions/loom-assay-budget/ledger.mjs';
 import { verifyVercelOidc } from '../neon/functions/loom-assay-budget/vercel-identity.mjs';
-import { sha256, canonicalJson, ASSAY_A18_PROGRAM, ASSAY_A19_PROGRAM, ASSAY_RECOVERY_POLICY_SCHEMA, ASSAY_RECOVERY_PROGRAM, ASSAY_RECOVERY_RUN_IDS, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256 } from '../server/loom-assay-contract.js';
+import { sha256, canonicalJson, ASSAY_A18_PROGRAM, ASSAY_A19_PROGRAM, ASSAY_RECOVERY_POLICY_SCHEMA, ASSAY_RECOVERY_PROGRAM, ASSAY_RECOVERY_RUN_IDS, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256 } from '../server/loom-assay-contract.js';
 const require = createRequire(new URL('../neon/functions/loom-assay-budget/package.json', import.meta.url));
 const { PGlite } = require('@electric-sql/pglite');
 const digest = 'a'.repeat(64), head = 'b'.repeat(40);
@@ -311,5 +311,33 @@ test('r04 permits exactly one frozen USD 0.27288 reservation under its independe
     assert.equal(state.reserved_cost_nanos, '272880000');
     await assert.rejects(reserveCall(pool, i), /CALL_ALREADY_RESERVED/);
     assert.equal((await db.query('SELECT count(*) AS n FROM td613_assay_calls')).rows[0].n, 1);
+  } finally { await db.close(); }
+});
+
+test('r05 permits exactly one frozen USD 0.27288 reservation under its independent $0.30 ceiling', async () => {
+  const p = policy();
+  p.run_id = ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID;
+  p.artifact_sha256 = ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256;
+  p.binding.protocol_commit = p.protocol_commit;
+  Object.assign(p.binding, { model: 'gemini-3.8-flash', response_model_ids: ['gemini-3.8-flash'],
+    generation_parameters: { temperature: null, top_p: null, thinking_level: 'medium' } });
+  Object.assign(p.binding.limits, { max_calls: 1, max_cost_usd: 0.3, max_input_tokens_per_call: 200000,
+    max_output_tokens_per_call: 32768, max_response_bytes: 2000000, timeout_ms: 240000 });
+  Object.assign(p.binding.pricing, { input_usd_per_million: 0.75, output_usd_per_million: 3.75 });
+  p.receiver_output_tokens = 32768;
+  const { db, pool } = await setup(p);
+  try {
+    const i = input('FIRST_CONFIGURED_RECEIVER-R01-1');
+    Object.assign(i, { run_id: p.run_id, artifact_sha256: p.artifact_sha256, output_limit: 32768 });
+    i.trial.case_id = 'R01';
+    const reserved = await reserveCall(pool, i);
+    assert.equal(reserved.reserved_cost_nanos, '272880000');
+    const state = await inspectRun(pool, { run_id: p.run_id, credential_sha256: digest });
+    assert.equal(state.calls_reserved, 1);
+    assert.equal(state.reserved_cost_nanos, '272880000');
+    await assert.rejects(reserveCall(pool, i), /CALL_ALREADY_RESERVED/);
+    assert.equal((await db.query('SELECT count(*) AS n FROM td613_assay_calls')).rows[0].n, 1);
+    await db.query('UPDATE td613_assay_runs SET status=$1 WHERE run_id=$2', ['CLOSED',p.run_id]);
+    await assert.rejects(inspectRun(pool,{run_id:p.run_id,credential_sha256:digest}), /ASSAY_RUN_UNAVAILABLE/);
   } finally { await db.close(); }
 });

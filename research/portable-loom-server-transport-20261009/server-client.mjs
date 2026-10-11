@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { ASSAY_REQUEST_SCHEMA, ASSAY_RESPONSE_SCHEMA, ASSAY_CLIENT_RETURN_MARGIN_MS, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256, ASSAY_REGISTERED_SOURCE_CONTROL_CALLER_CREDENTIAL_SHA256, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, requireThat, validateAssayPolicy, buildAssayProviderWire, inspectAssayResponse } from '../../server/loom-assay-contract.js';
+import { ASSAY_REQUEST_SCHEMA, ASSAY_RESPONSE_SCHEMA, ASSAY_CLIENT_RETURN_MARGIN_MS, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256, ASSAY_REGISTERED_SOURCE_CONTROL_CALLER_CREDENTIAL_SHA256, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, requireThat, validateAssayPolicy, buildAssayProviderWire, inspectAssayResponse } from '../../server/loom-assay-contract.js';
 
 const estate = 'research/portable-loom-server-transport-20261009';
 export function loadServerManifest(root = process.cwd(), runId = null) {
@@ -10,7 +10,7 @@ export function loadServerManifest(root = process.cwd(), runId = null) {
     ? 'research/portable-loom-a20-activation-20261010/TRIAL_MANIFEST_A20.json'
     : [ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID].includes(runId)
       ? 'research/portable-loom-registered-source-control-20261011/TRIAL_MANIFEST.json'
-      : runId === ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID
+      : ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(runId)
         ? 'research/portable-loom-registered-source-control-20261011/next-protocol-v1/TRIAL_MANIFEST.json'
       : `${estate}/TRIAL_MANIFEST.json`;
   const manifest = JSON.parse(readFileSync(resolve(root, manifestPath)));
@@ -51,7 +51,7 @@ export async function captureServerCall(policy, request, directory, { environmen
   const wire = buildAssayProviderWire(request, policy, manifest, artifact);
   const token = environment.TD613_LOOM_ASSAY_TOKEN;
   requireThat(typeof token === 'string' && /^[a-zA-Z0-9_-]{32,256}$/.test(token), 'ASSAY_CALLER_CAPABILITY_UNBOUND');
-  const nextRun = policy.run_id === ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID;
+  const nextRun = ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(policy.run_id);
   const expectedProviderCredential = environment.TD613_LOOM_ASSAY_EXPECTED_CREDENTIAL_SHA256;
   requireThat(!nextRun || sha256(token) === ASSAY_REGISTERED_SOURCE_CONTROL_CALLER_CREDENTIAL_SHA256
     && expectedProviderCredential === ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256

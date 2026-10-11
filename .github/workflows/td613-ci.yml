@@ -83,6 +83,34 @@ jobs:
             echo 'practice_fixture_changed=false' >> "$GITHUB_OUTPUT"
           fi
 
+  budget_bundle:
+    name: Neon budget deployment ZIP startup
+    needs: scope
+    if: >-
+      needs.scope.outputs.head_is_current == 'true' &&
+      (github.event_name != 'workflow_dispatch' || (inputs.mode != 'calibration' && inputs.mode != 'full-repository'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Reject the historical missing-package ZIP
+        run: node --test tests/loom-assay-budget-bundle.test.mjs
+      - name: Build locked dependencies and invoke the extracted deployment ZIP
+        run: python neon/functions/loom-assay-budget/build-and-verify.py "$GITHUB_WORKSPACE" "$(git rev-parse HEAD)" "$RUNNER_TEMP/loomassaybudget-artifact"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: loomassaybudget-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/loomassaybudget-artifact
+          if-no-files-found: error
+
   contracts:
     name: Static, constitutional, and release contracts
     needs: scope

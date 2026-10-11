@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { copyFileSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { ASSAY_ACTIVATION_RUN_IDS, ASSAY_REQUEST_SCHEMA, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, validateAssayPolicy, requireTrialFamily, buildAssayProviderWire } from '../server/loom-assay-contract.js';
+import { ASSAY_ACTIVATION_RUN_IDS, ASSAY_REQUEST_SCHEMA, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_PROMPT_SHA256, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, validateAssayPolicy, requireTrialFamily, buildAssayProviderWire } from '../server/loom-assay-contract.js';
 import { createLoomAssayHandler, loadApprovedRunConfiguration } from '../server/loom-assay.js';
 import { loadServerManifest, prepareServerRequest } from '../research/portable-loom-server-transport-20261009/server-client.mjs';
 
@@ -11,12 +11,13 @@ const runId = 'portable-loom-registered-source-control-20261011-r01';
 const continuationRunId = 'portable-loom-registered-source-control-20261011-r02';
 const captureRunId = 'portable-loom-registered-source-control-20261011-r03';
 const nextRunId = ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID;
+const replicationRunId = ASSAY_REGISTERED_SOURCE_CONTROL_REPLICATION_RUN_ID;
 const protocolCommit = '82d73f92e8c560753d2604446269f01f2f856061';
 const sourcePath = 'research/portable-loom-registered-source-control-20261011';
 const trial = { trial_id: 'FIRST_CONFIGURED_RECEIVER-R01-1', case_id: 'R01', role: 'RECEIVER', turn_index: 0 };
 function policy(manifest, selectedRunId = runId, thinkingLevel = 'medium') {
   const corrected = selectedRunId === captureRunId;
-  const next = selectedRunId === nextRunId;
+  const next = [nextRunId, replicationRunId].includes(selectedRunId);
   const outputCap = corrected || next ? 32768 : 8192;
   return validateAssayPolicy({
     schema: 'td613.loom.server-assay-policy/v0.2', run_id: selectedRunId, protocol_commit: protocolCommit,
@@ -48,6 +49,8 @@ test('new one-call run is explicitly allowlisted without reenrolling A20', () =>
   assert.ok(config.run_ids.includes(captureRunId));
   assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(nextRunId));
   assert.ok(config.run_ids.includes(nextRunId));
+  assert.ok(ASSAY_ACTIVATION_RUN_IDS.includes(replicationRunId));
+  assert.ok(config.run_ids.includes(replicationRunId));
   assert.ok(config.run_ids.includes('portable-loom-first-receiver-20261010-a20'));
 });
 
@@ -125,7 +128,7 @@ async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId
     operations.push(operation);
     if (operation === 'inspect') return { policy: p, calls_reserved: 0, reserved_cost_nanos: '0' };
     if (operation === 'reserve') return { durable_reservation: true, request_sha256: input.request_sha256,
-      call_key: `${trial.trial_id}:${trial.role}:${trial.turn_index}`, reserved_cost_nanos: selectedRunId === captureRunId || selectedRunId === nextRunId ? '272880000' : '180720000' };
+      call_key: `${trial.trial_id}:${trial.role}:${trial.turn_index}`, reserved_cost_nanos: selectedRunId === captureRunId || [nextRunId, replicationRunId].includes(selectedRunId) ? '272880000' : '180720000' };
     if (operation === 'complete') return { retained: true, call_key: input.call_key, status: input.status };
     throw new Error('unexpected budget operation');
   };
@@ -148,7 +151,7 @@ async function fixtureRequest(runtimeRoot = process.cwd(), selectedRunId = runId
   try {
     process.chdir(runtimeRoot);
     await handler({ method: 'POST', headers: { authorization: `Bearer ${token}`,
-      'x-vercel-oidc-token': 'test-oidc-token', 'x-td613-expected-credential-sha256': selectedRunId === nextRunId
+      'x-vercel-oidc-token': 'test-oidc-token', 'x-td613-expected-credential-sha256': [nextRunId, replicationRunId].includes(selectedRunId)
         ? ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256 : sha256(apiKey) }, body: request }, res);
   } finally { process.chdir(previousRoot); }
   return { res, operations, providerCalls };
@@ -222,6 +225,7 @@ test('Vercel-selected runtime assets permit the registered-control fixture reque
       copyFileSync(path, destination);
     }
     assertCaptured(await fixtureRequest(root, nextRunId, 'medium'));
+    assertCaptured(await fixtureRequest(root, replicationRunId, 'medium'));
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -262,4 +266,20 @@ test('r04 cannot reach reservation when its required credential expectation is m
   assert.equal(JSON.parse(res.body).error,'ASSAY_PROVIDER_CREDENTIAL_EXPECTATION_REQUIRED');
   assert.deepEqual(operations,[]);
   assert.equal(providerCalls,0);
+});
+
+test('r05 replication preserves exact r04 provider bytes and cannot widen scope', async () => {
+  const loaded = loadServerManifest(process.cwd(), replicationRunId);
+  const old = prepareServerRequest(policy(loaded.manifest, nextRunId), trial);
+  const p = policy(loaded.manifest, replicationRunId);
+  const fresh = prepareServerRequest(p, trial);
+  assert.equal(fresh.provider_wire.body, old.provider_wire.body);
+  assert.equal(fresh.provider_wire.request_sha256, '47dcecf8c2ecf1b56a671dcae04f4d01d3976aa2431e946ff2b3cc6edb44a3c6');
+  assert.equal(fresh.provider_wire.reserved_cost_nanos, 272880000);
+  for (const mutate of [x => {x.binding.limits.max_calls=2;}, x => {x.binding.generation_parameters.thinking_level='low';}, x => {x.artifact_sha256='0'.repeat(64);}]) {
+    const bad=structuredClone(p); mutate(bad);
+    assert.throws(() => validateAssayPolicy(bad), /ASSAY_REGISTERED_SOURCE_NEXT_SCOPE_UNBOUND/);
+  }
+  assert.throws(() => requireTrialFamily(p, {...trial,trial_id:'FIRST_CONFIGURED_RECEIVER-R01-2'}), /ASSAY_REGISTERED_SOURCE_NEXT_TRIAL_UNBOUND/);
+  assertCaptured(await fixtureRequest(process.cwd(), replicationRunId, 'medium'));
 });

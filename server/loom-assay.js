@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { timingSafeEqual } from 'node:crypto';
-import { ASSAY_RESPONSE_SCHEMA, ASSAY_RECOVERY_POLICY_SCHEMA, ASSAY_ACTIVATION_RUN_IDS, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, canonicalJson, exactFields, requireThat, buildAssayProviderWire, inspectAssayResponse } from './loom-assay-contract.js';
+import { ASSAY_RESPONSE_SCHEMA, ASSAY_RECOVERY_POLICY_SCHEMA, ASSAY_ACTIVATION_RUN_IDS, ASSAY_A20_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS, ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256, sha256, canonicalJson, exactFields, requireThat, buildAssayProviderWire, inspectAssayResponse } from './loom-assay-contract.js';
 import { createAssayBudgetClient } from './loom-assay-budget-client.js';
 import { readLoomDemoVercelOidcToken } from './loom-demo-custody-client.js';
 
@@ -49,7 +49,7 @@ export function createLoomAssayHandler({ environment = process.env, fetchImpl = 
       requireThat(![environment.GEMINI_API_KEY, auth.token, workloadToken].filter(Boolean)
         .some(secret => raw.includes(Buffer.from(secret))), 'ASSAY_PROTECTED_CREDENTIAL_IN_PAYLOAD');
       request = JSON.parse(raw.toString('utf8'));
-      requireThat(request.run_id !== ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID
+      requireThat(!ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(request.run_id)
         || expectedCredential === ASSAY_REGISTERED_SOURCE_CONTROL_PROVIDER_CREDENTIAL_SHA256,
         'ASSAY_PROVIDER_CREDENTIAL_EXPECTATION_REQUIRED');
       requireThat(allowedRunId === null || request.run_id === allowedRunId, 'ASSAY_RUN_OUTSIDE_ACTIVATION');
@@ -61,7 +61,7 @@ export function createLoomAssayHandler({ environment = process.env, fetchImpl = 
         ? 'research/portable-loom-a20-activation-20261010/TRIAL_MANIFEST_A20.json'
         : [ASSAY_REGISTERED_SOURCE_CONTROL_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CONTINUATION_RUN_ID, ASSAY_REGISTERED_SOURCE_CONTROL_CAPTURE_RUN_ID].includes(request.run_id)
           ? 'research/portable-loom-registered-source-control-20261011/TRIAL_MANIFEST.json'
-          : request.run_id === ASSAY_REGISTERED_SOURCE_CONTROL_NEXT_RUN_ID
+          : ASSAY_REGISTERED_SOURCE_CONTROL_ORDER_RUN_IDS.includes(request.run_id)
             ? 'research/portable-loom-registered-source-control-20261011/next-protocol-v1/TRIAL_MANIFEST.json'
           : resolve(estate, 'TRIAL_MANIFEST.json');
       const m = manifest ?? JSON.parse(readFileSync(resolve(manifestPath)));
