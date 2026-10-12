@@ -596,3 +596,17 @@ test('couture ingress retains the two selectable sources and gives receipts thei
   assert.match(product,/#loomAiWorkspace \.loom-flowcore-help/);
   assert.equal(doc.querySelector('#loomBegin').textContent.trim(),'Enter Loom →');
 });
+
+test('independent Lab links preserve unsent Loom work by opening another tab without an opener', () => {
+  const doc = new JSDOM(html).window.document;
+  const topLink = doc.querySelector('nav[aria-label="Loom utilities"] a[href="/dome-world/loom-instrument-lab.html"]');
+  const workspace = new JSDOM(loomWorkspaceTemplate).window.document;
+  const innerLink = workspace.querySelector('a[href="/dome-world/loom-instrument-lab.html"]');
+  for (const link of [topLink, innerLink]) {
+    assert.ok(link, 'independent Lab entrance is present');
+    assert.equal(link.target, '_blank', 'Lab must not navigate the current Loom document');
+    assert.ok(link.relList.contains('noopener'), 'new Lab tab must not acquire live opener');
+    assert.ok(link.relList.contains('noreferrer'), 'new Lab tab must not receive referrer information');
+    assert.match(link.title, /tab/);
+  }
+});
