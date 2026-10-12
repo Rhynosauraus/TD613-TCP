@@ -308,3 +308,16 @@ test('standalone Lab links reach real Loom surfaces, and unsigned review remains
   assert.equal(h.ui.inspect().receipt, null);
   assert.equal(h.fetches(), 0);
 });
+
+test('Lab labels distinguish original Loom tab from a fresh uncredentialed navigation', t => {
+  const h = setup(t);
+  const originalTab = h.root.querySelector('#ilOriginalTabNote');
+  assert.ok(originalTab, 'independent Lab must explain how to resume an existing task');
+  assert.match(originalTab.textContent, /original browser tab/);
+  assert.match(originalTab.textContent, /fresh session/);
+  assert.match(originalTab.textContent, /without restoring the original custody/);
+  assert.match(h.root.querySelector('#ilReturn').textContent, /fresh Loom workspace/);
+  h.choose('custody');
+  assert.match(h.root.querySelector('#ilCustodyPanel a').textContent, /fresh Loom Gate/);
+  assert.equal(h.fetches(), 0);
+});
