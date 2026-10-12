@@ -67,14 +67,14 @@ export function mountLoomInstrumentLab(root,{environment=root?.ownerDocument?.de
       <div id="ilBenchBody"><div class="il-actions"><button type="button" id="ilPractice">Load practice input</button><label class="il-upload">Import JSON<input id="ilUpload" type="file" accept=".json,application/json" aria-label="Import local assay JSON"></label></div>
       <label for="ilInput">Declared input · stays in this tab</label><textarea id="ilInput" spellcheck="false" maxlength="131072" rows="7" placeholder="Load a fictional example, or enter the finite input for this instrument."></textarea>
       <p id="ilInputClass" class="il-note">No input selected. Loading an example performs no assay.</p>
-      <div class="il-actions"><button type="button" id="ilRun">Run local assay</button><button type="button" id="ilCapture">Capture this browser episode</button><a id="ilReturn" href="#loomAiWorkspace">Return to work ↗</a></div></div>
+      <div class="il-actions"><button type="button" id="ilRun">Run local assay</button><button type="button" id="ilCapture">Capture this browser episode</button><a id="ilReturn" href="/dome-world/holonomy-loom.html#loomAiWorkspace" title="Open Loom; review exports do not restore custody in a new page.">Open Loom workspace ↗</a></div></div>
       <p id="ilStatus" role="status" aria-live="polite">Choose an instrument. Nothing calculated or sent.</p>
       <p id="ilFireScope" class="il-note" hidden>Fire Gate preparation and declared-witness checks grant no external execution. Acquisition remains held until an authenticated reviewed contract binds the route, operator and source.</p>
-      <section id="ilResult" hidden aria-label="Bounded assay result"><p id="ilResultStatus" class="mark"></p><h3 id="ilFinding"></h3><p id="ilLimit">Local analysis of declared inputs. Source authenticity, custody admission and empirical claims require separate evidence.</p>
+      <section id="ilResult" hidden aria-label="Bounded assay result"><p id="ilResultStatus" class="mark"></p><h3 id="ilFinding"></h3><p id="ilLimit">Local analysis of declared inputs. Source authenticity, custody admission and empirical claims require separate evidence.</p><p id="ilSignatureBoundary" class="il-note" hidden>Receipt signatures unverified. A matching review chain supplies no signer authentication, foreign-origin proof, or live-custody restoration.</p>
         <div class="il-actions" role="group" aria-label="Receipt depth"><button id="ilQuick" type="button" aria-pressed="true">Quick</button><button id="ilDeep" type="button" aria-pressed="false">Deep</button><button id="ilSave" type="button">Save assay receipt</button></div>
         <section id="ilExact" hidden aria-label="Exact assay receipt"><pre id="ilReceipt"></pre></section>
       </section>
-      <section id="ilCustodyPanel" hidden><p>Check compares registered returns with the current candidate. Explicit reviewed admission changes the local head. This Lab only reads that lane.</p><button id="ilCustody" type="button">Inspect this tab’s custody</button><p id="ilCustodyStatus" role="status"></p><pre id="ilCustodyReceipt" hidden></pre><a href="#aiReentryWorkspace">Open returned-work controls ↗</a></section>
+      <section id="ilCustodyPanel" hidden><p>Check compares registered returns with the current candidate. Explicit reviewed admission changes the local head. This Lab only reads that lane.</p><button id="ilCustody" type="button">Inspect this tab’s custody</button><p id="ilCustodyStatus" role="status"></p><pre id="ilCustodyReceipt" hidden></pre><a href="/dome-world/holonomy-loom.html#aiReentryWorkspace" title="Open Loom Gate in Loom; live custody from this tab cannot be restored by navigation.">Open Loom Gate in Loom ↗</a></section>
       <section id="ilAdvisory" hidden aria-label="Optional model explanation"></section>
     </section>`;
   const $=id=>root.querySelector(`#${id}`);
@@ -83,7 +83,7 @@ export function mountLoomInstrumentLab(root,{environment=root?.ownerDocument?.de
   let receipt=null,inputClass='DECLARED_INPUT',disposed=false,profile='quick',calculation=0;
   const listeners=[];
   const listen=(node,event,fn)=>{node.addEventListener(event,fn);listeners.push(()=>node.removeEventListener(event,fn));};
-  function clear(message){calculation++;receipt=null;$('ilResult').hidden=true;$('ilReceipt').textContent='';$('ilExact').hidden=true;$('ilStatus').textContent=message;root.dataset.assayState='NOT_RUN';}
+  function clear(message){calculation++;receipt=null;$('ilSignatureBoundary').hidden=true;$('ilResult').hidden=true;$('ilReceipt').textContent='';$('ilExact').hidden=true;$('ilStatus').textContent=message;root.dataset.assayState='NOT_RUN';}
   function choose(){$('ilCustodyReceipt').hidden=true;$('ilCustodyReceipt').textContent='';$('ilCustodyStatus').textContent='Read a fresh snapshot before treating this lane as current.';clear($('ilBench').value==='custody'?'Inspect this tab’s custody to read a current snapshot.':$('ilBench').value==='advisory'?'Optional model assistance sends only the disclosed warning packet after your explicit request.':'Instrument changed. Load or enter its input, then run the local assay.');$('ilInput').value='';inputClass='DECLARED_INPUT';$('ilInputClass').textContent='No input selected. Loading an example performs no assay.';$('ilScope').textContent=benches.find(x=>x.id===$('ilBench').value).scope;const auxiliary=['custody','advisory'].includes($('ilBench').value);$('ilBenchBody').hidden=auxiliary;$('ilCustodyPanel').hidden=$('ilBench').value!=='custody';$('ilAdvisory').hidden=$('ilBench').value!=='advisory';$('ilFireScope').hidden=!$('ilBench').value.startsWith('fire');}
   function showReceipt(){if(!receipt)return;const projected=compileLoomInstrumentProfile(receipt,{profile});$('ilReceipt').textContent=JSON.stringify(expandLoomInstrumentProfile(projected),null,2);$('ilQuick').setAttribute('aria-pressed',String(profile==='quick'));$('ilDeep').setAttribute('aria-pressed',String(profile==='deep'));$('ilExact').hidden=profile!=='deep';}
   function finding(value){
@@ -93,6 +93,7 @@ export function mountLoomInstrumentLab(root,{environment=root?.ownerDocument?.de
     if($('ilBench').value==='compression')return 'Inspect which actions survive the projection.';
     if($('ilBench').value.startsWith('fire'))return 'Execution and independent witness qualification stay separately held.';
     if(value.status==='INADMISSIBLE')return 'Repair the declared input before using this result.';
+    if($('ilBench').value==='export-history'&&value.status==='REVIEW_ONLY_CONSISTENCY')return 'Declared export history matches; receipt signatures remain unverified.';
     if(value.status==='HELD')return 'This input leaves an evidentiary requirement unresolved.';
     return 'The bounded result is ready to inspect.';
   }
@@ -106,7 +107,7 @@ export function mountLoomInstrumentLab(root,{environment=root?.ownerDocument?.de
       const result=await runners[$('ilBench').value](input,environment);
       if(disposed||token!==calculation)return;
       receipt={schema:'td613.loom.instrument-assay-receipt/v0.1',instrument:$('ilBench').value,input_class:inputClass,observed_at:new Date().toISOString(),result,authority:{admission:false,execution:false,empirical_claim:false}};
-      root.dataset.assayState=result.status||result.verdict||result.execution_state||'LAB_RESULT';$('ilResultStatus').textContent=`${result.status||result.verdict||result.execution_state||'LOCAL_RESULT'} · ${inputClass==='FICTIONAL_PRACTICE'?'fictional practice':'declared input'}`;$('ilFinding').textContent=finding(result);$('ilResult').hidden=false;showReceipt();$('ilStatus').textContent='Local calculation complete. Inspect its scope before drawing a conclusion.';
+      root.dataset.assayState=result.status||result.verdict||result.execution_state||'LAB_RESULT';$('ilResultStatus').textContent=`${result.status||result.verdict||result.execution_state||'LOCAL_RESULT'} · ${inputClass==='FICTIONAL_PRACTICE'?'fictional practice':'declared input'}`;$('ilFinding').textContent=finding(result);$('ilSignatureBoundary').hidden=$('ilBench').value!=='export-history'||result.receipt_signatures_verified===true;$('ilResult').hidden=false;showReceipt();$('ilStatus').textContent='Local calculation complete. Inspect its scope before drawing a conclusion.';
     }catch(error){if(token===calculation&&!disposed){root.dataset.assayState='INADMISSIBLE';$('ilStatus').textContent=`Input held · ${error.message}`;}}
     finally{if(!disposed)$('ilRun').disabled=false;}
   }
