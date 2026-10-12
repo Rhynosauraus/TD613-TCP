@@ -149,5 +149,5 @@ export const loomWorkspaceTemplate = `<section class="loom-stage" aria-labelledb
       </section>
 
 <section data-tool-panel="legacy" hidden><h3>Compatibility</h3><p>Earlier one-hop formats remain readable. Use the current session for the ordinary Loom journey.</p><button type="button" id="aiExport" disabled>Export legacy packet</button><button type="button" id="aiCopy" disabled>Copy legacy one-hop</button></section>
-<p class="loom-lab-link">Independent measurement and research: <a href="/dome-world/loom-instrument-lab.html">Instrument Lab ↗</a></p>
+<p class="loom-lab-link">Independent measurement and research: <a href="/dome-world/loom-instrument-lab.html" target="_blank" rel="noopener noreferrer" title="Opens in another tab; this Loom workspace remains available.">Instrument Lab ↗</a></p>
 </dialog>`;
