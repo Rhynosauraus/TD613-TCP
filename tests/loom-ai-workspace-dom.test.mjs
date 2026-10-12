@@ -117,6 +117,44 @@ function failSessionCreation(h) {
   } });
 }
 
+test('complete-answer review preserves unidentified visible bodies without advancing the prepared anchor',async t=>{
+  const h=harness(t);
+  assert.equal(h.$('#aiInspectTurnAnswer').disabled,true);
+  h.change('#aiTask','State the public fee.');h.$('#aiPreparePortable').click();await h.settled();
+  const exported=JSON.parse(h.$('#aiSessionReceipt').textContent),contract=exported.receiver_turn_contract;
+  assert.equal(contract.output_assembly_contract.schema,'td613.loom.receiver-output-assembly/v0.1');
+  assert.equal(h.$('#aiTurnSourceInventory').value,'[]','explicit no-source preparation has no visible bodies');
+  const capture=JSON.parse(fs.readFileSync('tests/fixtures/portable-loom-source-registration-n02.json','utf8')).input.answer;
+  const answer=capture.replace(/```json\n([\s\S]*?)\n```/,(_,json)=>{
+    const receipt=JSON.parse(json);Object.assign(receipt,{session_root_ref:contract.session_root_ref,policy_commitment:contract.effective_policy_commitment,anchor_work_unit_ref:contract.current_work_unit_ref,operator_task:'State the public fee.',receiver_declaration:'I described the supplied source; registration remains missing.'});
+    return '```json\n'+JSON.stringify(receipt)+'\n```';
+  });
+  h.change('#aiTurnExpectedTask','State the public fee.');
+  h.change('#aiTurnSourceInventory',JSON.stringify([{label:'Inline source',selected:true,outbound_visible:true,registered_id:null}]));
+  h.change('#aiTurnAnswerInput',answer);h.$('#aiInspectTurnAnswer').click();
+  const result=JSON.parse(h.$('#aiTurnAnswerTechnical').textContent);
+  assert.deepEqual(result.source_context,{registered_document_ids:[],observed_used_document_ids:[],unidentified_source_count:1});
+  assert.deepEqual(result.inspection.findings,['SOURCE_IDENTIFIER_UNREGISTERED']);
+  assert.equal(h.window.document.activeElement.id,'aiTurnAnswerResult');
+  assert.match(h.$('#aiTurnAnswerDetail').textContent,/1 selected visible source body lacks origin registration/);
+  assert.equal(h.ui.inspect().session.current_work_unit_ref,contract.current_work_unit_ref);
+  assert.equal(h.calls.length,0);
+  h.change('#aiTurnAnswerInput','{');assert.equal(h.$('#aiTurnAnswerResult').hidden,true);
+  h.$('#aiInspectTurnAnswer').click();assert.match(h.$('#aiTurnAnswerVerdict').textContent,/HOLD/);
+  h.change('#aiTask','An edited task invalidates this preparation.');
+  assert.equal(h.$('#aiInspectTurnAnswer').disabled,true);assert.equal(h.$('#aiTurnAnswerResult').hidden,true);
+});
+
+test('prepared source inventory contains only explicitly selected outbound bodies',async t=>{
+  const h=harness(t);h.load();h.$('#aiPreparePortable').click();await h.settled();
+  const inventory=JSON.parse(h.$('#aiTurnSourceInventory').value);
+  const exported=JSON.parse(h.$('#aiSessionReceipt').textContent);
+  assert.equal(inventory.length,exported.portable_task.documents.length);
+  assert.ok(inventory.length>0);assert.ok(inventory.every(item=>item.selected&&item.outbound_visible));
+  assert.deepEqual(inventory.map(item=>item.registered_id),exported.portable_task.documents.map(doc=>doc.id));
+  assert.equal(h.calls.length,0);
+});
+
 function assertFailedPreparationClosed(h) {
   assert.match(h.$('#aiStatus').textContent, /Controlled session creation failure/);
   assert.equal(h.ui.inspect().session, null, 'a failed candidate cannot become a prepared session');
