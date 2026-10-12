@@ -1,3 +1,4 @@
+import { PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT, renderPortableLoomReceiverOutputGuidance } from './portable-loom-receiver-output-contract.js';
 import {
   normalizeLoomAiTask,
   createLoomAiGovernance,
@@ -5,13 +6,13 @@ import {
 } from '../dome-world/holonomy-loom/ai-handoff-base.js';
 import { inspectLoomAiResponse } from '../dome-world/holonomy-loom/ai-intake.js';
 import { verifyPortableLoomCore } from './portable-loom-core.js';
-import { PORTABLE_LOOM_RECEIVER_OUTPUT_GUIDANCE } from './portable-loom-output.js';
+import { PORTABLE_LOOM_RECEIVER_OUTPUT_GUIDANCE, LEGACY_PORTABLE_LOOM_RECEIVER_OUTPUT_GUIDANCE } from './portable-loom-output.js';
 
 export const PORTABLE_LOOM_SESSION_SCHEMA = 'td613.loom.portable-session/v0.1';
 export const PORTABLE_LOOM_WORK_UNIT_SCHEMA = 'td613.loom.portable-session-work-unit/v0.1';
 export const PORTABLE_LOOM_SESSION_EVENT_SCHEMA = 'td613.loom.portable-session-event/v0.1';
 export const PORTABLE_LOOM_SESSION_EXPORT_SCHEMA = 'td613.loom.portable-session-export/v0.1';
-export const PORTABLE_LOOM_RECEIVER_TURN_SCHEMA = 'td613.loom.portable-session-receiver-turn/v0.1';
+export const PORTABLE_LOOM_RECEIVER_TURN_SCHEMA = PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT.receipt_schema;
 
 const encoder = new TextEncoder();
 const HEX64 = /^[a-f0-9]{64}$/;
@@ -353,8 +354,9 @@ export async function createPortableLoomSessionExport(sessionInput, packet, envi
     receiver_turn_contract: {
       schema: PORTABLE_LOOM_RECEIVER_TURN_SCHEMA,
       receipt_schema: PORTABLE_LOOM_RECEIVER_TURN_SCHEMA,
-      receipt_fields: ['schema', 'session_root_ref', 'policy_commitment', 'anchor_work_unit_ref', 'turn_index', 'operator_task', 'used_document_ids', 'missing_information', 'receiver_declaration'],
-      receipt_field_types: { used_document_ids: 'ARRAY_OF_DISTINCT_NONEMPTY_STRINGS; EMPTY_IS_[]', missing_information: 'ARRAY_OF_DISTINCT_NONEMPTY_STRINGS; EMPTY_IS_[]', turn_index: 'POSITIVE_INTEGER', receiver_declaration: 'NONEMPTY_STRING' },
+      receipt_fields: PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT.receipt_fields,
+      receipt_field_types: PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT.receipt_field_types,
+      ...(packet.portable_governance?.output_protocol?.receiver_output_contract ? { output_assembly_contract: PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT } : {}),
       session_root_ref: session.root.ref,
       effective_policy_commitment: session.work_units.at(-1)?.policy?.effective_policy_commitment || session.root.policy_commitment,
       current_work_unit_ref: session.continuity.current_work_unit_ref,
@@ -388,6 +390,8 @@ export async function createPortableLoomSessionExport(sessionInput, packet, envi
 
 export function createPortableLoomSessionPrompt(sessionExport) {
   if (!sessionExport || sessionExport.schema !== PORTABLE_LOOM_SESSION_EXPORT_SCHEMA) throw new TypeError('Portable Loom Session export required.');
+  const assembly = sessionExport.receiver_turn_contract?.output_assembly_contract;
+  if (assembly && stable(assembly) !== stable(PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT)) throw new TypeError('Unsupported receiver output assembly contract.');
   return [
     'You are receiving a TD613 Portable Loom Session.',
     'Treat the session root and portable rules as persistent governance for every proceeding task in this thread.',
@@ -396,7 +400,7 @@ export function createPortableLoomSessionPrompt(sessionExport) {
     'Do not silently inherit source bodies from an earlier task unless they are explicitly supplied or named as continuing inputs.',
     'Keep work-unit ancestry separate from content-predecessor ancestry.',
     'Before task and sources are selected, ask only for the current task and its explicit source selection, including an explicit choice of no source documents. Keep the route UNKNOWN and offer its technical catalogue on request. Activation, Rest and Gate review do not fabricate task receipts. Task HOLD does not prevent reviewing supplied evidence on 米.',
-    'For every proceeding-task answer after task/source selection, append a separate loom_session_receipt object containing exactly receiver_turn_contract.receipt_fields: schema, session_root_ref, policy_commitment, anchor_work_unit_ref, turn_index, operator_task, used_document_ids, missing_information and receiver_declaration. Use receipt_schema and the carried root/policy/last verified anchor. turn_index is a positive proceeding-task declaration counter, not authenticated off-platform ancestry. used_document_ids and missing_information must each be arrays of distinct nonempty strings; use [] when empty, never null or a scalar string. Use only origin-registered source IDs and a nonempty receiver_declaration string. If a used source lacks its origin ID, do not invent one: record SOURCE_IDENTIFIER_UNREGISTERED in missing_information and keep source-accounting HOLD. Empty used_document_ids means no declared source use, not unknown identification.',
+    assembly ? renderPortableLoomReceiverOutputGuidance() : 'For every proceeding-task answer after task/source selection, append a separate loom_session_receipt object containing exactly receiver_turn_contract.receipt_fields: schema, session_root_ref, policy_commitment, anchor_work_unit_ref, turn_index, operator_task, used_document_ids, missing_information and receiver_declaration. Use receipt_schema and the carried root/policy/last verified anchor. turn_index is a positive proceeding-task declaration counter, not authenticated off-platform ancestry. used_document_ids and missing_information must each be arrays of distinct nonempty strings; use [] when empty, never null or a scalar string. Use only origin-registered source IDs and a nonempty receiver_declaration string. If a used source lacks its origin ID, do not invent one: record SOURCE_IDENTIFIER_UNREGISTERED in missing_information and keep source-accounting HOLD. Empty used_document_ids means no declared source use, not unknown identification.',
     'That receipt is a declaration for Loom to revalidate; do not describe the receipt itself as proof of enforcement.',
     'Do not claim that your own acknowledgement proves enforcement, secrecy, retention, training behavior, or hidden memory state.',
     'When a Challenge Receiver packet appears, answer only its declared probes and preserve its exact session/work-unit/policy references.',
@@ -404,7 +408,7 @@ export function createPortableLoomSessionPrompt(sessionExport) {
     '',
     JSON.stringify(sessionExport, null, 2),
     '',
-    ...(sessionExport.portable_task?.portable_governance?.output_protocol ? [PORTABLE_LOOM_RECEIVER_OUTPUT_GUIDANCE] : [])
+    ...(sessionExport.portable_task?.portable_governance?.output_protocol ? [assembly ? PORTABLE_LOOM_RECEIVER_OUTPUT_GUIDANCE : LEGACY_PORTABLE_LOOM_RECEIVER_OUTPUT_GUIDANCE] : [])
   ].join('\n');
 }
 

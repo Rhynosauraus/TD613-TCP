@@ -109,6 +109,13 @@ export const loomWorkspaceTemplate = `<section class="loom-stage" aria-labelledb
           <label for="aiTurnReceiptInput">Receiver turn receipt<textarea id="aiTurnReceiptInput" rows="7" spellcheck="false" placeholder='{"schema":"td613.loom.portable-session-receiver-turn/v0.1",...}'></textarea></label>
           <button type="button" id="aiVerifyTurnReceipt">Verify proceeding-task receipt</button>
           <div id="aiTurnReceiptResult" class="ai-turn-result" hidden><strong id="aiTurnReceiptVerdict"></strong><p id="aiTurnReceiptDetail" class="ai-muted"></p><pre id="aiTurnReceiptTechnical"></pre></div>
+          <h4>Inspect the complete returned answer</h4>
+          <p class="ai-muted">This local check compares the captured answer, receipt and footer with the output instructions. It preserves missing registration and leaves custody unchanged.</p>
+          <label for="aiTurnSourceInventory">Selected source inventory · JSON<textarea id="aiTurnSourceInventory" rows="5" spellcheck="false" aria-describedby="aiTurnSourceHelp"></textarea></label>
+          <p id="aiTurnSourceHelp" class="ai-muted">Each entry records a source label, whether you selected it, whether its body was visible in the outgoing material, and its origin-registered ID. Use null for a missing ID. Keep every visible body listed even when it has no ID. Use [] only for an explicit choice of no source bodies. The prepared task fills the initial inventory; update it for the task you actually sent.</p>
+          <label for="aiTurnAnswerInput">Complete captured answer<textarea id="aiTurnAnswerInput" rows="9" spellcheck="false" maxlength="180000"></textarea></label>
+          <button type="button" id="aiInspectTurnAnswer" disabled>Inspect returned answer</button>
+          <div id="aiTurnAnswerResult" class="ai-turn-result" hidden tabindex="-1"><strong id="aiTurnAnswerVerdict"></strong><p id="aiTurnAnswerDetail" class="ai-muted"></p><details><summary>Inspect bounded findings</summary><pre id="aiTurnAnswerTechnical"></pre></details></div>
         </details>
       </section>
 </section>

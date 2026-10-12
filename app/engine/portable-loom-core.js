@@ -4,7 +4,7 @@ import { FLOWCORE_GLYPH_REGISTRY } from '../dome-world/data/flowcore-glyph-seman
 import { runFadtAgent } from './dollhouse-atlas-fadt.js';
 import { auditTypedEpistemicDeficit } from './aperture-v32-typed-epistemic-deficit.js';
 import { PORTABLE_LOOM_MECHANISMS } from './portable-loom-mechanisms.js';
-import { PORTABLE_LOOM_OUTPUT_PROTOCOL, LOOM_GATE_LABEL, LOOM_GATE_HREF } from './portable-loom-output.js';
+import { PORTABLE_LOOM_OUTPUT_PROTOCOL, LEGACY_PORTABLE_LOOM_OUTPUT_PROTOCOL, LOOM_GATE_LABEL, LOOM_GATE_HREF } from './portable-loom-output.js';
 import { LOOM_GATE_EXPLANATION } from './portable-loom-gate-explanation.js';
 
 export const PORTABLE_LOOM_CORE_SCHEMA = 'td613.loom.portable-governance/v0.1';
@@ -81,7 +81,9 @@ function observation(event) {
   if (event.provider_failure) result.provider_failure = { diagnostic: { stage: event.provider_failure.diagnostic?.stage ?? 'unclassified' } };
   return result;
 }
-export async function createPortableLoomCore(input, { observationBasis = null, sourceRevision = 'browser-unpinned' } = {}, environment = globalThis) {
+export async function createPortableLoomCore(input, { observationBasis = null, sourceRevision = 'browser-unpinned', outputProtocolVersion = PORTABLE_LOOM_OUTPUT_PROTOCOL.schema } = {}, environment = globalThis) {
+  const outputProtocol = [PORTABLE_LOOM_OUTPUT_PROTOCOL, LEGACY_PORTABLE_LOOM_OUTPUT_PROTOCOL].find(protocol => protocol.schema === outputProtocolVersion);
+  if (!outputProtocol) throw new TypeError('Unsupported portable output protocol.');
   input = copy(input);
   const selected = normalizeLoomAiTask({ task: input.task, documents: input.documents, rules: input.rules, governance: input.governance });
   await verifyLoomAiGovernance(selected, environment);
@@ -119,7 +121,7 @@ export async function createPortableLoomCore(input, { observationBasis = null, s
     },
     evidence_classes: [...LOOM_EVIDENCE_CLASSES], mechanisms: copy(PORTABLE_LOOM_MECHANISMS),
     return_protocol: { schema: 'td613.loom.bound-receiver-turn/v0.2', registration_required: true, stages: ['REGISTER', 'CAPTURE', 'CHECK', 'EXPLICIT_ADMIT', 'REST'], check_advances_head: false, imported_json_restores_custody: false },
-    output_protocol: copy(PORTABLE_LOOM_OUTPUT_PROTOCOL), gate_explanation: copy(LOOM_GATE_EXPLANATION),
+    output_protocol: copy(outputProtocol), gate_explanation: copy(LOOM_GATE_EXPLANATION),
     loom_gate: { action: 'CHECK_LOOM_GATE', label: LOOM_GATE_LABEL, href: LOOM_GATE_HREF,
       status: 'NOT_RUN', instruction: 'Keep private target values local. Bring captured receiver replies and declared reconstruction attempts to Loom Gate. A copied packet alone contains no capture of the rest of this conversation.', conversation_leakage_fraction: null },
     authority: { packet_carriage_only: true, receiver_authority_transferred: false, external_action_authorized: false, live_custody_capability: false, empirical_credit: 0, human_closure_required: true }
@@ -130,7 +132,7 @@ export async function createPortableLoomCore(input, { observationBasis = null, s
 export async function verifyPortableLoomCore(input, core, environment = globalThis) {
   core = copy(core);
   if (core?.schema !== PORTABLE_LOOM_CORE_SCHEMA) throw new TypeError('Unsupported portable governance.');
-  const rebuilt = await createPortableLoomCore(input, { observationBasis: core.observation_basis, sourceRevision: core.source_revision }, environment);
+  const rebuilt = await createPortableLoomCore(input, { observationBasis: core.observation_basis, sourceRevision: core.source_revision, outputProtocolVersion: core.output_protocol?.schema }, environment);
   if (stable(rebuilt) !== stable(core)) throw new Error('Portable governance, chronology, projection or support changed.');
   return freeze({ status: 'RECOMPUTED_INTEGRITY', ref: core.ref, source_authenticated: false, action_executed: false, custody_restored: false });
 }
