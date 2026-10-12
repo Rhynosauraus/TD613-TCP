@@ -285,3 +285,26 @@ test('pending projection reserves the field footprint while hiding stale current
   assert.equal(root.dataset.activeRelation, 'created_potential');
   assert.equal(status.hidden, true);
 });
+
+test('standalone Lab links reach real Loom surfaces, and unsigned review remains visibly bounded', async t => {
+  const h = setup(t);
+  const workspace = h.root.querySelector('#ilReturn');
+  assert.equal(workspace.getAttribute('href'), '/dome-world/holonomy-loom.html#loomAiWorkspace');
+  assert.match(workspace.title, /do not restore custody/);
+  h.choose('custody');
+  const gate = h.root.querySelector('#ilCustodyPanel a');
+  assert.equal(gate.getAttribute('href'), '/dome-world/holonomy-loom.html#aiReentryWorkspace');
+  assert.match(gate.title, /cannot be restored/);
+  assert.equal(h.root.querySelector('#ilSignatureBoundary').hidden, true);
+  h.choose('export-history');
+  h.input('{}'); await h.run();
+  assert.match(h.root.querySelector('#ilResultStatus').textContent, /HELD/);
+  assert.equal(h.root.querySelector('#ilSignatureBoundary').hidden, false);
+  assert.match(h.root.querySelector('#ilSignatureBoundary').textContent, /Receipt signatures unverified/);
+  assert.match(h.root.querySelector('#ilSignatureBoundary').textContent, /no signer authentication/);
+  assert.equal(h.ui.inspect().receipt.authority.admission, false);
+  h.choose('route');
+  assert.equal(h.root.querySelector('#ilSignatureBoundary').hidden, true);
+  assert.equal(h.ui.inspect().receipt, null);
+  assert.equal(h.fetches(), 0);
+});
