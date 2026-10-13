@@ -312,7 +312,7 @@ test('Clear conversation deletes the active archive record and returns to transi
   const clearEnd = terminalJs.indexOf("byId(doc, 'copyKhonapolitTranscript')?.addEventListener", clearStart);
   assert.ok(clearStart >= 0 && clearEnd > clearStart, 'clear handler remains inspectable');
   const clearHandler = terminalJs.slice(clearStart, clearEnd);
-  assert.match(clearHandler, /threadLibrary\.remove\(clearedThreadId\)/,
+  assert.match(clearHandler, /threadLibrary\.removeCascade\(clearedThreadId\)/,
     'Clear conversation deletes its durable archive record');
   assert.match(clearHandler, /activeThread = null/);
   assert.match(clearHandler, /setActiveId\(null\)/);
@@ -460,7 +460,7 @@ test('ordinary conversation chrome uses Send left and a minimalist retry copy cl
   assert.match(js, /'𖠿'/);
   assert.match(js, /home\.addEventListener\('click', \(\) => byId\(doc, 'marrowlineNewThread'\)\?\.click\(\)\)/);
   assert.deepEqual(release.composer.utilityGlyphs, ['↻','⧉','✕','𖠿']);
-  assert.match(js, /question\.textContent = 'Clear conversation\?'/);
+  assert.match(js, /question\.textContent = 'Delete this conversation and its branches from this browser\?/);
   assert.doesNotMatch(js, /root\.confirm\('Clear this Marrowline conversation\?/);
   assert.match(js, /clearLegacy\.click\(\)/);
   assert.match(js, /conversationChrome: 'send-left-retry-copy-clear-right'/);
@@ -470,7 +470,7 @@ test('ordinary conversation chrome uses Send left and a minimalist retry copy cl
   assert.match(page, /id="sealLastResponse"[^>]*>Seal latest reply ⟐<\/button>/);
   assert.match(page, /incoming receipt remains OPEN until an explicit Red Deer closure/);
   assert.equal(release.composer.copyFeedback, 'center-screen-tiny-green-Copied-1500ms');
-  assert.equal(release.composer.clearConfirmation, 'center-screen-modal-Clear-conversation-Yes-No-with-backdrop');
+  assert.equal(release.composer.clearConfirmation, 'center-screen-modal-Delete-conversation-and-branches-Yes-No-with-backdrop');
   assert.equal(release.composer.operatorVoiceSelection, false);
   assert.equal(release.composer.fixedConversationRoute, 'Kʰonapolit → Tauric Diana bots');
   assert.equal(release.composer.unissuedResearchMode, 'unchecked-by-default; checking enables SHI; unchecked excludes SHI');
@@ -488,7 +488,7 @@ test('clear conversation returns to a transient landing state without persisting
   assert.match(clearHandler, /const clearedThreadId = activeThread\?\.id \|\| null/);
   assert.match(clearHandler, /activeThread = null/);
   assert.match(clearHandler, /threadLibrary\?\.setActiveId\(null\)/);
-  assert.match(clearHandler, /threadLibrary\) await threadLibrary\.remove\(clearedThreadId\)/);
+  assert.match(clearHandler, /threadLibrary\) await threadLibrary\.removeCascade\(clearedThreadId\)/);
   assert.match(clearHandler, /root\.sessionStorage\.removeItem\(SESSION_KEY\)/);
   assert.doesNotMatch(clearHandler, /scheduleSave\(\)/, 'clear may not autosave the emptied active thread');
   assert.match(release.composer.clearDraftPolicy, /clear-conversation-empties-composer/i);

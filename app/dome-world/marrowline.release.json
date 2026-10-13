@@ -464,7 +464,7 @@
       "𖠿"
     ],
     "copyFeedback": "center-screen-tiny-green-Copied-1500ms",
-    "clearConfirmation": "center-screen-modal-Clear-conversation-Yes-No-with-backdrop",
+    "clearConfirmation": "center-screen-modal-Delete-conversation-and-branches-Yes-No-with-backdrop",
     "clearCompletionStatus": "empty-hidden-no-visible-session-cleared-strip",
     "clearDraftPolicy": "clear-conversation-empties-composer-and-preloaded-draft-state",
     "fixedConversationRoute": "Kʰonapolit → Tauric Diana bots",
