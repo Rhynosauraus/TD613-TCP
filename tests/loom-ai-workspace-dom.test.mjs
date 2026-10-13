@@ -84,7 +84,7 @@ test('Loom opens on the human task and local preparation exposes the next route'
   assert.equal(h.$('#aiDemoModePanel').hidden,true);
   // The guide names the next product surface in ordinary language.
   assert.deepEqual([...h.root.querySelectorAll('.loom-journey-step strong')].map(n=>n.textContent),['Loom','Marrowline','Return']);
-  assert.match(h.$('#aiFirstUseGuide').textContent,/Build the task here.*Marrowline carries the AI conversation/i);
+  assert.match(h.$('#aiFirstUseGuide').textContent,/Prepare your own task here\. Review privacy before continuing in Marrowline\./i);
   assert.equal(h.root.dataset.loomJourney,'loom');
 
   h.change('#aiTask','Compare the selected evidence and name what remains missing.');
