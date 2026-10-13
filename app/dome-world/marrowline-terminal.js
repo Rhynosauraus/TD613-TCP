@@ -1245,7 +1245,12 @@ export function installKhonapolitTerminal(doc = document, root = window) {
       return;
     }
     startPedagogueStatus(status, root, attachments.length);
-    const requestDeadline = root.setTimeout(() => requestController.abort(), KHONAPOLIT_CLIENT_REQUEST_TIMEOUT_MS);
+    // Large file uploads have a separate bounded transfer window. The normal
+    // 225-second generation deadline starts afresh only after upload completes.
+    let requestDeadline = root.setTimeout(
+      () => requestController.abort(),
+      marrowlineUploadRequired(attachments) ? 600000 : KHONAPOLIT_CLIENT_REQUEST_TIMEOUT_MS
+    );
     let hiddenDuringRequest = doc.visibilityState === 'hidden';
     const observeVisibility = () => {
       if (doc.visibilityState === 'hidden') hiddenDuringRequest = true;
@@ -1281,6 +1286,12 @@ export function installKhonapolitTerminal(doc = document, root = window) {
               'Transferring file ' + event.fileIndex + ' of ' + event.fileCount + '…',
               'Gemini File API upload in progress; Stop cancels further chunks.')
           });
+          // Provider generation owns its own 225-second budget after the
+          // final attachment is confirmed. This is not an automatic retry.
+          root.clearTimeout(requestDeadline);
+          requestDeadline = root.setTimeout(
+            () => requestController.abort(), KHONAPOLIT_CLIENT_REQUEST_TIMEOUT_MS
+          );
           requestStage = 'request';
         } else requestBody.attachments = attachments;
       }

@@ -160,8 +160,8 @@ test('client photo staging normalizes an oversized mobile image into the bounded
   const selected = {
     name: 'iphone-camera.heic',
     type: 'image/heic',
-    size: 4_200_000,
-    arrayBuffer: async () => new Uint8Array(4_200_000).buffer
+    size: 26_000_000,
+    arrayBuffer: async () => new Uint8Array(26_000_000).buffer
   };
   const state = await stageMarrowlineAttachments([selected], { kind: 'photo', environment });
   assert.equal(state.count, 1);
@@ -196,9 +196,9 @@ test('Marrowline keeps file and photo MIME classes non-interchangeable', () => {
   assert.throws(() => normalizeMarrowlineAttachments([{ ...attachment(), kind: 'photo' }]), /unsupported-attachment-type/);
 });
 
-test('photo capacity may use the full envelope while ordinary files retain the smaller single-file ceiling', () => {
-  assert.equal(MARROWLINE_ATTACHMENT_MAX_SINGLE_FILE_BYTES, 1_500_000);
-  assert.equal(MARROWLINE_ATTACHMENT_MAX_SINGLE_PHOTO_BYTES, 2_500_000);
+test('photo and document capacity admit 25 MB per file while still rejecting oversize payloads', () => {
+  assert.equal(MARROWLINE_ATTACHMENT_MAX_SINGLE_FILE_BYTES, 25_000_000);
+  assert.equal(MARROWLINE_ATTACHMENT_MAX_SINGLE_PHOTO_BYTES, 25_000_000);
   const bytes = Buffer.alloc(1_600_000, 0x61);
   const photo = attachment({
     id: 'att_realistic_photo_613',
@@ -216,8 +216,12 @@ test('photo capacity may use the full envelope while ordinary files retain the s
     mime_type: 'text/plain',
     bytes
   });
-  assert.throws(() => normalizeMarrowlineAttachments([file]), /invalid-attachment-size/,
-    'ordinary file ceiling remains bounded at 1.5 MB');
+  assert.equal(normalizeMarrowlineAttachments([file])[0].size_bytes, bytes.length,
+    'documents also gain usable capacity on the Gemini Files API path');
+  assert.throws(() => normalizeMarrowlineAttachments([{
+    ...file, size_bytes: 25_000_001
+  }]), /invalid-attachment-size/,
+    '25 MB individual-file ceiling remains enforced before decoding');
 });
 
 
