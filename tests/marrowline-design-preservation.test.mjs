@@ -208,13 +208,54 @@ test('↻ resends the exact original file and photo payloads after successful st
   assert.equal(h.calls.length, 2);
   assert.deepEqual(h.calls[1].attachments, firstAttachments,
     'explicit retry carries the same file/photo ids, MIME metadata, sizes, and base64 bodies');
-  assert.equal(h.doc.querySelectorAll('#khonapolitMessages .message[data-role="user"]').length, 2,
-    'retry is a second attempt: both Red Deer turns remain, preserving earlier model receipts');
+  assert.equal(h.doc.querySelectorAll('#khonapolitMessages .message[data-role="user"]').length, 1,
+    '↻ replaces the last Red Deer exchange rather than duplicating it');
   const saved = await h.saved();
-  assert.equal(saved.messages.filter(entry => entry.role === 'user').length, 2,
-    'both original and independent retry attempts persist as separate human turns');
+  assert.equal(saved.messages.filter(entry => entry.role === 'user').length, 1,
+    'the replaced prompt is deleted from the local conversation archive');
+  assert.deepEqual(h.calls[1].history, [], 'the superseded prompt and model return never enter the replacement provider history');
   assert.equal(JSON.stringify(saved).includes('data_base64'), false,
     'raw replay bytes remain non-enumerable live memory and never enter durable thread JSON');
+});
+
+
+test('↻ removes the last response from provider context without destroying earlier unrelated conversation', async t => {
+  clearMarrowlineAttachments(globalThis);
+  const h = harness(t);
+  await h.ready();
+  h.send('Earlier question retained.');
+  await h.settled(); await flush();
+  h.send('Latest question to replace.');
+  await h.settled(); await flush();
+  const previousHistory = h.calls[1].history;
+  assert.ok(previousHistory.some(entry => String(entry.text).includes('Earlier question retained.')));
+  h.doc.dispatchEvent(new h.win.CustomEvent('td613:marrowline:retry-independent'));
+  await h.settled(); await flush();
+  assert.equal(h.calls.length, 3);
+  assert.deepEqual(h.calls[2].history, previousHistory,
+    'retry carries only earlier conversation; it excludes superseded answer and prompt');
+  const saved = await h.saved();
+  assert.equal(saved.messages.filter(entry => entry.role === 'user').length, 2);
+  assert.equal(saved.messages.filter(entry => entry.role === 'model').length, 2);
+});
+
+test('✕ removes active conversation and all copies in its local branches', async t => {
+  const h = harness(t);
+  await h.ready();
+  h.send('A private marker should leave this device archive.');
+  await h.settled(); await flush();
+  const parent = await h.saved();
+  const library = h.win.__TD613_MARROWLINE_THREADS__;
+  const replyIndex = parent.messages.findIndex(entry => entry.role === 'model');
+  await library.branch(replyIndex);
+  const child = await h.saved();
+  assert.ok(child.id && child.id !== parent.id);
+  await library.switch(parent.id);
+  h.$('clearKhonapolitSession').click();
+  await flush(); await flush(); await flush();
+  assert.deepEqual(await library.list(), [], 'parent and child archives were removed together');
+  assert.equal(h.win.sessionStorage.getItem(sessionKey), null);
+  assert.equal(h.$('khonapolitPrompt').value, '');
 });
 
 test('conversation ⌕ filters saved threads locally without spending a provider call', async t => {

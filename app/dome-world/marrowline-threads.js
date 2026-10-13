@@ -115,6 +115,39 @@ export async function createMarrowlineThreadLibrary(root = window) {
   const all = async () => (await adapter.all()).sort((a, b) =>
     (b.updatedAt || '').localeCompare(a.updatedAt || '') || a.id.localeCompare(b.id));
   const remove = id => adapter.remove(id);
+  const removeCascade = async id => {
+    if (!id) return [];
+    const records = await adapter.all();
+    const ids = new Set([id]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const record of records) {
+        if (record.parentId && ids.has(record.parentId) && !ids.has(record.id)) {
+          ids.add(record.id); grew = true;
+        }
+      }
+    }
+    for (const idToRemove of ids) await adapter.remove(idToRemove);
+    // A previous localStorage fallback archive may survive later IndexedDB
+    // adoption. Remove matching mirrored records rather than leaving a copy.
+    try {
+      const raw = root.localStorage.getItem(FALLBACK_KEY);
+      if (raw) {
+        const mirrored = JSON.parse(raw);
+        if (mirrored && typeof mirrored === 'object' && !Array.isArray(mirrored)) {
+          for (const idToRemove of ids) delete mirrored[idToRemove];
+          if (Object.keys(mirrored).length) root.localStorage.setItem(FALLBACK_KEY, JSON.stringify(mirrored));
+          else root.localStorage.removeItem(FALLBACK_KEY);
+        }
+      }
+      if (ids.has(root.localStorage.getItem(ACTIVE_KEY))) root.localStorage.removeItem(ACTIVE_KEY);
+    } catch (error) {
+      // Deletion cannot claim success while a known fallback copy remains.
+      throw new Error('Could not verify deletion of all browser storage copies', { cause: error });
+    }
+    return [...ids];
+  };
   const create = async (state = empty(), args = {}) => put(threadFromState(root, state, args));
   const branch = async (parent, responseIndex) => {
     const index = Number(responseIndex);
@@ -211,7 +244,7 @@ export async function createMarrowlineThreadLibrary(root = window) {
     return record;
   };
   return Object.freeze({
-    backend: adapter.kind, get, all, put, create, branch, remove, migrate, pruneEmptyGeneratedThreads, migrateLegacyBranchTitles, migrateLegacyGeneratedTitles,
+    backend: adapter.kind, get, all, put, create, branch, remove, removeCascade, migrate, pruneEmptyGeneratedThreads, migrateLegacyBranchTitles, migrateLegacyGeneratedTitles,
     getActiveId: () => { try { return root.localStorage.getItem(ACTIVE_KEY); } catch { return null; } },
     setActiveId: value => { try { if (value) root.localStorage.setItem(ACTIVE_KEY, value); else root.localStorage.removeItem(ACTIVE_KEY); } catch {} },
     close: adapter.close

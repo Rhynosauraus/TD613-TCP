@@ -31,7 +31,7 @@ import { buildGeminiConsumptionReceipt, logGeminiConsumption } from './gemini-co
 
 export const MARROWLINE_ATTACHMENT_API_VERSION = 'td613.marrowline-attachment-ingress/v0.2-frontier-custody';
 export const MARROWLINE_ATTACHMENT_SCHEMA = 'td613.marrowline.attachment/v0.1';
-export const MARROWLINE_ATTACHMENT_MAX_COUNT = 6;
+export const MARROWLINE_ATTACHMENT_MAX_COUNT = 20;
 export const MARROWLINE_ATTACHMENT_MAX_TOTAL_BYTES = 2_500_000;
 export const MARROWLINE_ATTACHMENT_MAX_SINGLE_FILE_BYTES = 1_500_000;
 export const MARROWLINE_ATTACHMENT_MAX_SINGLE_PHOTO_BYTES = 2_500_000;

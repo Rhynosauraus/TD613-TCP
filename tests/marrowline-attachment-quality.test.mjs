@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import { frameMarrowlineUserTurn } from '../app/dome-world/khonapolit-covenant.js';
-import { clearMarrowlineAttachments, stageMarrowlineAttachments } from '../app/dome-world/marrowline-attachments.js';
+import { MARROWLINE_ATTACHMENT_LIMITS, attachmentState, clearMarrowlineAttachments, getMarrowlineAttachments, moveMarrowlineAttachment, stageMarrowlineAttachments } from '../app/dome-world/marrowline-attachments.js';
 import { clearGeminiModelState } from '../server/gemini-model-policy.js';
 import { GEMINI_GENERATION_PROFILE_KHONAPOLIT_INTERACTIVE, withGeminiGenerationProfile } from '../server/gemini-generation-envelope.js';
 import marrowlineAttachmentHandler, {
@@ -29,6 +29,40 @@ function attachment(overrides = {}) {
     ...Object.fromEntries(Object.entries(overrides).filter(([key]) => key !== 'bytes'))
   };
 }
+
+
+test('twenty attachments can be staged, rearranged, and sent to Gemini in the confirmed order', async () => {
+  const environment = {
+    crypto: { randomUUID: (() => { let n = 0; return () => String(++n).padStart(32, '0'); })() },
+    btoa: value => Buffer.from(value, 'binary').toString('base64')
+  };
+  clearMarrowlineAttachments(environment);
+  assert.equal(MARROWLINE_ATTACHMENT_LIMITS.count, 20);
+  assert.equal(MARROWLINE_ATTACHMENT_MAX_COUNT, 20);
+  const selected = Array.from({ length: 20 }, (_, i) => {
+    const bytes = Uint8Array.from([i + 1]);
+    return { name: `photo-${String(i + 1).padStart(2, '0')}.png`, type: 'image/png',
+      size: 1, arrayBuffer: async () => bytes.buffer };
+  });
+  try {
+    await stageMarrowlineAttachments(selected, { kind: 'photo', environment });
+    assert.equal(attachmentState().count, 20);
+    assert.equal(getMarrowlineAttachments()[0].name, 'photo-01.png');
+    moveMarrowlineAttachment(getMarrowlineAttachments()[19].id, 'up', environment);
+    const reordered = getMarrowlineAttachments();
+    assert.equal(reordered[18].name, 'photo-20.png');
+    assert.equal(reordered[19].name, 'photo-19.png');
+    const normalized = normalizeMarrowlineAttachments(reordered);
+    assert.deepEqual(normalized.map(item => item.name), reordered.map(item => item.name));
+    const request = buildAttachmentGeminiRequest(
+      { systemInstruction: 'Synthetic system.', mode: 'issued-conjunction', message: 'Review images in order.', history: [] },
+      {}, 'gemini-3.8-flash', normalized);
+    const wireOrder = request.contents.at(-1).parts
+      .filter(part => typeof part.text === 'string' && part.text.includes('[Operator attachment'))
+      .map(part => part.text.match(/photo-\d+\.png/)[0]);
+    assert.deepEqual(wireOrder, reordered.map(item => item.name));
+  } finally { clearMarrowlineAttachments(environment); }
+});
 
 test('attachments precede the canonical final sealed user text; the relay cue stays in system guidance', () => {
   const exact = attachment();

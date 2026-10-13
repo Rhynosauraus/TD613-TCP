@@ -911,13 +911,19 @@ export function installKhonapolitTerminal(doc = document, root = window) {
   };
   const deleteThread = async threadId => {
     if (!canChangeThread()) return;
-    if (!root.confirm?.('Delete this conversation from this browser?')) return;
+    if (!root.confirm?.('Delete this conversation and copies in its branches from this browser? This cannot recall provider requests or clipboard copies.')) return;
     if (!await scheduleSave()) return;
-    await threadLibrary.remove(threadId);
-    if (activeThread?.id === threadId) {
-      const survivors = await threadLibrary.all();
-      if (survivors[0]) restoreThread(survivors[0]); else resetTransientThread();
-    } else await renderThreadLibrary();
+    try {
+      const removed = await threadLibrary.removeCascade(threadId);
+      if (removed.includes(activeThread?.id)) {
+        clearMarrowlineAttachments(root);
+        const survivors = await threadLibrary.all();
+        if (survivors[0]) restoreThread(survivors[0]); else resetTransientThread();
+      } else await renderThreadLibrary();
+    } catch {
+      setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held',
+        'DELETE HELD · local storage could not confirm deletion');
+    }
   };
   const renameThread = async threadId => {
     if (!storeReady || requestInFlight) return;
@@ -1546,7 +1552,9 @@ export function installKhonapolitTerminal(doc = document, root = window) {
     }
     await submitTask();
   });
-  const retryLastPrompt = ({ independentRetry = false } = {}) => {
+  let retryPreparationActive = false;
+  const retryLastPrompt = async ({ independentRetry = false } = {}) => {
+    if (retryPreparationActive) return;
     if(isLoomEvidenceHold(state.lastFailure)) {
       openMarrowlineLoomGate(doc,root);
       return;
@@ -1564,8 +1572,13 @@ export function installKhonapolitTerminal(doc = document, root = window) {
       setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held', 'NO PRIOR PROMPT · nothing to retry');
       return;
     }
-    // Keep the current attempt's prior model return. A retry is a fresh
-    // attempt; unlike the 2026-10-05 patch, never truncate the custody trail.
+    // Ordinary ↻ replaces the immediately preceding exchange. Governed Loom
+    // history has independent immutable custody and must use its own Gate route.
+    if (loomState?.active) {
+      setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held',
+        'Loom continuation · use the Gate review route');
+      return;
+    }
     const replayAttachments = retryAttachmentsFor(userEntry);
     const stagedAttachments = getMarrowlineAttachments();
     const sourceReply = userIndex >= 0
@@ -1601,13 +1614,33 @@ export function installKhonapolitTerminal(doc = document, root = window) {
         'This conversation retained attachment metadata, not reusable file bytes. Select the original files, then press Retry again.');
       return;
     }
-    if (userIndex >= 0) {
-      // A new retry is a new attempt. Retain the prior response and its receipt.
-      state.pendingTask = message;
-      void scheduleSave();
+    retryPreparationActive = true;
+    try {
+      // Purge the old Red Deer turn, its Kʰonapolit output, and their local
+      // receipts before the replacement request. Earlier turns remain.
+      if (userIndex >= 0) state.messages.splice(userIndex);
+      state.pendingTask = '';
+      state.lastReceipt = null;
+      state.lastFailure = null;
+      root.__TD613_KHONAPOLIT_LAST_RECEIPT__ = null;
+      root.__TD613_KHONAPOLIT_LAST_FAILURE__ = null;
+      lastEpisodeWitness = null;
+      root.__TD613_MARROWLINE_LAST_EPISODE_WITNESS__ = null;
+      backgroundResumeTask = '';
+      backgroundResumeSpentTask = '';
       renderMessages(doc, state);
+      updateReceipt(doc, root, state);
+      displayClassification(doc, null);
+      syncRecoveryControls(doc, state);
+      if (!await scheduleSave()) {
+        setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held',
+          'RETRY HELD · could not persist deletion of the previous exchange');
+        return;
+      }
+      await submitTask(message, { independentRetry, attachmentOverride: retryAttachments });
+    } finally {
+      retryPreparationActive = false;
     }
-    submitTask(message, { independentRetry, attachmentOverride: retryAttachments });
   };
   byId(doc, 'retryKhonapolitTask')?.addEventListener('click', () => retryLastPrompt());
   // Corner ↻ is a separate human retry gesture: it never delegates to a
@@ -1653,12 +1686,13 @@ export function installKhonapolitTerminal(doc = document, root = window) {
     threadLibrary?.setActiveId(null);
     try { root.sessionStorage.removeItem(SESSION_KEY); } catch {}
     const removeClearedThread = saveChain.catch(() => false).then(async () => {
-      if (clearedThreadId && threadLibrary) await threadLibrary.remove(clearedThreadId);
+      if (clearedThreadId && threadLibrary) await threadLibrary.removeCascade(clearedThreadId);
       await renderThreadLibrary();
     });
     backgroundResumeTask = '';
     backgroundResumeSpentTask = '';
     episodeArmed = false; lastEpisodeWitness = null; root.__TD613_MARROWLINE_LAST_EPISODE_WITNESS__ = null;
+    root.__TD613_KHONAPOLIT_LAST_RECEIPT__ = null;
     const witnessArm = byId(doc, 'armMarrowlineEpisodeWitness');
     if (witnessArm) { witnessArm.setAttribute('aria-pressed', 'false'); witnessArm.textContent = 'Record next turn'; }
     const witnessCopy = byId(doc, 'copyMarrowlineEpisodeWitness');
@@ -1672,14 +1706,15 @@ export function installKhonapolitTerminal(doc = document, root = window) {
       delete prompt.dataset.preloadedPromptValue;
     }
     renderMessages(doc, state); updateReceipt(doc, root, state); displayClassification(doc, null); syncRecoveryControls(doc, state); syncConversationTitle(doc, state);
-    await removeClearedThread.catch(() => {});
+    const clearSucceeded = await removeClearedThread.then(() => true, () => false);
     stopPedagogueStatus(root);
     const terminalStatus = byId(doc, 'khonapolitTerminalStatus');
     if (terminalStatus) {
       terminalStatus.textContent = '';
       terminalStatus.title = '';
-      terminalStatus.dataset.phase = 'prepared';
-      terminalStatus.dataset.progressStage = 'prepared';
+      terminalStatus.dataset.phase = clearSucceeded ? 'prepared' : 'held';
+      terminalStatus.dataset.progressStage = clearSucceeded ? 'prepared' : 'held';
+      if (!clearSucceeded) terminalStatus.textContent = 'CLEAR HELD · could not verify browser archive deletion';
     }
     prompt?.focus?.({ preventScroll: true });
   });
