@@ -3,6 +3,7 @@ import { handleMarrowlineLoomGateCommand, openMarrowlineLoomGate } from './marro
 import { reviewLoomEvidence } from './holonomy-loom/ai-evidence-review.js';
 import { isLoomEvidenceHold, projectLoomEvidenceReview } from './holonomy-loom/ai-evidence-diagnostic.js';
 import { createMarrowlineThreadLibrary } from './marrowline-threads.js';
+import { marrowlineUploadRequired, prepareMarrowlineAttachmentWire } from './marrowline-attachment-upload.js';
 import { DEFAULT_MARROWLINE_TITLE, deriveMarrowlineConversationTitle } from './marrowline-title.js';
 import { formatMarrowlineReplyForCopy } from './marrowline-speaker-frames.js';
 import {
@@ -1265,7 +1266,24 @@ export function installKhonapolitTerminal(doc = document, root = window) {
       // Browser history remains visible in the local ledger but no longer carries
       // retry permission into the server. Explicit retries always reach live Gemini.
       requestBody.quotaBudgetHints = quotaBudgetHints;
-      if (attachments.length) requestBody.attachments = attachments;
+      if (attachments.length) {
+        if (loomTransport && marrowlineUploadRequired(attachments)) {
+          requestStage = 'governed-attachment-large-hold';
+          throw new Error('Large uploads use ordinary Marrowline; governed Loom attachments require their own registered transport.');
+        }
+        if (marrowlineUploadRequired(attachments)) {
+          requestStage = 'attachment-upload';
+          setPedagogueStatus(status, 'pending', 'Transferring attachments…',
+            'Files travel in bounded chunks to Gemini Files API (48-hour provider retention); Marrowline maintains no server-side file archive.');
+          requestBody.attachments = await prepareMarrowlineAttachmentWire(attachments, {
+            fetchImpl: root.fetch || fetch, signal: requestController.signal,
+            onProgress: event => setPedagogueStatus(status, 'pending',
+              'Transferring file ' + event.fileIndex + ' of ' + event.fileCount + '…',
+              'Gemini File API upload in progress; Stop cancels further chunks.')
+          });
+          requestStage = 'request';
+        } else requestBody.attachments = attachments;
+      }
       // Client correlator only; server/provider identifiers remain separate.
       if (witnessRequestId) requestBody.request_id = witnessRequestId;
       if (loomTransport) {

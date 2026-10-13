@@ -232,7 +232,7 @@ function installUniversalContextPlus(doc, root) {
   const attachmentDrawerTitle = doc.createElement('strong');
   attachmentDrawerTitle.textContent = 'Attachments';
   const attachmentDrawerNote = doc.createElement('span');
-  attachmentDrawerNote.textContent = 'Confirm numbered send order · 20 items maximum · 2.5 MB combined';
+  attachmentDrawerNote.textContent = 'Confirm numbered send order · 20 items maximum · 50 MB combined';
   attachmentDrawerHead.append(attachmentDrawerTitle, attachmentDrawerNote);
   attachmentDrawer.append(attachmentDrawerHead);
   const attachmentTray = byId(doc, 'marrowlineAttachmentTray');
@@ -250,8 +250,8 @@ function installUniversalContextPlus(doc, root) {
     attachmentButton.hidden = count === 0 || attachmentSubmissionActive;
     attachmentButton.setAttribute('aria-label', count === 1 ? 'Open 1 staged attachment' : `Open ${count} staged attachments`);
     attachmentDrawerNote.textContent = count === 1
-      ? '1 of 20 staged · arrows set send order · 2.5 MB combined'
-      : `${count} of 20 staged · arrows set send order · 2.5 MB combined`;
+      ? '1 of 20 staged · arrows set send order · 50 MB combined'
+      : `${count} of 20 staged · arrows set send order · 50 MB combined`;
     if (attachmentButton.hidden) closeAttachmentDrawer();
   };
   const toggleAttachmentDrawer = force => {
@@ -367,7 +367,7 @@ function installUniversalContextPlus(doc, root) {
       doc.querySelectorAll('.relay-message .reply-attachment-access').forEach(button => {
         button.hidden = !staged;
       });
-      setStatus(`ATTACHMENT${state.count === 1 ? '' : 'S'} STAGED · ${state.count}/20 · numbered order adjustable before Send · 2.5 MB shared limit`);
+      setStatus(`ATTACHMENT${state.count === 1 ? '' : 'S'} STAGED · ${state.count}/20 · numbered order adjustable before Send · 50 MB shared limit`);
     } catch (error) {
       setStatus(`ATTACHMENT HELD · ${safe(error?.message || error)}`);
     } finally {

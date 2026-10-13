@@ -1,3 +1,4 @@
+import './marrowline-large-attachment-transport.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';

@@ -2,9 +2,9 @@ export const MARROWLINE_ATTACHMENT_SCHEMA = 'td613.marrowline.attachment/v0.1';
 export const MARROWLINE_ATTACHMENT_STATE_SCHEMA = 'td613.marrowline.attachment-state/v0.1';
 export const MARROWLINE_ATTACHMENT_LIMITS = Object.freeze({
   count: 20,
-  totalBytes: 2_500_000,
-  singleFileBytes: 1_500_000,
-  singlePhotoBytes: 2_500_000
+  totalBytes: 50_000_000,
+  singleFileBytes: 25_000_000,
+  singlePhotoBytes: 25_000_000
 });
 
 const FILE_MIMES = new Set([
@@ -232,7 +232,7 @@ async function stageMarrowlineAttachmentsSerial(files, { kind = 'file', environm
       ? Math.min(MARROWLINE_ATTACHMENT_LIMITS.singlePhotoBytes,
         Math.floor(remainingBytes / (files.length - selectionIndex)))
       : MARROWLINE_ATTACHMENT_LIMITS.singleFileBytes;
-    if (singleLimit <= 0) throw new Error('The staged attachments exceed Marrowline’s 2.5 MB total attachment limit.');
+    if (singleLimit <= 0) throw new Error('The staged attachments exceed Marrowline’s 50 MB combined attachment limit.');
 
     const file = kind === 'photo'
       ? await fitPhotoToEnvelope(selectedFile, singleLimit, environment)
@@ -240,7 +240,7 @@ async function stageMarrowlineAttachmentsSerial(files, { kind = 'file', environm
     const size = Number(file?.size || 0);
     const mime = inferredMime(file);
     if (kind !== 'photo' && size > singleLimit) {
-      throw new Error(`${cleanName(file?.name)} is larger than Marrowline’s 1.5 MB per-file limit.`);
+      throw new Error(`${cleanName(file?.name)} is larger than Marrowline’s 25 MB per-file limit.`);
     }
     if (!validKindMime(kind, mime)) {
       throw new Error(kind === 'photo'
@@ -248,7 +248,7 @@ async function stageMarrowlineAttachmentsSerial(files, { kind = 'file', environm
         : 'Choose a TXT, Markdown, CSV, JSON, or PDF file.');
     }
     total += size;
-    if (total > MARROWLINE_ATTACHMENT_LIMITS.totalBytes) throw new Error('The staged attachments exceed Marrowline’s 2.5 MB total attachment limit.');
+    if (total > MARROWLINE_ATTACHMENT_LIMITS.totalBytes) throw new Error('The staged attachments exceed Marrowline’s 50 MB combined attachment limit.');
     const data_base64 = await fileBase64(file, environment);
     next.push({
       schema: MARROWLINE_ATTACHMENT_SCHEMA,

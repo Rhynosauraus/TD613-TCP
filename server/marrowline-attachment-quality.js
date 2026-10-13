@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { verifyMarrowlineUploadProof } from './marrowline-attachment-upload.js';
 import { buildInvocationPacket, KHONAPOLIT_REQUEST_MAX_UTF8_BYTES } from '../app/dome-world/khonapolit-covenant.js';
 import { observeTD613ApertureEgress } from '../app/engine/td613-aperture-egress-contract.js';
 import { buildApertureV3InvocationReceipt } from '../app/engine/aperture-v3-task-intent.js';
@@ -32,9 +33,9 @@ import { buildGeminiConsumptionReceipt, logGeminiConsumption } from './gemini-co
 export const MARROWLINE_ATTACHMENT_API_VERSION = 'td613.marrowline-attachment-ingress/v0.2-frontier-custody';
 export const MARROWLINE_ATTACHMENT_SCHEMA = 'td613.marrowline.attachment/v0.1';
 export const MARROWLINE_ATTACHMENT_MAX_COUNT = 20;
-export const MARROWLINE_ATTACHMENT_MAX_TOTAL_BYTES = 2_500_000;
-export const MARROWLINE_ATTACHMENT_MAX_SINGLE_FILE_BYTES = 1_500_000;
-export const MARROWLINE_ATTACHMENT_MAX_SINGLE_PHOTO_BYTES = 2_500_000;
+export const MARROWLINE_ATTACHMENT_MAX_TOTAL_BYTES = 50_000_000;
+export const MARROWLINE_ATTACHMENT_MAX_SINGLE_FILE_BYTES = 25_000_000;
+export const MARROWLINE_ATTACHMENT_MAX_SINGLE_PHOTO_BYTES = 25_000_000;
 
 const WALL_TIMEOUT_MS = 210000;
 const RESPONSE_RESERVE_MS = 5000;
@@ -94,7 +95,10 @@ export function normalizeMarrowlineAttachments(value) {
   let total = 0;
   return value.map(raw => {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new TypeError('invalid-attachment');
-    const expected = ['schema', 'id', 'name', 'kind', 'mime_type', 'size_bytes', 'data_base64'];
+    const uploaded = typeof raw.file_uri === 'string';
+    const expected = uploaded
+      ? ['schema', 'id', 'name', 'kind', 'mime_type', 'size_bytes', 'file_uri', 'upload_proof']
+      : ['schema', 'id', 'name', 'kind', 'mime_type', 'size_bytes', 'data_base64'];
     if (Object.keys(raw).length !== expected.length || expected.some(key => !Object.hasOwn(raw, key))) throw new TypeError('invalid-attachment-shape');
     if (raw.schema !== MARROWLINE_ATTACHMENT_SCHEMA) throw new TypeError('invalid-attachment-schema');
     const id = safe(raw.id);
@@ -109,12 +113,20 @@ export function normalizeMarrowlineAttachments(value) {
       ? MARROWLINE_ATTACHMENT_MAX_SINGLE_PHOTO_BYTES
       : MARROWLINE_ATTACHMENT_MAX_SINGLE_FILE_BYTES;
     if (!Number.isSafeInteger(size_bytes) || size_bytes <= 0 || size_bytes > singleLimit) throw new TypeError('invalid-attachment-size');
-    const bytes = decodeBase64(raw.data_base64);
-    if (bytes.length !== size_bytes) throw new TypeError('attachment-size-mismatch');
+    const source = uploaded ? verifyMarrowlineUploadProof(raw) : null;
+    if (uploaded) {
+      if (!source || source.size_bytes !== size_bytes) throw new TypeError('upload-proof-invalid');
+    } else {
+      const bytes = decodeBase64(raw.data_base64);
+      if (bytes.length !== size_bytes) throw new TypeError('attachment-size-mismatch');
+    }
     total += size_bytes;
     if (total > MARROWLINE_ATTACHMENT_MAX_TOTAL_BYTES) throw new TypeError('attachments-too-large');
     ids.add(id);
-    return Object.freeze({ schema: MARROWLINE_ATTACHMENT_SCHEMA, id, name, kind, mime_type, size_bytes, data_base64: raw.data_base64 });
+    return Object.freeze(uploaded
+      ? { schema: MARROWLINE_ATTACHMENT_SCHEMA, id, name, kind, mime_type, size_bytes,
+          file_uri: source.file_uri, source_digest: source.source_digest }
+      : { schema: MARROWLINE_ATTACHMENT_SCHEMA, id, name, kind, mime_type, size_bytes, data_base64: raw.data_base64 });
   });
 }
 
@@ -125,7 +137,8 @@ function attachmentReceipt(attachments = []) {
     kind: item.kind,
     mime_type: item.mime_type,
     size_bytes: item.size_bytes,
-    sha256: sha256(Buffer.from(item.data_base64, 'base64'))
+    sha256: item.file_uri ? (item.source_digest || null) : sha256(Buffer.from(item.data_base64, 'base64')),
+    transport: item.file_uri ? 'gemini-files-api-resumable' : 'inline-base64'
   })));
 }
 
@@ -142,7 +155,9 @@ function addAttachmentContext(request, packet, attachments) {
   for (const item of attachments) {
     parts.push(
       { text: `\n[Operator attachment ${item.id}: ${item.name}; kind=${item.kind}; mime=${item.mime_type}; bytes=${item.size_bytes}]` },
-      { inlineData: { mimeType: item.mime_type, data: item.data_base64 } }
+      item.file_uri
+        ? { fileData: { mimeType: item.mime_type, fileUri: item.file_uri } }
+        : { inlineData: { mimeType: item.mime_type, data: item.data_base64 } }
     );
   }
   if (framedUserPart) parts.push(framedUserPart);
