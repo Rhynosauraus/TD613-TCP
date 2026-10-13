@@ -3,6 +3,7 @@ import geminiReadinessHandler from '../server/gemini-readiness.js';
 import loomTaskHandler from '../server/loom-task.js';
 import loomDemoTaskHandler from '../server/loom-demo-task.js';
 import marrowlineAttachmentHandler from '../server/marrowline-attachment-quality.js';
+import marrowlineAttachmentUploadHandler from '../server/marrowline-attachment-upload.js';
 import khonapolitHandler from '../server/khonapolit-quality.js';
 import loomAdvisoryHandler from '../server/holonomy-loom-khonapolit-advisory.js';
 import loomAssayHandler from '../server/loom-assay.js';
@@ -36,6 +37,7 @@ function requestHasAttachments(req = {}) {
 }
 
 export default function handler(req, res) {
+  if (requestedOperation(req) === 'attachment-upload') return marrowlineAttachmentUploadHandler(req, res);
   if (requestedOperation(req) === 'loom-assay-credential') return loomAssayCredentialHandler(req, res);
   if (requestedOperation(req) === 'loom-assay') return loomAssayHandler(req, res);
   if (requestedOperation(req) === 'loom-advisory') return withGeminiGenerationProfile(

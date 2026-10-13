@@ -1,9 +1,10 @@
+import './marrowline-large-attachment-transport.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import { frameMarrowlineUserTurn } from '../app/dome-world/khonapolit-covenant.js';
-import { clearMarrowlineAttachments, stageMarrowlineAttachments } from '../app/dome-world/marrowline-attachments.js';
+import { MARROWLINE_ATTACHMENT_LIMITS, attachmentState, clearMarrowlineAttachments, invalidateMarrowlinePendingAttachmentStaging, getMarrowlineAttachments, moveMarrowlineAttachment, stageMarrowlineAttachments } from '../app/dome-world/marrowline-attachments.js';
 import { clearGeminiModelState } from '../server/gemini-model-policy.js';
 import { GEMINI_GENERATION_PROFILE_KHONAPOLIT_INTERACTIVE, withGeminiGenerationProfile } from '../server/gemini-generation-envelope.js';
 import marrowlineAttachmentHandler, {
@@ -29,6 +30,82 @@ function attachment(overrides = {}) {
     ...Object.fromEntries(Object.entries(overrides).filter(([key]) => key !== 'bytes'))
   };
 }
+
+
+test('concurrent attachment picker batches retain gesture order and never exceed the shared cap', async () => {
+  const environment = {
+    crypto: { randomUUID: (() => { let n = 100; return () => String(++n).padStart(32, '0'); })() },
+    btoa: value => Buffer.from(value, 'binary').toString('base64')
+  };
+  clearMarrowlineAttachments(environment);
+  let releaseFirst;
+  const deferred = new Promise(resolve => { releaseFirst = resolve; });
+  const make = (name, bytes) => ({ name, type: 'text/plain', size: bytes.length,
+    arrayBuffer: async () => bytes.buffer });
+  const firstBytes = Uint8Array.from([1, 2, 3]);
+  const secondBytes = Uint8Array.from([4, 5, 6]);
+  const first = { name: 'first.txt', type: 'text/plain', size: 3,
+    arrayBuffer: () => deferred };
+  try {
+    const slowBatch = stageMarrowlineAttachments([first], { kind: 'file', environment });
+    const quickBatch = stageMarrowlineAttachments([make('second.txt', secondBytes)], { kind: 'file', environment });
+    releaseFirst(firstBytes.buffer);
+    await Promise.all([slowBatch, quickBatch]);
+    assert.deepEqual(getMarrowlineAttachments().map(item => item.name), ['first.txt', 'second.txt']);
+    assert.equal(attachmentState().count, 2);
+  } finally { clearMarrowlineAttachments(environment); }
+});
+
+test('clear invalidates a still-pending image/file read before it can resurrect deleted staged bytes', async () => {
+  const environment = {
+    crypto: { randomUUID: () => 'f'.repeat(32) },
+    btoa: value => Buffer.from(value, 'binary').toString('base64')
+  };
+  clearMarrowlineAttachments(environment);
+  let release;
+  const deferred = new Promise(resolve => { release = resolve; });
+  const bytes = Uint8Array.from([7, 8, 9]);
+  const work = stageMarrowlineAttachments([
+    { name: 'do-not-resurrect.txt', type: 'text/plain', size: 3, arrayBuffer: () => deferred }
+  ], { kind: 'file', environment });
+  clearMarrowlineAttachments(environment);
+  release(bytes.buffer);
+  await assert.rejects(work, /cleared before staging completed/);
+  assert.equal(attachmentState().count, 0);
+});
+
+test('twenty attachments can be staged, rearranged, and sent to Gemini in the confirmed order', async () => {
+  const environment = {
+    crypto: { randomUUID: (() => { let n = 0; return () => String(++n).padStart(32, '0'); })() },
+    btoa: value => Buffer.from(value, 'binary').toString('base64')
+  };
+  clearMarrowlineAttachments(environment);
+  assert.equal(MARROWLINE_ATTACHMENT_LIMITS.count, 20);
+  assert.equal(MARROWLINE_ATTACHMENT_MAX_COUNT, 20);
+  const selected = Array.from({ length: 20 }, (_, i) => {
+    const bytes = Uint8Array.from([i + 1]);
+    return { name: `photo-${String(i + 1).padStart(2, '0')}.png`, type: 'image/png',
+      size: 1, arrayBuffer: async () => bytes.buffer };
+  });
+  try {
+    await stageMarrowlineAttachments(selected, { kind: 'photo', environment });
+    assert.equal(attachmentState().count, 20);
+    assert.equal(getMarrowlineAttachments()[0].name, 'photo-01.png');
+    moveMarrowlineAttachment(getMarrowlineAttachments()[19].id, 'up', environment);
+    const reordered = getMarrowlineAttachments();
+    assert.equal(reordered[18].name, 'photo-20.png');
+    assert.equal(reordered[19].name, 'photo-19.png');
+    const normalized = normalizeMarrowlineAttachments(reordered);
+    assert.deepEqual(normalized.map(item => item.name), reordered.map(item => item.name));
+    const request = buildAttachmentGeminiRequest(
+      { systemInstruction: 'Synthetic system.', mode: 'issued-conjunction', message: 'Review images in order.', history: [] },
+      {}, 'gemini-3.8-flash', normalized);
+    const wireOrder = request.contents.at(-1).parts
+      .filter(part => typeof part.text === 'string' && part.text.includes('[Operator attachment'))
+      .map(part => part.text.match(/photo-\d+\.png/)[0]);
+    assert.deepEqual(wireOrder, reordered.map(item => item.name));
+  } finally { clearMarrowlineAttachments(environment); }
+});
 
 test('attachments precede the canonical final sealed user text; the relay cue stays in system guidance', () => {
   const exact = attachment();
@@ -83,8 +160,8 @@ test('client photo staging normalizes an oversized mobile image into the bounded
   const selected = {
     name: 'iphone-camera.heic',
     type: 'image/heic',
-    size: 4_200_000,
-    arrayBuffer: async () => new Uint8Array(4_200_000).buffer
+    size: 26_000_000,
+    arrayBuffer: async () => new Uint8Array(26_000_000).buffer
   };
   const state = await stageMarrowlineAttachments([selected], { kind: 'photo', environment });
   assert.equal(state.count, 1);
@@ -119,9 +196,9 @@ test('Marrowline keeps file and photo MIME classes non-interchangeable', () => {
   assert.throws(() => normalizeMarrowlineAttachments([{ ...attachment(), kind: 'photo' }]), /unsupported-attachment-type/);
 });
 
-test('photo capacity may use the full envelope while ordinary files retain the smaller single-file ceiling', () => {
-  assert.equal(MARROWLINE_ATTACHMENT_MAX_SINGLE_FILE_BYTES, 1_500_000);
-  assert.equal(MARROWLINE_ATTACHMENT_MAX_SINGLE_PHOTO_BYTES, 2_500_000);
+test('photo and document capacity admit 25 MB per file while still rejecting oversize payloads', () => {
+  assert.equal(MARROWLINE_ATTACHMENT_MAX_SINGLE_FILE_BYTES, 25_000_000);
+  assert.equal(MARROWLINE_ATTACHMENT_MAX_SINGLE_PHOTO_BYTES, 25_000_000);
   const bytes = Buffer.alloc(1_600_000, 0x61);
   const photo = attachment({
     id: 'att_realistic_photo_613',
@@ -139,8 +216,12 @@ test('photo capacity may use the full envelope while ordinary files retain the s
     mime_type: 'text/plain',
     bytes
   });
-  assert.throws(() => normalizeMarrowlineAttachments([file]), /invalid-attachment-size/,
-    'ordinary file ceiling remains bounded at 1.5 MB');
+  assert.equal(normalizeMarrowlineAttachments([file])[0].size_bytes, bytes.length,
+    'documents also gain usable capacity on the Gemini Files API path');
+  assert.throws(() => normalizeMarrowlineAttachments([{
+    ...file, size_bytes: 25_000_001
+  }]), /invalid-attachment-size/,
+    '25 MB individual-file ceiling remains enforced before decoding');
 });
 
 
@@ -433,4 +514,29 @@ test('attachment terminal continuation is same-provider, native, byte-preserving
     assert.equal(res.payload.text, initialVoice + '\n\n' + terminalVoice);
     assert.equal(res.payload.receipt.provider.structuralRepair, undefined);
   });
+});
+
+test('abandoned Loom file read releases its FIFO lane without resurrecting old bytes', async t => {
+  clearMarrowlineAttachments();
+  t.after(() => clearMarrowlineAttachments());
+  let release;
+  const blocked = new Promise(resolve => { release = resolve; });
+  const previous = stageMarrowlineAttachments([{
+    name: 'abandoned.txt', type: 'text/plain', size: 3,
+    arrayBuffer: async () => { await blocked; return Uint8Array.from([1,2,3]).buffer; }
+  }], { kind: 'file' });
+  await new Promise(resolve => setTimeout(resolve, 0));
+  invalidateMarrowlinePendingAttachmentStaging();
+  const fresh = stageMarrowlineAttachments([{
+    name: 'new.txt', type: 'text/plain', size: 3,
+    arrayBuffer: async () => Uint8Array.from([4,5,6]).buffer
+  }], { kind: 'file' });
+  const outcome = await Promise.race([
+    fresh,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('new picker stranded behind abandoned Loom read')), 1000))
+  ]);
+  assert.deepEqual(outcome.attachments.map(item => item.name), ['new.txt']);
+  release();
+  await assert.rejects(previous, /cleared before staging completed/);
+  assert.deepEqual(getMarrowlineAttachments().map(item => item.name), ['new.txt']);
 });

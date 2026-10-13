@@ -1,6 +1,6 @@
 {
   "schema": "td613.dome-world.marrowline.release/v52",
-  "version": "v0.7.53-receipt-first-project-cap",
+  "version": "v0.7.56-large-50mb-files-api",
   "stationSchema": "td613.dome-world.marrowline/v0.2.0",
   "receiptSchema": "td613.dome-world.marrowline-receipt/v0.2",
   "liveReceiptSchema": "td613.dome-world.marrowline-live-receipt/v1",
@@ -464,7 +464,7 @@
       "𖠿"
     ],
     "copyFeedback": "center-screen-tiny-green-Copied-1500ms",
-    "clearConfirmation": "center-screen-modal-Clear-conversation-Yes-No-with-backdrop",
+    "clearConfirmation": "center-screen-modal-Delete-conversation-and-branches-Yes-No-with-backdrop",
     "clearCompletionStatus": "empty-hidden-no-visible-session-cleared-strip",
     "clearDraftPolicy": "clear-conversation-empties-composer-and-preloaded-draft-state",
     "fixedConversationRoute": "Kʰonapolit → Tauric Diana bots",
@@ -492,7 +492,7 @@
       "primaryStorage": "browser IndexedDB; localStorage fallback only when IndexedDB unavailable",
       "migration": "one-time per-tab import of prior sessionStorage conversation; exact records preserved",
       "branch": "Branch appears inside More with this reply on every model reply; child copies transcript only through the selected reply and its receipt; parent remains unchanged; title never receives a forced Branch suffix",
-      "controls": "opaque foreground Conversations picker with dismissal; new, rename and individually delete; old conversation selected after reload",
+      "controls": "opaque foreground Conversations picker with dismissal; ⌕ searches titles and Red Deer/Kʰonapolit transcript text locally; delete and ✕ purge the selected conversation plus descendants copied by branching in this browser from IndexedDB and legacy fallback mirrors, without claiming provider/clipboard deletion; new and rename remain; old conversation selected after reload; Gemini Files API provider retention is outside local deletion",
       "requestBinding": "switch/create/delete/branch blocked while provider request is in flight or attachments are staged",
       "history": "full archive preserved locally; conversation list remains sorted by real persisted activity, while passive thread reads/switches leave updatedAt unchanged; provider request context retains existing bounded recent-history behavior",
       "scope": "same-browser, same-device; no account or cross-device synchronization",
@@ -507,11 +507,12 @@
     "outgoingPromptLimit": "3000000 UTF-16 code units per human turn across client/server, exact tail retained; 3700000-byte serialized UTF-8 request envelope guards the Vercel ingress below its 4.5 MB hard ceiling; 3000000-byte serialized history ceiling remains; attachments/history share the same request envelope; provider output remains unrestricted by composer limit",
     "botParagraphDisplay": "one additional CSS-only visual newline at existing exactly-double-newline Tauric Diana bot paragraph boundaries; original provider textContent, receipt and plain-text copy remain byte-identical; 1.04 native overprint unchanged",
     "inlineTechnicalRecord": "removed from chat; archived turn provenance and dedicated Receipt preserved",
-    "retryPolicy": "new explicit Send never disabled by prior Retry-After; preserved-task retry honors provider delay",
+    "retryPolicy": "new explicit Send never disabled by prior Retry-After; preserved-task retry honors provider delay; ↻ replaces the last ordinary Red Deer input and model reply in local browser archive, persists the deletion, then resends the original prompt plus its exact in-memory attachment payload; the replaced exchange is absent from the next provider history; after reload with only attachment receipt metadata ↻ holds for explicit reattachment; governed Loom routes retain independent Gate custody",
     "quotaFailureCopy": "observed Gemini 429 and model count; account balance and actual quota unverified",
     "presetHydration": "preloaded prompt survives asynchronous thread storage hydration",
     "replyPresetBudget": "full small reply or explicitly labeled 2400-character excerpt; 6000-character human composer never overflowed by follow-up",
-    "homeLandingAction": "𖠿 delegates to the existing marrowlineNewThread control; it uses the same transient unsaved The speaking grove landing path and preserves the same request/attachment thread-change guards as New +"
+    "homeLandingAction": "𖠿 delegates to the existing marrowlineNewThread control; it uses the same transient unsaved The speaking grove landing path and preserves the same request/attachment thread-change guards as New +",
+    "attachmentIngress": "20 items, 50 MB total, 25 MB per item, Gemini Files API chunk transport above 1.75 MB base64. Provider retains uploads for up to 48 hours; browser local clear cannot reverse provider retention. Governed Loom large files hold until governed transport."
   },
   "desktop": {
     "posture": "conversation-with-persistent-instruments",

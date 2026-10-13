@@ -1,10 +1,10 @@
 export const MARROWLINE_ATTACHMENT_SCHEMA = 'td613.marrowline.attachment/v0.1';
 export const MARROWLINE_ATTACHMENT_STATE_SCHEMA = 'td613.marrowline.attachment-state/v0.1';
 export const MARROWLINE_ATTACHMENT_LIMITS = Object.freeze({
-  count: 6,
-  totalBytes: 2_500_000,
-  singleFileBytes: 1_500_000,
-  singlePhotoBytes: 2_500_000
+  count: 20,
+  totalBytes: 50_000_000,
+  singleFileBytes: 25_000_000,
+  singlePhotoBytes: 25_000_000
 });
 
 const FILE_MIMES = new Set([
@@ -45,6 +45,8 @@ const EXTENSION_MIMES = Object.freeze({
 const CHANGE_EVENT = 'td613:marrowline:attachments-changed';
 const STYLE_ID = 'marrowline-attachment-style';
 let attachments = [];
+let attachmentEpoch = 0;
+let stageTail = Promise.resolve();
 
 const copy = value => JSON.parse(JSON.stringify(value));
 const formatBytes = value => value < 1024 ? `${value} B` : value < 1024 * 1024 ? `${Math.ceil(value / 1024)} KB` : `${(value / (1024 * 1024)).toFixed(1)} MB`;
@@ -203,22 +205,34 @@ export function getMarrowlineAttachmentSummaries() {
   return attachmentState().attachments.map(item => ({ ...item }));
 }
 
-export async function stageMarrowlineAttachments(fileList, { kind = 'file', environment = globalThis, onStaged = null } = {}) {
+// Each picker gesture receives a stable place in the staging queue. Large
+// photos cannot leapfrog smaller photos selected later. This also serializes
+// the count/byte guards across overlapping file/photo picker callbacks.
+export function stageMarrowlineAttachments(fileList, options = {}) {
   const files = Array.from(fileList || []);
+  const epoch = attachmentEpoch;
+  const attempt = stageTail.then(() => stageMarrowlineAttachmentsSerial(files, options, epoch));
+  stageTail = attempt.then(() => undefined, () => undefined);
+  return attempt;
+}
+
+async function stageMarrowlineAttachmentsSerial(files, { kind = 'file', environment = globalThis, onStaged = null } = {}, epoch) {
+  if (epoch !== attachmentEpoch) throw new Error('Attachment selection was cleared before staging completed.');
   if (!files.length) return attachmentState();
   if (!['file', 'photo'].includes(kind)) throw new TypeError('Attachment kind must be file or photo.');
   if (attachments.length + files.length > MARROWLINE_ATTACHMENT_LIMITS.count) throw new Error(`Marrowline can stage up to ${MARROWLINE_ATTACHMENT_LIMITS.count} attachments at once.`);
 
   const next = [];
   let total = attachments.reduce((sum, item) => sum + item.size_bytes, 0);
-  for (const selectedFile of files) {
+  for (const [selectionIndex, selectedFile] of files.entries()) {
     const initialSize = Number(selectedFile?.size || 0);
     if (!Number.isSafeInteger(initialSize) || initialSize <= 0) throw new Error('Empty attachments cannot be staged.');
     const remainingBytes = MARROWLINE_ATTACHMENT_LIMITS.totalBytes - total;
     const singleLimit = kind === 'photo'
-      ? Math.min(MARROWLINE_ATTACHMENT_LIMITS.singlePhotoBytes, remainingBytes)
+      ? Math.min(MARROWLINE_ATTACHMENT_LIMITS.singlePhotoBytes,
+        Math.floor(remainingBytes / (files.length - selectionIndex)))
       : MARROWLINE_ATTACHMENT_LIMITS.singleFileBytes;
-    if (singleLimit <= 0) throw new Error('The staged attachments exceed Marrowline’s 2.5 MB total attachment limit.');
+    if (singleLimit <= 0) throw new Error('The staged attachments exceed Marrowline’s 50 MB combined attachment limit.');
 
     const file = kind === 'photo'
       ? await fitPhotoToEnvelope(selectedFile, singleLimit, environment)
@@ -226,7 +240,7 @@ export async function stageMarrowlineAttachments(fileList, { kind = 'file', envi
     const size = Number(file?.size || 0);
     const mime = inferredMime(file);
     if (kind !== 'photo' && size > singleLimit) {
-      throw new Error(`${cleanName(file?.name)} is larger than Marrowline’s 1.5 MB per-file limit.`);
+      throw new Error(`${cleanName(file?.name)} is larger than Marrowline’s 25 MB per-file limit.`);
     }
     if (!validKindMime(kind, mime)) {
       throw new Error(kind === 'photo'
@@ -234,7 +248,7 @@ export async function stageMarrowlineAttachments(fileList, { kind = 'file', envi
         : 'Choose a TXT, Markdown, CSV, JSON, or PDF file.');
     }
     total += size;
-    if (total > MARROWLINE_ATTACHMENT_LIMITS.totalBytes) throw new Error('The staged attachments exceed Marrowline’s 2.5 MB total attachment limit.');
+    if (total > MARROWLINE_ATTACHMENT_LIMITS.totalBytes) throw new Error('The staged attachments exceed Marrowline’s 50 MB combined attachment limit.');
     const data_base64 = await fileBase64(file, environment);
     next.push({
       schema: MARROWLINE_ATTACHMENT_SCHEMA,
@@ -246,9 +260,11 @@ export async function stageMarrowlineAttachments(fileList, { kind = 'file', envi
       data_base64
     });
   }
+  // Clear/delete/Send may have invalidated an in-flight picker. Never
+  // resurrect its raw bytes after the operator cleared the staged material.
+  if (epoch !== attachmentEpoch) throw new Error('Attachment selection was cleared before staging completed.');
   attachments = [...attachments, ...next];
-  // Call ownership is independent of other staging calls finishing during an
-  // asynchronous file read. Notify only after the caller knows its exact ids.
+  // Notify after the batch's original selection order has been committed.
   onStaged?.(next.map(item=>item.id));
   return notify(environment);
 }
@@ -260,7 +276,26 @@ export function removeMarrowlineAttachment(id, environment = globalThis) {
   return attachmentState();
 }
 
+export function moveMarrowlineAttachment(id, direction, environment = globalThis) {
+  const index = attachments.findIndex(item => item.id === id);
+  const delta = direction === 'up' ? -1 : direction === 'down' ? 1 : 0;
+  const target = index + delta;
+  if (index < 0 || !delta || target < 0 || target >= attachments.length) return attachmentState();
+  const next = [...attachments];
+  [next[index], next[target]] = [next[target], next[index]];
+  attachments = next;
+  return notify(environment);
+}
+
+// Explicit Loom closure invalidates pending reads and frees the FIFO for new
+// human picker gestures. Finished attachments remain untouched.
+export function invalidateMarrowlinePendingAttachmentStaging() {
+  attachmentEpoch += 1;
+  stageTail = Promise.resolve();
+}
+
 export function clearMarrowlineAttachments(environment = globalThis) {
+  invalidateMarrowlinePendingAttachmentStaging();
   if (!attachments.length) return attachmentState();
   attachments = [];
   return notify(environment);
@@ -273,13 +308,16 @@ function installStyle(doc) {
   style.textContent = `
 #marrowlineAttachmentTray{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;margin:3px 0 7px;padding:0;min-height:0}
 #marrowlineAttachmentTray[hidden]{display:none!important}
-.marrowline-attachment-chip{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:8px;width:100%;max-width:none;min-height:30px;padding:5px 0;border:0;border-radius:0;background:transparent;color:#e8f4ed;font:500 11px/1.3 var(--sans,system-ui,sans-serif)}
+.marrowline-attachment-chip{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto;align-items:center;gap:8px;width:100%;max-width:none;min-height:30px;padding:5px 0;border:0;border-radius:0;background:transparent;color:#e8f4ed;font:500 11px/1.3 var(--sans,system-ui,sans-serif)}
 .marrowline-attachment-chip>span:first-child{color:#9fbeb2;font-size:10px;white-space:nowrap}
 .marrowline-attachment-chip b{min-width:0;max-width:none;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere;font-weight:650}
 .marrowline-attachment-chip small{color:#9fbeb2;font:500 9px/1.2 var(--sans,system-ui,sans-serif);white-space:nowrap}
 .marrowline-attachment-remove{display:inline-grid!important;place-items:center!important;width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;margin:0!important;padding:0!important;border:0!important;border-radius:50%!important;background:transparent!important;color:#c6dcd2!important;font:700 15px/1 var(--sans,system-ui,sans-serif)!important;text-transform:none!important;letter-spacing:0!important}
 .marrowline-attachment-remove:hover,.marrowline-attachment-remove:focus-visible{background:rgba(255,255,255,.08)!important;color:#fff!important}
-@media(max-width:860px){.marrowline-attachment-chip{grid-template-columns:auto minmax(0,1fr) auto auto;gap:7px}.marrowline-attachment-chip b{max-width:none}}
+.marrowline-attachment-move{appearance:none;border:1px solid rgba(160,190,182,.4);border-radius:6px;background:transparent;color:#e8f4ed;min-width:28px;min-height:30px;padding:2px;font:600 12px/1 system-ui;cursor:pointer}
+.marrowline-attachment-move:disabled{opacity:.3;cursor:default}
+.marrowline-attachment-move:focus-visible{outline:2px solid #9de8db;outline-offset:1px}
+@media(max-width:860px){.marrowline-attachment-chip{grid-template-columns:auto minmax(0,1fr) auto auto auto auto;gap:7px}.marrowline-attachment-chip b{max-width:none}}
 `;
   doc.head.append(style);
 }
@@ -302,18 +340,29 @@ export function installMarrowlineAttachmentTray(doc = document, environment = wi
     const state = attachmentState();
     tray.replaceChildren();
     tray.hidden = state.count === 0;
-    for (const item of state.attachments) {
+    for (const [index, item] of state.attachments.entries()) {
       const chip = doc.createElement('span');
       chip.className = 'marrowline-attachment-chip';
       chip.dataset.attachmentId = item.id;
-      const kind = doc.createElement('span'); kind.textContent = item.kind === 'photo' ? 'Photo' : 'File';
+      const kind = doc.createElement('span');
+      kind.textContent = `${index + 1} · ${item.kind === 'photo' ? 'Photo' : 'File'}`;
       const name = doc.createElement('b'); name.textContent = item.name;
       const size = doc.createElement('small'); size.textContent = formatBytes(item.size_bytes);
       const remove = doc.createElement('button');
       remove.type = 'button'; remove.className = 'marrowline-attachment-remove'; remove.textContent = '×';
       remove.setAttribute('aria-label', `Remove ${item.name}`);
       remove.addEventListener('click', () => removeMarrowlineAttachment(item.id, environment));
-      chip.append(kind, name, size, remove);
+      const up = doc.createElement('button');
+      up.type = 'button'; up.className = 'marrowline-attachment-move'; up.textContent = '↑';
+      up.disabled = index === 0;
+      up.setAttribute('aria-label', `Move ${item.name} earlier in send order`);
+      up.addEventListener('click', () => moveMarrowlineAttachment(item.id, 'up', environment));
+      const down = doc.createElement('button');
+      down.type = 'button'; down.className = 'marrowline-attachment-move'; down.textContent = '↓';
+      down.disabled = index === state.count - 1;
+      down.setAttribute('aria-label', `Move ${item.name} later in send order`);
+      down.addEventListener('click', () => moveMarrowlineAttachment(item.id, 'down', environment));
+      chip.append(kind, name, size, up, down, remove);
       tray.append(chip);
     }
   };

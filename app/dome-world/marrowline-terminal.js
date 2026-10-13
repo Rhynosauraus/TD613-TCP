@@ -3,6 +3,7 @@ import { handleMarrowlineLoomGateCommand, openMarrowlineLoomGate } from './marro
 import { reviewLoomEvidence } from './holonomy-loom/ai-evidence-review.js';
 import { isLoomEvidenceHold, projectLoomEvidenceReview } from './holonomy-loom/ai-evidence-diagnostic.js';
 import { createMarrowlineThreadLibrary } from './marrowline-threads.js';
+import { marrowlineUploadRequired, prepareMarrowlineAttachmentWire } from './marrowline-attachment-upload.js';
 import { DEFAULT_MARROWLINE_TITLE, deriveMarrowlineConversationTitle } from './marrowline-title.js';
 import { formatMarrowlineReplyForCopy } from './marrowline-speaker-frames.js';
 import {
@@ -373,6 +374,21 @@ function transcriptText(messages = []) {
     return `${header}${speaker}\n${entryText(entry)}${entry.sealed ? `\nSealed ${SEAL_GLYPH}` : ''}`;
   }).join('\n\n— — —\n\n');
 }
+function normalizeMarrowlineThreadSearch(value = '') {
+  return String(value ?? '').normalize('NFKC').toLocaleLowerCase();
+}
+export function marrowlineThreadMatchesSearch(thread = {}, query = '') {
+  const terms = normalizeMarrowlineThreadSearch(query).trim().split(/\s+/u).filter(Boolean);
+  if (!terms.length) return true;
+  const haystack = normalizeMarrowlineThreadSearch([
+    thread.conversationTitle || '',
+    thread.pendingTask || '',
+    thread.draft || '',
+    ...asArray(thread.messages).map(entry => entryText(entry))
+  ].join('\n'));
+  return terms.every(term => haystack.includes(term));
+}
+
 function updateReceipt(doc, root, state) {
   const node = byId(doc, 'khonapolitReceipt');
   if (node) node.textContent = state.lastFailure
@@ -697,6 +713,29 @@ export function installKhonapolitTerminal(doc = document, root = window) {
   let storeReady = false;
   let requestInFlight = false;
   let attachmentStagingActive = false;
+  let threadSearchQuery = '';
+  const retryAttachmentSlot = Symbol('td613.marrowline.retry-attachments');
+  const retryAttachmentsFor = entry => Array.isArray(entry?.[retryAttachmentSlot])
+    ? entry[retryAttachmentSlot].map(item => ({ ...item }))
+    : [];
+  const bindRetryAttachments = (entry, items = []) => {
+    // Raw bytes live only with the current in-memory turn. The Symbol property
+    // is non-enumerable, so IndexedDB/localStorage keep receipt metadata without
+    // silently becoming a duplicate binary store.
+    for (const candidate of state.messages) {
+      if (candidate && typeof candidate === 'object'
+        && Object.prototype.hasOwnProperty.call(candidate, retryAttachmentSlot)) {
+        delete candidate[retryAttachmentSlot];
+      }
+    }
+    if (entry && items.length) {
+      entry.attachmentReceipt = items.map(({ data_base64, ...metadata }) => ({ ...metadata }));
+      Object.defineProperty(entry, retryAttachmentSlot, {
+        value: items.map(item => ({ ...item })),
+        configurable: true
+      });
+    }
+  };
   let activeRequestController = null;
   let activeRequestCancelRequested = false;
   const sendControl = byId(doc, 'khonapolitSend');
@@ -727,8 +766,12 @@ export function installKhonapolitTerminal(doc = document, root = window) {
     const list = byId(doc, 'marrowlineThreadList');
     if (!list) return;
     const threads = await threadLibrary.all();
+    const query = safe(threadSearchQuery);
+    const visibleThreads = query
+      ? threads.filter(thread => marrowlineThreadMatchesSearch(thread, query))
+      : threads;
     list.replaceChildren();
-    for (const thread of threads) {
+    for (const thread of visibleThreads) {
       const row = doc.createElement('div'); row.className = 'marrowline-thread-row';
       row.dataset.threadId = thread.id;
       const open = doc.createElement('button'); open.type = 'button'; open.className = 'marrowline-thread-open';
@@ -745,6 +788,21 @@ export function installKhonapolitTerminal(doc = document, root = window) {
       del.setAttribute('aria-label', 'Delete conversation');
       del.addEventListener('click', () => void deleteThread(thread.id));
       row.append(open, rename, del); list.append(row);
+    }
+    if (!visibleThreads.length) {
+      const empty = doc.createElement('p');
+      empty.className = 'marrowline-thread-empty';
+      empty.textContent = query
+        ? 'No saved conversation contains all of those search terms.'
+        : 'No saved conversations yet.';
+      list.append(empty);
+    }
+    const searchStatus = byId(doc, 'marrowlineThreadSearchStatus');
+    if (searchStatus) {
+      searchStatus.hidden = !query;
+      searchStatus.textContent = query
+        ? `${visibleThreads.length} of ${threads.length} conversation${threads.length === 1 ? '' : 's'}`
+        : '';
     }
   };
   const threadContentSnapshot = record => ({
@@ -854,13 +912,19 @@ export function installKhonapolitTerminal(doc = document, root = window) {
   };
   const deleteThread = async threadId => {
     if (!canChangeThread()) return;
-    if (!root.confirm?.('Delete this conversation from this browser?')) return;
+    if (!root.confirm?.('Delete this conversation and copies in its branches from this browser? This cannot recall provider requests or clipboard copies.')) return;
     if (!await scheduleSave()) return;
-    await threadLibrary.remove(threadId);
-    if (activeThread?.id === threadId) {
-      const survivors = await threadLibrary.all();
-      if (survivors[0]) restoreThread(survivors[0]); else resetTransientThread();
-    } else await renderThreadLibrary();
+    try {
+      const removed = await threadLibrary.removeCascade(threadId);
+      if (removed.includes(activeThread?.id)) {
+        clearMarrowlineAttachments(root);
+        const survivors = await threadLibrary.all();
+        if (survivors[0]) restoreThread(survivors[0]); else resetTransientThread();
+      } else await renderThreadLibrary();
+    } catch {
+      setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held',
+        'DELETE HELD · local storage could not confirm deletion');
+    }
   };
   const renameThread = async threadId => {
     if (!storeReady || requestInFlight) return;
@@ -884,6 +948,37 @@ export function installKhonapolitTerminal(doc = document, root = window) {
   byId(doc, 'marrowlineThreadOpen')?.setAttribute('aria-expanded', 'false');
   const conversationToggle = byId(doc, 'marrowlineThreadOpen');
   const conversationDrawer = byId(doc, 'marrowlineThreadDrawer');
+  const conversationSearchToggle = byId(doc, 'marrowlineThreadSearchToggle');
+  const conversationSearchPanel = byId(doc, 'marrowlineThreadSearchPanel');
+  const conversationSearchInput = byId(doc, 'marrowlineThreadSearchInput');
+  const setConversationSearchExpanded = expanded => {
+    if (conversationSearchPanel) conversationSearchPanel.hidden = !expanded;
+    conversationSearchToggle?.setAttribute('aria-expanded', String(expanded));
+    if (expanded) conversationSearchInput?.focus?.({ preventScroll: true });
+  };
+  conversationSearchToggle?.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    const expand = Boolean(conversationSearchPanel?.hidden);
+    setConversationSearchExpanded(expand);
+    if (expand) void renderThreadLibrary().catch(() => {});
+  });
+  conversationSearchInput?.addEventListener('input', () => {
+    threadSearchQuery = conversationSearchInput.value || '';
+    void renderThreadLibrary().catch(() => {});
+  });
+  conversationSearchInput?.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    event.stopPropagation();
+    if (conversationSearchInput.value) {
+      conversationSearchInput.value = '';
+      threadSearchQuery = '';
+      void renderThreadLibrary().catch(() => {});
+    } else {
+      setConversationSearchExpanded(false);
+      conversationSearchToggle?.focus?.({ preventScroll: true });
+    }
+  });
   const closeConversationDrawer = () => {
     if (conversationDrawer) conversationDrawer.open = false;
     conversationToggle?.setAttribute('aria-expanded', 'false');
@@ -1036,7 +1131,7 @@ export function installKhonapolitTerminal(doc = document, root = window) {
   shiInput?.addEventListener('input', () => refreshKeyState(doc));
   issuanceToggle?.addEventListener('change', () => refreshKeyState(doc));
 
-  const submitTask = async (messageOverride = '', { independentRetry = false, backgroundResume = false } = {}) => {
+  const submitTask = async (messageOverride = '', { independentRetry = false, backgroundResume = false, attachmentOverride = null } = {}) => {
     const loomTransport = root.__TD613_LOOM_DEMO_CONTROLLER__?.snapshot().active ? root.__TD613_LOOM_DEMO_CONTROLLER__ : null;
     const prompt = byId(doc, 'khonapolitPrompt');
     const message = safe(messageOverride || prompt?.value);
@@ -1059,7 +1154,9 @@ export function installKhonapolitTerminal(doc = document, root = window) {
         'The selected attachment is still being prepared in this browser; Send will unlock when staging is complete.');
       return;
     }
-    const attachments = getMarrowlineAttachments();
+    const attachments = Array.isArray(attachmentOverride)
+      ? attachmentOverride.map(item => ({ ...item }))
+      : getMarrowlineAttachments();
     const retrying = Boolean(state.pendingTask && state.pendingTask === message && state.messages.at(-1)?.role === 'user' && safe(state.messages.at(-1)?.text) === message);
     if (!retrying && !backgroundResume) backgroundResumeSpentTask = '';
     const historyForPacket = retrying ? state.messages.slice(0, -1) : state.messages;
@@ -1094,7 +1191,13 @@ export function installKhonapolitTerminal(doc = document, root = window) {
     if (status) status.dataset.progressStage = 'submitted';
     setPedagogueStatus(status, 'pending', 'The Red Deer releases a word…',
       'Human submission observed; preserving the task locally before dispatch');
-    if (!retrying) state.messages.push({ role: 'user', text: message, mode, sealed: false });
+    if (!retrying) {
+      const userEntry = { role: 'user', text: message, mode, sealed: false };
+      state.messages.push(userEntry);
+      bindRetryAttachments(userEntry, attachments);
+    } else {
+      bindRetryAttachments(state.messages.at(-1), attachments);
+    }
     // A suspended page can be restored as a preserved task. An old HTTP return
     // is never silently assumed to have arrived after a browser restart.
     state.pendingTask = message;
@@ -1142,7 +1245,12 @@ export function installKhonapolitTerminal(doc = document, root = window) {
       return;
     }
     startPedagogueStatus(status, root, attachments.length);
-    const requestDeadline = root.setTimeout(() => requestController.abort(), KHONAPOLIT_CLIENT_REQUEST_TIMEOUT_MS);
+    // Large file uploads have a separate bounded transfer window. The normal
+    // 225-second generation deadline starts afresh only after upload completes.
+    let requestDeadline = root.setTimeout(
+      () => requestController.abort(),
+      marrowlineUploadRequired(attachments) ? 600000 : KHONAPOLIT_CLIENT_REQUEST_TIMEOUT_MS
+    );
     let hiddenDuringRequest = doc.visibilityState === 'hidden';
     const observeVisibility = () => {
       if (doc.visibilityState === 'hidden') hiddenDuringRequest = true;
@@ -1163,7 +1271,30 @@ export function installKhonapolitTerminal(doc = document, root = window) {
       // Browser history remains visible in the local ledger but no longer carries
       // retry permission into the server. Explicit retries always reach live Gemini.
       requestBody.quotaBudgetHints = quotaBudgetHints;
-      if (attachments.length) requestBody.attachments = attachments;
+      if (attachments.length) {
+        if (loomTransport && marrowlineUploadRequired(attachments)) {
+          requestStage = 'governed-attachment-large-hold';
+          throw new Error('Large uploads use ordinary Marrowline; governed Loom attachments require their own registered transport.');
+        }
+        if (marrowlineUploadRequired(attachments)) {
+          requestStage = 'attachment-upload';
+          setPedagogueStatus(status, 'pending', 'Transferring attachments…',
+            'Files travel in bounded chunks to Gemini Files API (48-hour provider retention); Marrowline maintains no server-side file archive.');
+          requestBody.attachments = await prepareMarrowlineAttachmentWire(attachments, {
+            fetchImpl: root.fetch || fetch, signal: requestController.signal,
+            onProgress: event => setPedagogueStatus(status, 'pending',
+              'Transferring file ' + event.fileIndex + ' of ' + event.fileCount + '…',
+              'Gemini File API upload in progress; Stop cancels further chunks.')
+          });
+          // Provider generation owns its own 225-second budget after the
+          // final attachment is confirmed. This is not an automatic retry.
+          root.clearTimeout(requestDeadline);
+          requestDeadline = root.setTimeout(
+            () => requestController.abort(), KHONAPOLIT_CLIENT_REQUEST_TIMEOUT_MS
+          );
+          requestStage = 'request';
+        } else requestBody.attachments = attachments;
+      }
       // Client correlator only; server/provider identifiers remain separate.
       if (witnessRequestId) requestBody.request_id = witnessRequestId;
       if (loomTransport) {
@@ -1450,7 +1581,9 @@ export function installKhonapolitTerminal(doc = document, root = window) {
     }
     await submitTask();
   });
-  const retryLastPrompt = ({ independentRetry = false } = {}) => {
+  let retryPreparationActive = false;
+  const retryLastPrompt = async ({ independentRetry = false } = {}) => {
+    if (retryPreparationActive) return;
     if(isLoomEvidenceHold(state.lastFailure)) {
       openMarrowlineLoomGate(doc,root);
       return;
@@ -1462,18 +1595,81 @@ export function installKhonapolitTerminal(doc = document, root = window) {
     }
     if (!storeReady || requestInFlight) return;
     const userIndex = lastUserMessageIndex(state.messages || []);
-    const message = safe(state.pendingTask) || (userIndex >= 0 ? entryText(state.messages[userIndex]) : '');
+    const userEntry = userIndex >= 0 ? state.messages[userIndex] : null;
+    const message = safe(state.pendingTask) || (userEntry ? entryText(userEntry) : '');
     if (!message) {
       setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held', 'NO PRIOR PROMPT · nothing to retry');
       return;
     }
-    if (userIndex >= 0) {
-      // A new retry is a new attempt. Retain the prior response and its receipt.
-      state.pendingTask = message;
-      void scheduleSave();
-      renderMessages(doc, state);
+    // Ordinary ↻ replaces the immediately preceding exchange. Governed Loom
+    // history has independent immutable custody and must use its own Gate route.
+    if (loomState?.active) {
+      setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held',
+        'Loom continuation · use the Gate review route');
+      return;
     }
-    submitTask(message, { independentRetry });
+    const replayAttachments = retryAttachmentsFor(userEntry);
+    const stagedAttachments = getMarrowlineAttachments();
+    const sourceReply = userIndex >= 0
+      ? state.messages.slice(userIndex + 1).find(entry => entry?.role === 'model')
+      : null;
+    const expectedAttachments = Array.isArray(userEntry?.attachmentReceipt)
+      ? userEntry.attachmentReceipt : modelAttachmentReceipt(sourceReply);
+    let retryAttachments = replayAttachments;
+    if (!retryAttachments.length && stagedAttachments.length) {
+      // A reattached file must agree with the saved metadata; a changed
+      // payload should instead be sent as a new human turn.
+      const agrees = !expectedAttachments.length ||
+        (expectedAttachments.length === stagedAttachments.length
+          && expectedAttachments.every((item, index) => {
+            const selected = stagedAttachments[index];
+            return item.name === selected.name
+              && item.kind === selected.kind
+              && item.mime_type === selected.mime_type
+              && item.size_bytes === selected.size_bytes
+              && (!item.sha256 || !selected.sha256 || item.sha256 === selected.sha256);
+          }));
+      if (!agrees) {
+        setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held',
+          'ATTACHMENT MISMATCH · reselect the original files',
+          'The new attachment selection differs from the saved name, type, size or digest. To send different files, use a new message.');
+        return;
+      }
+      retryAttachments = stagedAttachments.map(item => ({ ...item }));
+    }
+    if (!retryAttachments.length && expectedAttachments.length) {
+      setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held',
+        'REATTACH ORIGINAL FILES · prior raw bytes are unavailable',
+        'This conversation retained attachment metadata, not reusable file bytes. Select the original files, then press Retry again.');
+      return;
+    }
+    retryPreparationActive = true;
+    try {
+      // Purge the old Red Deer turn, its Kʰonapolit output, and their local
+      // receipts before the replacement request. Earlier turns remain.
+      if (userIndex >= 0) state.messages.splice(userIndex);
+      state.pendingTask = '';
+      state.lastReceipt = null;
+      state.lastFailure = null;
+      root.__TD613_KHONAPOLIT_LAST_RECEIPT__ = null;
+      root.__TD613_KHONAPOLIT_LAST_FAILURE__ = null;
+      lastEpisodeWitness = null;
+      root.__TD613_MARROWLINE_LAST_EPISODE_WITNESS__ = null;
+      backgroundResumeTask = '';
+      backgroundResumeSpentTask = '';
+      renderMessages(doc, state);
+      updateReceipt(doc, root, state);
+      displayClassification(doc, null);
+      syncRecoveryControls(doc, state);
+      if (!await scheduleSave()) {
+        setPedagogueStatus(byId(doc, 'khonapolitTerminalStatus'), 'held',
+          'RETRY HELD · could not persist deletion of the previous exchange');
+        return;
+      }
+      await submitTask(message, { independentRetry, attachmentOverride: retryAttachments });
+    } finally {
+      retryPreparationActive = false;
+    }
   };
   byId(doc, 'retryKhonapolitTask')?.addEventListener('click', () => retryLastPrompt());
   // Corner ↻ is a separate human retry gesture: it never delegates to a
@@ -1519,12 +1715,13 @@ export function installKhonapolitTerminal(doc = document, root = window) {
     threadLibrary?.setActiveId(null);
     try { root.sessionStorage.removeItem(SESSION_KEY); } catch {}
     const removeClearedThread = saveChain.catch(() => false).then(async () => {
-      if (clearedThreadId && threadLibrary) await threadLibrary.remove(clearedThreadId);
+      if (clearedThreadId && threadLibrary) await threadLibrary.removeCascade(clearedThreadId);
       await renderThreadLibrary();
     });
     backgroundResumeTask = '';
     backgroundResumeSpentTask = '';
     episodeArmed = false; lastEpisodeWitness = null; root.__TD613_MARROWLINE_LAST_EPISODE_WITNESS__ = null;
+    root.__TD613_KHONAPOLIT_LAST_RECEIPT__ = null;
     const witnessArm = byId(doc, 'armMarrowlineEpisodeWitness');
     if (witnessArm) { witnessArm.setAttribute('aria-pressed', 'false'); witnessArm.textContent = 'Record next turn'; }
     const witnessCopy = byId(doc, 'copyMarrowlineEpisodeWitness');
@@ -1538,14 +1735,15 @@ export function installKhonapolitTerminal(doc = document, root = window) {
       delete prompt.dataset.preloadedPromptValue;
     }
     renderMessages(doc, state); updateReceipt(doc, root, state); displayClassification(doc, null); syncRecoveryControls(doc, state); syncConversationTitle(doc, state);
-    await removeClearedThread.catch(() => {});
+    const clearSucceeded = await removeClearedThread.then(() => true, () => false);
     stopPedagogueStatus(root);
     const terminalStatus = byId(doc, 'khonapolitTerminalStatus');
     if (terminalStatus) {
       terminalStatus.textContent = '';
       terminalStatus.title = '';
-      terminalStatus.dataset.phase = 'prepared';
-      terminalStatus.dataset.progressStage = 'prepared';
+      terminalStatus.dataset.phase = clearSucceeded ? 'prepared' : 'held';
+      terminalStatus.dataset.progressStage = clearSucceeded ? 'prepared' : 'held';
+      if (!clearSucceeded) terminalStatus.textContent = 'CLEAR HELD · could not verify browser archive deletion';
     }
     prompt?.focus?.({ preventScroll: true });
   });

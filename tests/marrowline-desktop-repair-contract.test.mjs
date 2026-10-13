@@ -255,9 +255,8 @@ test('staged attachments have two temporary access points and the composer contr
   assert.equal(composerAttachments.hidden, true, 'cleared/successfully consumed staging removes the composer control');
   assert.equal(replyAttachments.hidden, true, 'cleared/successfully consumed staging removes the reply action');
 
-  // Exercise the actual Upload photo input path with a mobile-sized payload
-  // that exceeds the full 2.5 MB wire envelope. This must be normalized in the
-  // browser, then reveal both Attachments entry points without staging a file first.
+  // Exercise the Upload photo path with a 4.2 MB original that formerly
+  // required recompression. Under the 25 MB cap its bytes stay intact.
   const photoBytes = new Uint8Array(4_200_000);
   photoBytes[0] = 0xff; photoBytes[1] = 0xd8; photoBytes[photoBytes.length - 2] = 0xff; photoBytes[photoBytes.length - 1] = 0xd9;
   const nativeCreateElement = document.createElement.bind(document);
@@ -296,7 +295,7 @@ test('staged attachments have two temporary access points and the composer contr
   const stagedPhoto = window.__TD613_MARROWLINE_ATTACHMENT_STATE__?.().attachments[0];
   assert.equal(stagedPhoto?.kind, 'photo');
   assert.equal(stagedPhoto?.mime_type, 'image/jpeg');
-  assert.equal(stagedPhoto?.size_bytes, 1_200_000);
+  assert.equal(stagedPhoto?.size_bytes, 4_200_000);
   assert.equal(document.querySelector('#marrowlineAttachmentTray [data-attachment-id]')?.textContent.includes('grove-photo.jpg'), true,
     'normalized photo-only picker path uses the same staged attachment drawer');
   clearMarrowlineAttachments(window);
@@ -312,7 +311,7 @@ test('Clear conversation deletes the active archive record and returns to transi
   const clearEnd = terminalJs.indexOf("byId(doc, 'copyKhonapolitTranscript')?.addEventListener", clearStart);
   assert.ok(clearStart >= 0 && clearEnd > clearStart, 'clear handler remains inspectable');
   const clearHandler = terminalJs.slice(clearStart, clearEnd);
-  assert.match(clearHandler, /threadLibrary\.remove\(clearedThreadId\)/,
+  assert.match(clearHandler, /threadLibrary\.removeCascade\(clearedThreadId\)/,
     'Clear conversation deletes its durable archive record');
   assert.match(clearHandler, /activeThread = null/);
   assert.match(clearHandler, /setActiveId\(null\)/);
@@ -460,7 +459,7 @@ test('ordinary conversation chrome uses Send left and a minimalist retry copy cl
   assert.match(js, /'𖠿'/);
   assert.match(js, /home\.addEventListener\('click', \(\) => byId\(doc, 'marrowlineNewThread'\)\?\.click\(\)\)/);
   assert.deepEqual(release.composer.utilityGlyphs, ['↻','⧉','✕','𖠿']);
-  assert.match(js, /question\.textContent = 'Clear conversation\?'/);
+  assert.match(js, /question\.textContent = 'Delete this conversation and its branches from this browser\?/);
   assert.doesNotMatch(js, /root\.confirm\('Clear this Marrowline conversation\?/);
   assert.match(js, /clearLegacy\.click\(\)/);
   assert.match(js, /conversationChrome: 'send-left-retry-copy-clear-right'/);
@@ -470,7 +469,7 @@ test('ordinary conversation chrome uses Send left and a minimalist retry copy cl
   assert.match(page, /id="sealLastResponse"[^>]*>Seal latest reply ⟐<\/button>/);
   assert.match(page, /incoming receipt remains OPEN until an explicit Red Deer closure/);
   assert.equal(release.composer.copyFeedback, 'center-screen-tiny-green-Copied-1500ms');
-  assert.equal(release.composer.clearConfirmation, 'center-screen-modal-Clear-conversation-Yes-No-with-backdrop');
+  assert.equal(release.composer.clearConfirmation, 'center-screen-modal-Delete-conversation-and-branches-Yes-No-with-backdrop');
   assert.equal(release.composer.operatorVoiceSelection, false);
   assert.equal(release.composer.fixedConversationRoute, 'Kʰonapolit → Tauric Diana bots');
   assert.equal(release.composer.unissuedResearchMode, 'unchecked-by-default; checking enables SHI; unchecked excludes SHI');
@@ -488,7 +487,7 @@ test('clear conversation returns to a transient landing state without persisting
   assert.match(clearHandler, /const clearedThreadId = activeThread\?\.id \|\| null/);
   assert.match(clearHandler, /activeThread = null/);
   assert.match(clearHandler, /threadLibrary\?\.setActiveId\(null\)/);
-  assert.match(clearHandler, /threadLibrary\) await threadLibrary\.remove\(clearedThreadId\)/);
+  assert.match(clearHandler, /threadLibrary\) await threadLibrary\.removeCascade\(clearedThreadId\)/);
   assert.match(clearHandler, /root\.sessionStorage\.removeItem\(SESSION_KEY\)/);
   assert.doesNotMatch(clearHandler, /scheduleSave\(\)/, 'clear may not autosave the emptied active thread');
   assert.match(release.composer.clearDraftPolicy, /clear-conversation-empties-composer/i);

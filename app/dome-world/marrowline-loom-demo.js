@@ -1,7 +1,7 @@
 import { consumeLoomAiHandoff } from './holonomy-loom/ai-handoff.js';
 import { createLoomDemoActivation, bindLoomDemoRequest, exportLoomDemoCurrent, loomDemoDigest, loomDemoReceiptDigest, loomDemoResult, validateLoomDemoStageReceipt, inspectLoomDemoExport, LOOM_DEMO_REQUEST_SCHEMA } from './holonomy-loom/demo-contract.js';
 import { readLoomAiFailure, describeLoomAiFailure } from './holonomy-loom/ai-failure.js';
-import { getMarrowlineAttachments, stageMarrowlineAttachments, removeMarrowlineAttachment } from './marrowline-attachments.js';
+import { getMarrowlineAttachments, stageMarrowlineAttachments, removeMarrowlineAttachment, invalidateMarrowlinePendingAttachmentStaging } from './marrowline-attachments.js';
 import { installMarrowlineLoomGateContinuity } from './marrowline-loom-gate-continuity.js';
 import { LOOM_RETURN_REVIEW_STORAGE_KEY } from './holonomy-loom/returned-session-review.js';
 import { portableLoomDigest } from '../engine/portable-loom-session.js';
@@ -350,7 +350,7 @@ export async function installMarrowlineLoomDemo(packet, doc=document, environmen
   }
   async function submit(){return environment.TD613_KHONAPOLIT_TERMINAL?.submitTask();}
   function leaveDemo(){
-    stageGeneration++;environment.TD613_KHONAPOLIT_TERMINAL?.stop();latestBinding?.governor.close();
+    stageGeneration++;invalidateMarrowlinePendingAttachmentStaging();environment.TD613_KHONAPOLIT_TERMINAL?.stop();latestBinding?.governor.close();
     staged.forEach(item=>removeMarrowlineAttachment(item.id,environment));staged=[];
     if(pending && prompt.value===stagedDraft){prompt.value='';prompt.dispatchEvent(new environment.Event('input',{bubbles:true}));}
     active=false;phase='LEFT';pending=null;closeMenu({focusParent:false});
@@ -390,7 +390,7 @@ export async function installMarrowlineLoomDemo(packet, doc=document, environmen
   environment.addEventListener('td613:marrowline:loom-demo-close',()=>closeMenu({focusParent:false}));
   doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden){event.preventDefault();closeMenu();}});
   doc.addEventListener('click',event=>{if(!menu.hidden&&!menu.contains(event.target)&&!byId(doc,'marrowlineContextLoom')?.contains(event.target))closeMenu({focusParent:false});});
-  const expiry=environment.setTimeout(()=>{stageGeneration++;phase='EXPIRED';environment.TD613_KHONAPOLIT_TERMINAL?.stop();menuStatus.textContent='This transfer expired. Prepare a fresh handoff in Loom.';emit();},Math.max(0,activation.expires_at-Date.now()));
+  const expiry=environment.setTimeout(()=>{stageGeneration++;invalidateMarrowlinePendingAttachmentStaging();phase='EXPIRED';environment.TD613_KHONAPOLIT_TERMINAL?.stop();menuStatus.textContent='This transfer expired. Prepare a fresh handoff in Loom.';emit();},Math.max(0,activation.expires_at-Date.now()));
   environment.addEventListener('pagehide',()=>{if(active)environment.TD613_KHONAPOLIT_TERMINAL?.stop();});
   environment.addEventListener('td613:marrowline:attachments-changed',()=>emit());
   const controller={returnToLoom,openMenu,stageAia,stageFiles,restoreStage,leaveDemo,submit,prepareRequest,admitResponse,rejectAttempt,finishAttempt,snapshot,exportPacket,
