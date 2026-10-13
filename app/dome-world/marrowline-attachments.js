@@ -287,8 +287,15 @@ export function moveMarrowlineAttachment(id, direction, environment = globalThis
   return notify(environment);
 }
 
-export function clearMarrowlineAttachments(environment = globalThis) {
+// Explicit Loom closure invalidates pending reads and frees the FIFO for new
+// human picker gestures. Finished attachments remain untouched.
+export function invalidateMarrowlinePendingAttachmentStaging() {
   attachmentEpoch += 1;
+  stageTail = Promise.resolve();
+}
+
+export function clearMarrowlineAttachments(environment = globalThis) {
+  invalidateMarrowlinePendingAttachmentStaging();
   if (!attachments.length) return attachmentState();
   attachments = [];
   return notify(environment);

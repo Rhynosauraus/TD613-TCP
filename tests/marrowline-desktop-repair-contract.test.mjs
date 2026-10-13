@@ -255,9 +255,8 @@ test('staged attachments have two temporary access points and the composer contr
   assert.equal(composerAttachments.hidden, true, 'cleared/successfully consumed staging removes the composer control');
   assert.equal(replyAttachments.hidden, true, 'cleared/successfully consumed staging removes the reply action');
 
-  // Exercise the actual Upload photo input path with a mobile-sized payload
-  // that exceeds the full 2.5 MB wire envelope. This must be normalized in the
-  // browser, then reveal both Attachments entry points without staging a file first.
+  // Exercise the Upload photo path with a 4.2 MB original that formerly
+  // required recompression. Under the 25 MB cap its bytes stay intact.
   const photoBytes = new Uint8Array(4_200_000);
   photoBytes[0] = 0xff; photoBytes[1] = 0xd8; photoBytes[photoBytes.length - 2] = 0xff; photoBytes[photoBytes.length - 1] = 0xd9;
   const nativeCreateElement = document.createElement.bind(document);
@@ -296,7 +295,7 @@ test('staged attachments have two temporary access points and the composer contr
   const stagedPhoto = window.__TD613_MARROWLINE_ATTACHMENT_STATE__?.().attachments[0];
   assert.equal(stagedPhoto?.kind, 'photo');
   assert.equal(stagedPhoto?.mime_type, 'image/jpeg');
-  assert.equal(stagedPhoto?.size_bytes, 1_200_000);
+  assert.equal(stagedPhoto?.size_bytes, 4_200_000);
   assert.equal(document.querySelector('#marrowlineAttachmentTray [data-attachment-id]')?.textContent.includes('grove-photo.jpg'), true,
     'normalized photo-only picker path uses the same staged attachment drawer');
   clearMarrowlineAttachments(window);

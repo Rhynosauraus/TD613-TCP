@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import { frameMarrowlineUserTurn } from '../app/dome-world/khonapolit-covenant.js';
-import { MARROWLINE_ATTACHMENT_LIMITS, attachmentState, clearMarrowlineAttachments, getMarrowlineAttachments, moveMarrowlineAttachment, stageMarrowlineAttachments } from '../app/dome-world/marrowline-attachments.js';
+import { MARROWLINE_ATTACHMENT_LIMITS, attachmentState, clearMarrowlineAttachments, invalidateMarrowlinePendingAttachmentStaging, getMarrowlineAttachments, moveMarrowlineAttachment, stageMarrowlineAttachments } from '../app/dome-world/marrowline-attachments.js';
 import { clearGeminiModelState } from '../server/gemini-model-policy.js';
 import { GEMINI_GENERATION_PROFILE_KHONAPOLIT_INTERACTIVE, withGeminiGenerationProfile } from '../server/gemini-generation-envelope.js';
 import marrowlineAttachmentHandler, {
@@ -514,4 +514,29 @@ test('attachment terminal continuation is same-provider, native, byte-preserving
     assert.equal(res.payload.text, initialVoice + '\n\n' + terminalVoice);
     assert.equal(res.payload.receipt.provider.structuralRepair, undefined);
   });
+});
+
+test('abandoned Loom file read releases its FIFO lane without resurrecting old bytes', async t => {
+  clearMarrowlineAttachments();
+  t.after(() => clearMarrowlineAttachments());
+  let release;
+  const blocked = new Promise(resolve => { release = resolve; });
+  const previous = stageMarrowlineAttachments([{
+    name: 'abandoned.txt', type: 'text/plain', size: 3,
+    arrayBuffer: async () => { await blocked; return Uint8Array.from([1,2,3]).buffer; }
+  }], { kind: 'file' });
+  await new Promise(resolve => setTimeout(resolve, 0));
+  invalidateMarrowlinePendingAttachmentStaging();
+  const fresh = stageMarrowlineAttachments([{
+    name: 'new.txt', type: 'text/plain', size: 3,
+    arrayBuffer: async () => Uint8Array.from([4,5,6]).buffer
+  }], { kind: 'file' });
+  const outcome = await Promise.race([
+    fresh,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('new picker stranded behind abandoned Loom read')), 1000))
+  ]);
+  assert.deepEqual(outcome.attachments.map(item => item.name), ['new.txt']);
+  release();
+  await assert.rejects(previous, /cleared before staging completed/);
+  assert.deepEqual(getMarrowlineAttachments().map(item => item.name), ['new.txt']);
 });
