@@ -4,7 +4,7 @@
  * Raw bytes remain in live browser-memory for an explicit ↻; durable
  * conversation archives receive only receipt metadata.
  */
-export const MARROWLINE_UPLOAD_ENDPOINT='/api/marrowline-attachment-upload';
+export const MARROWLINE_UPLOAD_ENDPOINT='/api/dome-world/khonapolit?operation=attachment-upload';
 export const MARROWLINE_UPLOAD_INLINE_THRESHOLD=1_750_000;
 export const MARROWLINE_UPLOAD_CHUNK_BASE64_CHARS=3_000_000;
 export function marrowlineUploadRequired(items=[]) {

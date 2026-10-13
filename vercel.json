@@ -37,9 +37,6 @@
     "api/ash-local-commitment-guard.py": {
       "maxDuration": 60,
       "includeFiles": "{api/ash-local-commitment.py,packages/dome_world_exact/ash_*.py}"
-    },
-    "api/marrowline-attachment-upload.js": {
-      "maxDuration": 60
     }
   },
   "redirects": [
