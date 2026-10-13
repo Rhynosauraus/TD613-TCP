@@ -45,6 +45,8 @@ const EXTENSION_MIMES = Object.freeze({
 const CHANGE_EVENT = 'td613:marrowline:attachments-changed';
 const STYLE_ID = 'marrowline-attachment-style';
 let attachments = [];
+let attachmentEpoch = 0;
+let stageTail = Promise.resolve();
 
 const copy = value => JSON.parse(JSON.stringify(value));
 const formatBytes = value => value < 1024 ? `${value} B` : value < 1024 * 1024 ? `${Math.ceil(value / 1024)} KB` : `${(value / (1024 * 1024)).toFixed(1)} MB`;
@@ -203,8 +205,19 @@ export function getMarrowlineAttachmentSummaries() {
   return attachmentState().attachments.map(item => ({ ...item }));
 }
 
-export async function stageMarrowlineAttachments(fileList, { kind = 'file', environment = globalThis, onStaged = null } = {}) {
+// Each picker gesture receives a stable place in the staging queue. Large
+// photos cannot leapfrog smaller photos selected later. This also serializes
+// the count/byte guards across overlapping file/photo picker callbacks.
+export function stageMarrowlineAttachments(fileList, options = {}) {
   const files = Array.from(fileList || []);
+  const epoch = attachmentEpoch;
+  const attempt = stageTail.then(() => stageMarrowlineAttachmentsSerial(files, options, epoch));
+  stageTail = attempt.then(() => undefined, () => undefined);
+  return attempt;
+}
+
+async function stageMarrowlineAttachmentsSerial(files, { kind = 'file', environment = globalThis, onStaged = null } = {}, epoch) {
+  if (epoch !== attachmentEpoch) throw new Error('Attachment selection was cleared before staging completed.');
   if (!files.length) return attachmentState();
   if (!['file', 'photo'].includes(kind)) throw new TypeError('Attachment kind must be file or photo.');
   if (attachments.length + files.length > MARROWLINE_ATTACHMENT_LIMITS.count) throw new Error(`Marrowline can stage up to ${MARROWLINE_ATTACHMENT_LIMITS.count} attachments at once.`);
@@ -247,9 +260,11 @@ export async function stageMarrowlineAttachments(fileList, { kind = 'file', envi
       data_base64
     });
   }
+  // Clear/delete/Send may have invalidated an in-flight picker. Never
+  // resurrect its raw bytes after the operator cleared the staged material.
+  if (epoch !== attachmentEpoch) throw new Error('Attachment selection was cleared before staging completed.');
   attachments = [...attachments, ...next];
-  // Call ownership is independent of other staging calls finishing during an
-  // asynchronous file read. Notify only after the caller knows its exact ids.
+  // Notify after the batch's original selection order has been committed.
   onStaged?.(next.map(item=>item.id));
   return notify(environment);
 }
@@ -273,6 +288,7 @@ export function moveMarrowlineAttachment(id, direction, environment = globalThis
 }
 
 export function clearMarrowlineAttachments(environment = globalThis) {
+  attachmentEpoch += 1;
   if (!attachments.length) return attachmentState();
   attachments = [];
   return notify(environment);

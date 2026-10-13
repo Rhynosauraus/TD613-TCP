@@ -31,6 +31,48 @@ function attachment(overrides = {}) {
 }
 
 
+test('concurrent attachment picker batches retain gesture order and never exceed the shared cap', async () => {
+  const environment = {
+    crypto: { randomUUID: (() => { let n = 100; return () => String(++n).padStart(32, '0'); })() },
+    btoa: value => Buffer.from(value, 'binary').toString('base64')
+  };
+  clearMarrowlineAttachments(environment);
+  let releaseFirst;
+  const deferred = new Promise(resolve => { releaseFirst = resolve; });
+  const make = (name, bytes) => ({ name, type: 'text/plain', size: bytes.length,
+    arrayBuffer: async () => bytes.buffer });
+  const firstBytes = Uint8Array.from([1, 2, 3]);
+  const secondBytes = Uint8Array.from([4, 5, 6]);
+  const first = { name: 'first.txt', type: 'text/plain', size: 3,
+    arrayBuffer: () => deferred };
+  try {
+    const slowBatch = stageMarrowlineAttachments([first], { kind: 'file', environment });
+    const quickBatch = stageMarrowlineAttachments([make('second.txt', secondBytes)], { kind: 'file', environment });
+    releaseFirst(firstBytes.buffer);
+    await Promise.all([slowBatch, quickBatch]);
+    assert.deepEqual(getMarrowlineAttachments().map(item => item.name), ['first.txt', 'second.txt']);
+    assert.equal(attachmentState().count, 2);
+  } finally { clearMarrowlineAttachments(environment); }
+});
+
+test('clear invalidates a still-pending image/file read before it can resurrect deleted staged bytes', async () => {
+  const environment = {
+    crypto: { randomUUID: () => 'f'.repeat(32) },
+    btoa: value => Buffer.from(value, 'binary').toString('base64')
+  };
+  clearMarrowlineAttachments(environment);
+  let release;
+  const deferred = new Promise(resolve => { release = resolve; });
+  const bytes = Uint8Array.from([7, 8, 9]);
+  const work = stageMarrowlineAttachments([
+    { name: 'do-not-resurrect.txt', type: 'text/plain', size: 3, arrayBuffer: () => deferred }
+  ], { kind: 'file', environment });
+  clearMarrowlineAttachments(environment);
+  release(bytes.buffer);
+  await assert.rejects(work, /cleared before staging completed/);
+  assert.equal(attachmentState().count, 0);
+});
+
 test('twenty attachments can be staged, rearranged, and sent to Gemini in the confirmed order', async () => {
   const environment = {
     crypto: { randomUUID: (() => { let n = 0; return () => String(++n).padStart(32, '0'); })() },
