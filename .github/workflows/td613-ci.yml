@@ -976,7 +976,7 @@ jobs:
         if: steps.layout_scope.outputs.changed == 'true'
         run: |
           node --check app/dome-world/marrowline-reading-surface.js
-          node --test \
+          node --test --test-timeout=45000 \
             tests/loom-task.test.mjs \
             tests/loom-ai-workspace-dom.test.mjs \
             tests/loom-ai-handoff.test.mjs \
