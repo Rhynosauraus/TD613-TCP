@@ -419,7 +419,7 @@ test('first use explains private material, remixes presentation, and skips witho
   const privateNote=h.$('#loomFirstCrossingPrivate');
   assert.equal(privateNote.tagName,'DIV');
   assert.equal(privateNote.getAttribute('role'),'note');
-  assert.match(privateNote.textContent,/Excluded from this request/);
+  assert.match(privateNote.textContent,/Other material/);
   assert.match(privateNote.textContent,/stays in this browser/i);
   assert.equal(privateNote.hasAttribute('aria-pressed'), false);
   const before=h.$('#loomFlowcoreMessage').textContent;
@@ -468,7 +468,7 @@ test('selection and readiness publish consequences before naming the Flow-Core r
   // Finishing before all three consequences publish must stay forbidden.
   for (const [step, cue, progress] of [
     [3, 'send-named', '4 of 7 · Carry'],
-    [4, 'privacy-named', '5 of 7 · Protect'],
+    [4, 'privacy-named', '5 of 7 · Test'],
     [5, 'proof-named', '6 of 7 · Return']
   ]) {
     h.$('#loomFirstCrossingStop').click();
@@ -636,7 +636,7 @@ test('opening overture contains all eight relations without borrowing the à ill
 test('privacy tutorial retains two selections and optional answer details in document flow', () => {
   const doc = new JSDOM(loomWorkspaceTemplate).window.document;
   assert.equal(doc.querySelectorAll('[data-first-crossing-item]').length,2);
-  assert.match(doc.querySelector('[data-first-crossing-item=source]').textContent,/Use these project notes/);
+  assert.match(doc.querySelector('[data-first-crossing-item=source]').textContent,/Use the project files/);
   assert.doesNotMatch(doc.querySelector('[data-first-crossing-item=source]').textContent,/\/\//);
   assert.match(product,/\.loom-tutorial-proof\{order:6/);
   assert.match(product,/:not\(\[data-first-crossing-step="0"\]\)\s*\.loom-first-crossing-objects\{display:none\}/);
