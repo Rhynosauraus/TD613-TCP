@@ -38,6 +38,12 @@ export function loomOpeningPresentation(score) {
       id: `ingress-overture-${score?.id ?? 'full-ensemble'}`,
       relations: complete ? relations : canonical,
       family: score?.family ?? 'phi-gossamer',
+      // Weighted theatrical casting, confined to the fictional ingress. The
+      // eight canonical relation IDs remain unchanged and the 39 carriers
+      // retain the AnimationCoordinator's one shared clock.
+      presentation_slots: ['recurrence','protected_continuity','bounded_emergence',
+        'release','structural_rest','created_potential','gathering','protected_continuity',
+        'bounded_emergence','release','structural_rest','released_tendency'],
       evidence_class: 'TUTORIAL_ILLUSTRATION_ONLY'
     }
   };
