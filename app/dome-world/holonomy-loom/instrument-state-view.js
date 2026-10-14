@@ -731,8 +731,10 @@ export function mountLoomInstrumentStateView(root, { fullPage = false } = {}) {
         // Once a canonical consequence exists, every carrier keeps that evidenced
         // relation identity; the selected family may deform geometry, never truth.
         const observed=illustration ? null : evidencedTrail.findLast(item=>item.relation_key===frame.relation_key);
+        const slots=Array.isArray(choreography?.presentation_slots)
+          ? choreography.presentation_slots.filter(key=>choreographyRelations.includes(key)) : [];
         const ambientRelation=illustration ? illustration.relations[i%illustration.relations.length] : !observed&&ambientChoreography
-          ? choreographyRelations[i%choreographyRelations.length] : null;
+          ? (slots.length?slots[i%slots.length]:choreographyRelations[i%choreographyRelations.length]) : null;
         const visible=Boolean(observed||ambientRelation);
         if(!visible){setText(node,'');setProjectedAttribute(node,'visibility','hidden');continue;}
         const relationKey=observed?.relation_key??ambientRelation;

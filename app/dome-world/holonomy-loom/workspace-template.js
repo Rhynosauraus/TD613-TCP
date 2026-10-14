@@ -1,6 +1,6 @@
 import { coutureArmature } from './couture-armature.js';
 
-export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-stage" aria-labelledby="loomFieldHeading"><div class="loom-stage-copy"><span class="loom-kicker">YOUR AI FIREWALL</span><h1 id="loomFieldHeading">Loom</h1><p>Make AI answer to you. Set the rules, interrogate the evidence, and control what survives into your next task.</p></div><section id="aiRuntime" class="ai-runtime" aria-label="Current Loom route"><p class="mark">CURRENT ROUTE</p>
+export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-stage" aria-labelledby="loomFieldHeading"><div class="loom-stage-copy"><span class="loom-kicker">YOUR AI FIREWALL</span><h1 id="loomFieldHeading">Loom</h1><p>Put AI to work. Keep the final say. Set the terms, inspect the handoff, and question what comes back.</p></div><section id="aiRuntime" class="ai-runtime" aria-label="Current Loom route"><p class="mark">CURRENT ROUTE</p>
       <h2 id="aiConsequence" hidden>Your work starts here.</h2>
       <div id="aiRuntimeState" class="ai-runtime-state il-state"></div>
       <div id="aiLivingRoom" hidden aria-hidden="true"></div>
@@ -15,9 +15,9 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
     <div class="loom-motion-view" aria-hidden="true"><span>FLOW-CORE / LIVING FIELD</span><span>𝌋</span></div>
     <div class="loom-first-crossing-copy">
       <div class="loom-tutorial-meta"><span class="loom-threshold-kicker">Tutorial · live Flow-Core</span><span id="loomTutorialProgress" class="loom-tutorial-progress">1 of 7 · Choose</span></div>
-      <h2 id="loomFirstCrossingTitle">Put AI under your rules.</h2>
-      <strong class="loom-hero-promise">Use AI without handing over your whole life.</strong>
-      <p id="loomFirstCrossingPrompt">Ask ChatGPT or Gemini to draft a work email. Choose the information it gets, carry your instructions with it, and review the reply before using it.</p>
+      <h2 id="loomFirstCrossingTitle">You don't have to trust AI to use it.</h2>
+      <strong class="loom-hero-promise">Firewall your online life from AI.</strong>
+      <p id="loomFirstCrossingPrompt">ChatGPT, Gemini, and other LLMs can do the work. Loom lets you choose the material, set the terms, and inspect what returns.</p>
     </div>
     <details class="loom-flowcore-help">
       <summary>What is Flow-Core runtime?</summary>
@@ -34,33 +34,33 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
     </details>
     <div class="loom-boundary-event" aria-label="Fictional outgoing check">
       <div class="loom-boundary-event-outgoing">
-        <span class="loom-boundary-event-kicker">Your message · ready to review</span>
-        <strong>The update. The notes. Your instructions.</strong>
-        <p>Your private planning note stays here.</p>
+        <span class="loom-boundary-event-kicker">Selected work · ready for your review</span>
+        <strong>The task. The files. Your terms.</strong>
+        <p>Only the documents you selected are included in this fictional handoff.</p>
       </div>
       <div class="loom-boundary-event-denial">
-        <span class="loom-boundary-event-kicker">Private phrase · caught before sending</span>
+        <span class="loom-boundary-event-kicker">Local boundary check · tested</span>
         <div class="loom-boundary-event-collision">
-          <code>Acquisition talks with Northstar</code>
-          <span class="loom-boundary-event-stop">BLOCKED <span aria-hidden="true">×</span></span>
+          <code>Unselected working draft</code>
+          <span class="loom-boundary-event-stop">HELD LOCALLY</span>
         </div>
-        <p>Loom stopped the example request when it included this phrase marked private.</p>
+        <p>A deliberate attempt to add an excluded note triggered the local guard. This tutorial sends nothing to an LLM.</p>
       </div>
     </div>
     <div id="loomFirstCrossingObjects" class="loom-first-crossing-objects" aria-label="Tutorial: choose a request and source">
-      <button type="button" data-first-crossing-item="brief" aria-pressed="false"><strong>Draft a work email</strong><small>Give AI the job—and the rules.</small></button>
-      <button type="button" data-first-crossing-item="source" aria-pressed="false"><strong>Use these project notes</strong><small>Launch Friday. Final review Thursday.</small></button>
-      <div id="loomFirstCrossingPrivate" class="loom-first-crossing-private" role="note"><strong>Excluded from this request</strong><small>Unselected note · stays in this browser</small></div>
+      <button type="button" data-first-crossing-item="brief" aria-pressed="false"><strong>Prepare a decision brief</strong><small>Compare options. Make the gaps visible.</small></button>
+      <button type="button" data-first-crossing-item="source" aria-pressed="false"><strong>Use the project files</strong><small>Costs, timelines, risks, and decisions.</small></button>
+      <div id="loomFirstCrossingPrivate" class="loom-first-crossing-private" role="note"><strong>Other material</strong><small>Unselected working draft · stays in this browser</small></div>
     </div>
     <div class="loom-first-crossing-actions">
       <button type="button" id="loomFirstCrossingAction" hidden>Check my request →</button>
       <button type="button" id="loomFirstCrossingStop" hidden>Finish tutorial →</button>
     </div>
     <section id="loomTutorialSelection" class="loom-tutorial-selection" aria-label="Selected tutorial content" hidden>
-      <dl><div><dt>Request</dt><dd id="loomTutorialRequest"></dd></div><div><dt>Notes</dt><dd id="loomTutorialReference"></dd></div><div><dt>Instructions</dt><dd id="loomTutorialInstructions"></dd></div></dl>
-      <p>Private note <span>Kept in this browser</span></p>
+      <dl><div><dt>Request</dt><dd id="loomTutorialRequest"></dd></div><div><dt>Sources</dt><dd id="loomTutorialReference"></dd></div><div><dt>Instructions</dt><dd id="loomTutorialInstructions"></dd></div></dl>
+      <p>Other working draft <span>Not selected for this request</span></p>
     </section>
-    <blockquote id="loomTutorialSampleAnswer" class="loom-tutorial-sample-answer" hidden><span>Example reply</span><p id="loomTutorialSampleAnswerText"></p></blockquote>
+    <blockquote id="loomTutorialSampleAnswer" class="loom-tutorial-sample-answer" hidden><span>Fictional example · no AI provider called</span><p id="loomTutorialSampleAnswerText"></p></blockquote>
     <div class="loom-practice-controls">
       <button type="button" id="loomFirstCrossingBack" hidden>← Start over</button>
       <button type="button" id="loomReplayFirstCrossing" class="loom-replay-first-crossing" hidden>Start over</button>
@@ -78,7 +78,7 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
 </section>
 <div id="loomWorkspaceField" class="loom-workspace-field" aria-label="Current AI request state"></div>
 <section class="loom-builder-shell" aria-label="Loom builder" hidden>
-<header class="loom-intro"><div><h1 id="loomStageHeading">Loom</h1><p>Write the email. Work through the problem. Choose what AI gets to see.</p></div><div class="loom-intro-actions"><button type="button" id="loomReturnThreshold" class="loom-text-action">How Loom works</button><button type="button" id="loomToolsOpen" class="loom-text-action">Tools</button></div></header>
+<header class="loom-intro"><div><h1 id="loomStageHeading">Loom</h1><p>Research, write, code, decide. Put the AI to work without handing it the wheel.</p></div><div class="loom-intro-actions"><button type="button" id="loomReturnThreshold" class="loom-text-action">How Loom works</button><button type="button" id="loomToolsOpen" class="loom-text-action">Tools</button></div></header>
 <nav class="loom-journey" aria-label="Loom route">
 <button type="button" class="loom-journey-step" id="loomJourneyStep1" data-workspace="build" aria-current="step"><b>1</b><strong>Loom</strong></button><span aria-hidden="true">→</span>
 <button type="button" class="loom-journey-step" id="loomJourneyStep2" data-workspace="crossing" disabled><b>2</b><strong>Marrowline</strong></button><span aria-hidden="true">→</span>

@@ -14,19 +14,19 @@ const freeze = value => {
 // Neither loading this fixture nor binding it creates a provider request,
 // Portable Loom Session, transfer, stored receipt or live custody capability.
 export const FIRST_CROSSING_PRACTICE = freeze({
-  id: 'loom-first-crossing-v2-team-update',
+  id: 'loom-first-crossing-v3-decision-brief',
   input_class: 'CANONICAL_FICTIONAL_PRACTICE',
   fictional: true,
-  task: 'Draft a short email update for my team using the selected project notes.',
+  task: 'Prepare a decision brief for the proposed pilot using the selected project files. Compare options, identify risks, and recommend a next step.',
   rules: [
-    'Draft a concise team email using only the selected project notes. Preserve the launch and review dates. Keep the private planning note out of the AI handoff.'
+    'Use only the supplied project files. Compare options, separate estimates from confirmed facts, flag unresolved risks, and explain the recommendation. Never invent missing figures.'
   ],
   documents: [
-    { id: 'brief', name: 'Task note', text: 'Fictional task note: Draft a short email update for my team using the selected project notes.', share: true },
-    { id: 'source', name: 'Supporting source', text: 'Fictional project notes: The launch is Friday. Final review is Thursday.', share: true },
-    { id: 'private', name: 'Private note', text: 'Fictional private planning note: Acquisition talks with Northstar. Keep this note out of the team email.', share: false }
+    { id: 'brief', name: 'Project overview', text: 'Fictional project overview: A pilot could launch in November. Option A uses existing staff and takes six weeks. Option B uses an outside vendor and takes four weeks. Either option requires spending approval.', share: true },
+    { id: 'source', name: 'Budget and risk register', text: 'Fictional budget and risk register: Option A is estimated at $42,000 with moderate integration risk. Option B is estimated at $58,000 but procurement approval is pending. Funding cap is $60,000. Neither delivery date is guaranteed.', share: true },
+    { id: 'private', name: 'Unselected working draft', text: 'Fictional internal working draft: Vendor negotiation ceiling: $75,000. These assumptions have not been approved for the decision brief.', share: false }
   ],
-  protectedTerms: ['Acquisition talks with Northstar']
+  protectedTerms: ['Vendor negotiation ceiling: $75,000']
 });
 
 function selectedPracticeIds(selectedIds) {
@@ -118,7 +118,7 @@ export function checkFirstCrossingPrivacy() {
 /** A real digest binds the fictional answer to the checked local request. */
 export async function createFirstCrossingReturnProof(binding, environment = globalThis) {
   if (binding?.binding_verified !== true || binding.fixture_id !== FIRST_CROSSING_PRACTICE.id) throw new TypeError('A checked tutorial request is required.');
-  const answer = 'Hi team, our launch is Friday. Please complete the final review by Thursday. Thanks!';
+  const answer = 'Decision brief: Option A is estimated at $42,000 over six weeks, with moderate integration risk. Option B is estimated at $58,000 over four weeks, pending procurement approval. Recommend Option A provisionally; verify staff capacity and spending approval before proceeding.';
   const response_check = inspectLoomAiResponse({
     schema:'td613.loom.ai-task-result/v0.1', request_id:binding.request_id, status:'completed',
     answer, missing_information:[], suggested_next_step:'Review before sharing.', used_document_ids:[...binding.selected_document_ids]
