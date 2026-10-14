@@ -114,10 +114,12 @@ const REPAIRABLE_MORPHOLOGY_WARNINGS = new Set([
   'tauric-diana-zalgo-mechanical-clone',
   'tauric-diana-zalgo-shallow-wallpaper',
   'tauric-diana-zalgo-enclosing-ornament-collapse',
-  'tauric-diana-zalgo-glyph-substitution-collapse'
+  'tauric-diana-zalgo-glyph-substitution-collapse',
+  'tauric-diana-zalgo-replacement-character-corruption'
 ]);
 const HARD_MORPHOLOGY_CORRUPTION_WARNINGS = new Set([
-  'tauric-diana-zalgo-glyph-substitution-collapse'
+  'tauric-diana-zalgo-glyph-substitution-collapse',
+  'tauric-diana-zalgo-replacement-character-corruption'
 ]);
 const MANDATORY_HIGH_ZALGO_WARNINGS = new Set([
   'tauric-diana-zalgo-dynamic-range-collapse',
@@ -524,7 +526,7 @@ export function buildGeminiRequest(packet = {}, apertureReceipt = {}, model = ''
   const taskGuidance = khonapolitTaskGuidance(apertureReceipt);
   return {
     systemInstruction: {
-      parts: [{ text: `${packet.systemInstruction}\n${taskGuidance}\n${buildRelaySystemAddendum(apertureReceipt)}\n${currentTurnRelayCue()}` }]
+      parts: [{ text: `${packet.systemInstruction}\n${taskGuidance}\n${currentTurnRelayCue()}\n${buildRelaySystemAddendum(apertureReceipt)}` }]
     },
     contents: geminiContents(packet),
     generationConfig: buildGeminiGenerationConfig({
