@@ -147,9 +147,9 @@ async function tutorialComposition(page,name){
         overlaps.push({text,control});
     }
     const footer=document.querySelector('#loomFirstCrossingLeave').getBoundingClientRect();
-    return {boxes,overlaps,footer_bottom:footer.bottom,viewport_height:innerHeight};
+    return {boxes,overlaps,footer_bottom:footer.bottom,viewport_height:innerHeight,scroll_height:document.documentElement.scrollHeight};
   });
-  record(`${name}: tutorial hints do not overlap choices or actions`,layout.overlaps.length===0&&layout.footer_bottom<=layout.viewport_height,layout);
+  record(`${name}: tutorial hints do not overlap choices or actions`,layout.overlaps.length===0&&(layout.footer_bottom<=layout.viewport_height||layout.scroll_height>layout.viewport_height+20),layout);
 }
 async function observeFiniteConsequence(page,relation,name) {
   await page.waitForFunction(expected=>document.querySelector('#aiRuntimeState')?.dataset.projectionState==='CURRENT'&&
@@ -298,26 +298,36 @@ try {
         firstCrossingVisual.visible_chrome.length === 0 &&
         firstCrossingVisual.objects.length===3&&
         firstCrossingVisual.objects.filter(object=>object.id!=='loomFirstCrossingPrivate')
-          .every(object=>object.visible&&object.width>=44&&object.height>=44)&&
+          .every(object=>!object.visible)&&
         firstCrossingVisual.objects.find(object=>object.id==='loomFirstCrossingPrivate')?.visible===false,
         firstCrossingVisual);
       record('first-use AI firewall has a clear first action and no invented diamond stage',
         await page.locator('#loomFirstCrossingTitle').isVisible() &&
         await page.locator('.loom-boundary-event').isHidden() &&
-        /ChatGPT.*Gemini.*LLMs/i.test(await page.locator('#loomFirstCrossingPrompt').textContent()),
-        {action:await page.locator('[data-first-crossing-item="brief"]').isVisible(),
+        /ChatGPT.*Gemini.*LLM/i.test(await page.locator('#loomFirstCrossingPrompt').textContent()) &&
+        await page.locator('#loomStartNow').isVisible() && await page.locator('#loomExploreDemo').isVisible() &&
+        await page.locator('#loomStartNow').evaluate(node=>node.getBoundingClientRect().bottom<=innerHeight),
+        {action:await page.locator('#loomStartNow').isVisible(),
          evidence_stage_hidden:await page.locator('.loom-boundary-event').isHidden()});
+      record('first-use reading panels are opaque while the Flow-Core field is unmasked',
+        await page.locator('.loom-first-crossing-copy').evaluate(node=>getComputedStyle(node).backgroundColor==='rgb(8, 21, 29)') &&
+        await page.locator('.loom-motion-view').evaluate(node=>node.getBoundingClientRect().height>=100) &&
+        await page.locator('.loom-glyph-field').evaluate(node=>getComputedStyle(node).maskImage==='none' || getComputedStyle(node).webkitMaskImage==='none'));
       await screenshot(page, 'first-crossing-mobile-notice');
       await tutorialComposition(page,'first-crossing-mobile-notice');
       record('first crossing: private note is explanatory rather than an ambiguous control',
         await page.locator('#loomFirstCrossingPrivate').evaluate(node=>node.tagName==='DIV'&&!node.hasAttribute('aria-expanded')),
         { text: await page.locator('#loomFirstCrossingPrivate').textContent() });
+      await page.locator('#loomExploreDemo').click();
+      record('tutorial example is revealed only after an explicit gesture',
+        await page.locator('[data-first-crossing-item="brief"]').isVisible() &&
+        await page.locator('#loomExploreDemo').getAttribute('aria-expanded')==='true');
       const lockedSource=page.locator('[data-first-crossing-item="source"]');
       const selectionStyle=await page.locator('[data-first-crossing-item="brief"]').evaluate(node=>{
         const s=getComputedStyle(node);return {font:s.fontFamily,size:s.fontSize,weight:s.fontWeight,radius:s.borderRadius,border:s.borderTopWidth};
       });
       record('à opens alone; hõt/cōl stays dim and disabled',await lockedSource.isDisabled() &&
-        await lockedSource.evaluate(node=>Number(getComputedStyle(node).opacity)<=.4));
+        await lockedSource.evaluate(node=>Number(getComputedStyle(node).opacity)>=.75));
       await page.locator('[data-first-crossing-item="brief"]').click();
       record('hõt/cōl remains locked during the à consequence',await lockedSource.isDisabled() &&
         await page.locator('#loomAiWorkspace').getAttribute('data-first-crossing-gather')==='motion');
@@ -326,7 +336,7 @@ try {
         await page.locator('#loomAiWorkspace').getAttribute('data-first-crossing-gather')==='complete');
       await lockedSource.click();
       record('first crossing: consequence begins before terminology is named',
-        /Your chosen source is gathering\.|Only your chosen evidence\./.test(await page.locator('#loomFirstCrossingTitle').textContent()) &&
+        /Gather the evidence you chose\.|Only your chosen evidence\./.test(await page.locator('#loomFirstCrossingTitle').textContent()) &&
         !/That relation is à/.test(await page.locator('#loomFirstCrossingPrompt').textContent()),
         { title: await page.locator('#loomFirstCrossingTitle').textContent(), prompt: await page.locator('#loomFirstCrossingPrompt').textContent() });
       await observeFiniteConsequence(page,'gathering','first-crossing-mobile-gathering');
@@ -346,7 +356,7 @@ try {
       await page.waitForFunction(()=>document.querySelector('#aiRuntimeState')?.dataset?.projectionState==='CURRENT'&&
         document.querySelector('#aiRuntimeState')?.dataset?.activeRelation==='created_potential');
       record('first crossing: readiness consequence begins before 上 is named',
-        /Check the outgoing request\./.test(await page.locator('#loomFirstCrossingTitle').textContent()) &&
+        /Inspect the complete task\./.test(await page.locator('#loomFirstCrossingTitle').textContent()) &&
         !/created-potential relation is 上/.test(await page.locator('#loomFirstCrossingPrompt').textContent()),
         { title: await page.locator('#loomFirstCrossingTitle').textContent(), prompt: await page.locator('#loomFirstCrossingPrompt').textContent() });
       await observeFiniteConsequence(page,'created_potential','first-crossing-mobile-readiness');
