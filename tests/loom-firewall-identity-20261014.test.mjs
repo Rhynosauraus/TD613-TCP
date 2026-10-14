@@ -55,4 +55,3 @@ test('the overture casts all eight glyph relations while emphasizing legible ret
   assert.ok(slots.filter(x=>x==='structural_rest').length>=2);
   assert.equal(new Set(presentation.flowcore_choreography.relations).size,8);
 });
-dom.window.close();
