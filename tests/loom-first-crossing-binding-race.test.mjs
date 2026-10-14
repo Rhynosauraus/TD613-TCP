@@ -201,7 +201,7 @@ test('an old gathering frame cannot reopen pending local binding or duplicate it
   assert.equal(h.$('#loomFirstCrossingAction').hidden, true);
   h.advance(100);
   assert.equal(h.root.dataset.firstCrossingCue, 'binding', 'the old 87.5% gathering frame must preserve pending preparation');
-  assert.equal(h.$('#loomFirstCrossingTitle').textContent, 'Checking before sending.');
+  assert.equal(h.$('#loomFirstCrossingTitle').textContent, 'Checking the work unit.');
   assert.equal(h.$('#loomFirstCrossingAction').hidden, true);
   assert.equal(h.$('#loomFirstCrossingStop').hidden, true);
   // Hidden DOM controls can still receive programmatic/re-entrant events. The
@@ -230,7 +230,7 @@ test('an old gathering frame retains the binding HOLD explanation until an expli
   assert.equal(h.$('#loomFirstCrossingStop').hidden, true);
   h.advance(100); h.advance(250);
   assert.equal(h.root.dataset.firstCrossingCue, 'binding-held');
-  assert.equal(h.$('#loomFirstCrossingTitle').textContent, 'This preview could not be checked.');
+  assert.equal(h.$('#loomFirstCrossingTitle').textContent, 'This review needs attention.');
   assert.match(h.$('#loomFirstCrossingPrompt').textContent, /Controlled local digest failure/);
   assert.equal(h.ui.inspect().runtime.view.event.binding_verified, false);
   assert.equal(h.ui.inspect().session, null);
