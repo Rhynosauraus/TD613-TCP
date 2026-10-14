@@ -76,6 +76,7 @@ const LEGACY_OUTPUT_TOKENS = 4096;
 // local packet/morphology admission as diagnostic telemetry rather than authority
 // to erase nonempty provider text from an explicit human turn.
 const HUMAN_LIVENESS_MODEL_ORDER = Object.freeze([
+  'gemini-4-argon',
   'gemini-3.8-flash',
   'gemini-3.5-flash',
   'gemini-3.6-flash',
@@ -84,6 +85,7 @@ const HUMAN_LIVENESS_MODEL_ORDER = Object.freeze([
 ]);
 export const KHONAPOLIT_MAX_OUTPUT_TOKENS = 65536;
 const QUALITY_ENVELOPE_MODELS = new Set([
+  'gemini-4-argon',
   'gemini-3.8-flash',
   'gemini-3.7-flash',
   'gemini-3.6-flash',
@@ -274,7 +276,7 @@ export function selectKhonapolitProviderModels(callableModels = []) {
   const available = [...new Set((Array.isArray(callableModels) ? callableModels : [])
     .map((model) => String(model || '').replace(/^models\//, '').trim())
     .filter(Boolean)
-    .filter((model) => /^gemini-3(?:\.|-|$)/.test(model))
+    .filter((model) => HUMAN_LIVENESS_MODEL_ORDER.includes(model))
     .filter((model) => !/lite/i.test(model)))];
   if (!available.length) return [];
   const selected = [];
@@ -299,6 +301,7 @@ export function selectKhonapolitProviderModelsFromPlan(plan = {}) {
     .filter((row) => {
       const reasons = Array.isArray(row?.eligibility?.reasons) ? row.eligibility.reasons : [];
       return row?.metadata?.lifecycle === 'current'
+        && row?.model !== 'gemini-4-argon'
         && HUMAN_LIVENESS_MODEL_ORDER.includes(row?.model)
         && reasons.length === 1
         && reasons[0] === 'provider-absent';
@@ -313,6 +316,7 @@ export function selectKhonapolitProviderModelsFromPlan(plan = {}) {
     .filter((row) => {
       const reasons = Array.isArray(row?.eligibility?.reasons) ? row.eligibility.reasons : [];
       return row?.metadata?.lifecycle === 'current'
+        && row?.model !== 'gemini-4-argon'
         && HUMAN_LIVENESS_MODEL_ORDER.includes(row?.model)
         && reasons.length === 1
         && reasons[0] === 'fresh-complete-provider-observation-required';
@@ -354,11 +358,14 @@ export function preferMarrowlineIncompleteReturn(current = null, candidate = nul
   return observedBaseLength(candidate) > observedBaseLength(current) ? candidate : current;
 }
 
-export function allocateKhonapolitAttemptTimeout({ remainingMs = 0, index = 0, modelCount = 1, fairShare = false } = {}) {
+export function allocateKhonapolitAttemptTimeout({ remainingMs = 0, index = 0, modelCount = 1, fairShare = false, model = '' } = {}) {
   const remaining = Math.max(0, Math.floor(Number(remainingMs) || 0));
   const position = Math.max(0, Math.floor(Number(index) || 0));
   const inheritedCap = position === 0 ? PRIMARY_REQUEST_TIMEOUT_MS : FALLBACK_REQUEST_TIMEOUT_MS;
-  if (!fairShare) return Math.min(inheritedCap, remaining);
+  if (!fairShare) return Math.min(model === 'gemini-4-argon' ? 75000 : inheritedCap, remaining);
+  // One bounded Argon stream; no implicit long-decode retries or changed spend ceiling.
+  // Reserve the existing Gemini 3 fallback runway inside this interactive wall.
+  if (model === 'gemini-4-argon') return Math.min(75000, Math.max(1, remaining - (modelCount > 1 ? 105000 : 0)));
 
   const total = Math.max(position + 1, Math.floor(Number(modelCount) || 1));
   const remainingAttempts = Math.max(1, total - position);
@@ -506,6 +513,7 @@ function geminiContents(packet = {}) {
 
 function khonapolitReasoning(model = '', { fallback = false } = {}) {
   if (!qualityEnvelope(model)) return null;
+  if (model === 'gemini-4-argon') return { level: 'medium' };
   return {
     // Fallback means transport position, not permission to lower the requested reasoning level.
     level: 'high'
@@ -1466,7 +1474,7 @@ export default async function handler(req, res) {
     const fallback = index > 0;
     const remainingMs = WALL_TIMEOUT_MS - (Date.now() - startedAt) - RESPONSE_RESERVE_MS;
     if (remainingMs <= 0) break;
-    const timeoutMs = allocateKhonapolitAttemptTimeout({ remainingMs, index, modelCount: models.length, fairShare: true });
+    const timeoutMs = allocateKhonapolitAttemptTimeout({ remainingMs, index, modelCount: models.length, fairShare: true, model });
     const attemptStartedAt = Date.now();
     const result = await callGemini(model, packet, apertureReceipt, timeoutMs, {
       // Fair-share timeouts are hard seat boundaries. Streaming progress is

@@ -1,10 +1,12 @@
 // Lifecycle and production-suitability evidence refreshed 2026-09-10 from the official Gemini model and thinking guides.
-export const GEMINI_LIFECYCLE_VERSION = 'td613.gemini-lifecycle/v0.2-20260910';
+export const GEMINI_LIFECYCLE_VERSION = 'td613.gemini-lifecycle/v0.3-20261013-argon';
 export const GEMINI_LIFECYCLE_SOURCES = Object.freeze([
   'https://ai.google.dev/gemini-api/docs/models',
   'https://ai.google.dev/gemini-api/docs/deprecations',
   'https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash',
-  'https://ai.google.dev/gemini-api/docs/generate-content/thinking'
+  'https://ai.google.dev/gemini-api/docs/generate-content/thinking',
+  'https://ai.google.dev/gemini-api/docs/generate-content/latest-model',
+  'https://ai.google.dev/gemini-api/docs/models/gemini-4-argon'
 ]);
 const LEGACY_CATALOG = Object.freeze({
   'gemini-3.5-flash': Object.freeze({ tier: 'frontier', stability: 'stable', quality: 100, role: 'fourth-quality' }),
@@ -17,6 +19,7 @@ const rows = Object.fromEntries(Object.entries(LEGACY_CATALOG).map(([id, row]) =
   ...row, lifecycle: 'current', capability: 'text', qualityEvidence: 'legacy-policy-prior-not-benchmark-proof'
 }]));
 Object.assign(rows, {
+  'gemini-4-argon': { tier: 'frontier-pro', stability: 'stable', quality: 140, role: 'listed-frontier-primary', lifecycle: 'current', capability: 'text', qualityEvidence: 'official-2026-10-13-argon-release-not-route-benchmark' },
   'gemini-3.8-flash': { tier: 'frontier', stability: 'stable', quality: 130, role: 'primary-quality', lifecycle: 'current', capability: 'text', qualityEvidence: 'official-most-intelligent-flash-long-horizon-complex-workflows-2026-09-02' },
   'gemini-3.7-flash': { tier: 'frontier', stability: 'stable', quality: 120, role: 'secondary-quality', lifecycle: 'current', capability: 'text', qualityEvidence: 'official-current-stable-flash-2026-09' },
   'gemini-3.6-flash': { tier: 'frontier', stability: 'stable', quality: 110, role: 'tertiary-quality', lifecycle: 'current', capability: 'text', qualityEvidence: 'official-current-stable-flash-2026-09' },
@@ -34,7 +37,7 @@ for (const id of ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-pro
 for (const id of ['gemini-3-pro-image-preview', 'gemini-3-pro-image', 'nano-banana-pro-preview', 'gemini-3.1-flash-image-preview', 'gemini-3.1-flash-image', 'gemini-3.1-flash-lite-image', 'gemini-omni-flash-preview', 'gemini-omni-1.1-flash', 'gemini-3.5-transcribe', 'lyria-3-clip-preview', 'lyria-3-pro-preview', 'lyria-3.5', 'gemini-3.1-flash-tts-preview', 'gemini-robotics-er-2-preview', 'antigravity-preview-05-2026', 'deep-research-max-preview-04-2026', 'deep-research-preview-04-2026', 'deep-research-pro-preview-12-2025']) {
   rows[id] = { stability: 'task-specific', lifecycle: 'specialized', capability: 'specialized', role: 'separate-route-required' };
 }
-export const MODEL_CATALOG = Object.freeze(Object.fromEntries(Object.entries(rows).map(([id, row]) => [id, Object.freeze({ ...row, lifecycleEvidenceDate: '2026-09-10' })])));
+export const MODEL_CATALOG = Object.freeze(Object.fromEntries(Object.entries(rows).map(([id, row]) => [id, Object.freeze({ ...row, lifecycleEvidenceDate: id === 'gemini-4-argon' ? '2026-10-13' : '2026-09-10' })])));
 
 export function assessGeminiEligibility(model, { explicit = false, listing, at = Date.now() } = {}) {
   const metadata = MODEL_CATALOG[model];

@@ -1,11 +1,11 @@
-export const GEMINI_MODEL_POLICY_VERSION = 'td613.gemini-model-policy/v11-khonapolit-frontier-custody';
+export const GEMINI_MODEL_POLICY_VERSION = 'td613.gemini-model-policy/v12-argon-listed-frontier';
 
 import { MODEL_CATALOG, assessGeminiEligibility } from './gemini-model-registry.js';
 import { listGeminiGenerateContentModels } from './gemini-model-discovery.js';
 
 // General interactive generation prefers the current Flash frontier. Marrowline's
-// Kʰonapolit route is stricter: only callable Gemini 3.x non-Lite models may enter
-// the provider plan. Model identity is still not output-quality proof; hard dual-
+// Kʰonapolit additionally admits exact Gemini 4 Argon only after complete
+// credential-scoped generateContent discovery; existing Gemini 3 fallbacks remain. Model identity is still not output-quality proof; hard dual-
 // channel admission remains the final gate.
 const QUALITY_ORDER = Object.freeze([
   'gemini-3.8-flash',
@@ -16,6 +16,7 @@ const QUALITY_ORDER = Object.freeze([
 ]);
 
 const KHONAPOLIT_QUALITY_ORDER = Object.freeze([
+  'gemini-4-argon',
   'gemini-3.8-flash',
   'gemini-3.7-flash',
   'gemini-3.6-flash',
@@ -179,7 +180,7 @@ export function resolveGeminiModelPlan({ task = 'general-text', env = process.en
   if (mode === 'quality-first' && legacyGlobal.length) warnings.push('legacy-global-models-demoted-under-quality-first');
   if (cooling.length) warnings.push('cooling-models-demoted');
   if (preThreeConfigured.length) warnings.push('pre-gemini-3-config-ignored');
-  if (floorRejected.length) warnings.push('khonapolit-frontier-only-rejected-non-3x-or-lite-models');
+  if (floorRejected.length) warnings.push('khonapolit-frontier-only-rejected-unapproved-or-lite-models');
   return Object.freeze({
     version: GEMINI_MODEL_POLICY_VERSION,
     task,
@@ -229,7 +230,8 @@ export async function resolveGeminiProviderPlan(options = {}) {
   let plan = resolveGeminiModelPlan({ ...planOptions, env, at: Date.now(), providerListing: listing });
   const khonapolitFrontierPartiallyObserved = task === 'khonapolit-dialogue'
     && plan.rows.some((row) => (
-      KHONAPOLIT_QUALITY_ORDER.includes(row.model)
+      row.model !== 'gemini-4-argon'
+      && KHONAPOLIT_QUALITY_ORDER.includes(row.model)
       && row?.metadata?.lifecycle === 'current'
       && Array.isArray(row?.eligibility?.reasons)
       && row.eligibility.reasons.includes('provider-absent')

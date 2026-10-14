@@ -7,7 +7,7 @@ import {
   geminiThinkingConfig
 } from '../server/gemini-generation-envelope.js';
 
-assert.equal(GEMINI_GENERATION_ENVELOPE_VERSION, 'td613.gemini-generation-envelope/v0.5-full-native-output-budget-20260922');
+assert.equal(GEMINI_GENERATION_ENVELOPE_VERSION, 'td613.gemini-generation-envelope/v0.6-argon-bounded-stream');
 assert.equal(geminiGeneration('models/gemini-3.8-flash'), '3');
 assert.equal(geminiGeneration('synthetic-model'), 'unknown');
 
@@ -48,3 +48,9 @@ assert.deepEqual(describeGeminiGenerationEnvelope('gemini-3.8-flash', { reasonin
 });
 
 console.log('gemini-generation-envelope.test.mjs passed');
+
+assert.equal(geminiGeneration('models/gemini-4-argon'), '4');
+const argon = buildGeminiGenerationConfig({model:'gemini-4-argon',maxOutputTokens:65536,sampling:{temperature:0.2,topP:0.4,topK:20},reasoning:{level:'medium'}});
+assert.deepEqual(argon.thinkingConfig,{thinkingLevel:'medium'});
+assert.equal(argon.maxOutputTokens,65536);
+for(const key of ['temperature','topP','topK'])assert.equal(Object.hasOwn(argon,key),false);
