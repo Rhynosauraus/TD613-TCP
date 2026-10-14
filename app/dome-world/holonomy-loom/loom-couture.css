@@ -255,3 +255,14 @@ body{background:var(--ink);overflow-x:clip}
 #loomAiWorkspace[data-loom-intro="true"] .loom-practice-controls{width:min(445px,100%)}
 #loomAiWorkspace[data-loom-intro="true"] .loom-tutorial-meta{max-width:445px;margin-bottom:22px}
 @media(max-width:600px){#loomAiWorkspace[data-loom-intro="true"] .loom-stage{padding:24px 24px 22px}#loomAiWorkspace[data-loom-intro="true"] .loom-first-crossing{gap:16px}#loomAiWorkspace[data-loom-intro="true"] .loom-first-crossing-copy h2{font-size:clamp(48px,12vw,68px);line-height:.98;margin-bottom:22px}#loomAiWorkspace[data-loom-intro="true"] .loom-hero-promise{font-size:17px}#loomAiWorkspace[data-loom-intro="true"] .loom-first-crossing-copy p{font-size:12px;line-height:1.6}#loomAiWorkspace[data-loom-intro="true"] .loom-first-crossing-objects button{min-height:68px}#loomAiWorkspace[data-loom-intro="true"] .loom-tutorial-meta{margin-bottom:24px}}
+
+/* FLOW-CORE: desktop keeps the full 39-carrier field, without the mobile sculpture. */
+@media (min-width:761px) {
+  #loomAiWorkspace .loom-armature {display:none !important}
+}
+/* Real local boundary witness, without a redaction tableau. */
+#loomAiWorkspace .loom-boundary-event-collision code {text-decoration:none !important}
+#loomAiWorkspace[data-first-crossing-step="6"] #loomFirstCrossingLeave {display:none !important}
+/* Cover Latin diacritics, CJK and the fermata without relying on one font. */
+#loomAiWorkspace .loom-field-flight text,
+#loomAiWorkspace .loom-field-glyph text {font-family:"Loom Flow-Core","Noto Sans Symbols 2","Apple Symbols","Segoe UI Symbol",Georgia,sans-serif}
