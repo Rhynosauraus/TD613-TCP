@@ -266,3 +266,16 @@ body{background:var(--ink);overflow-x:clip}
 /* Cover Latin diacritics, CJK and the fermata without relying on one font. */
 #loomAiWorkspace .loom-field-flight text,
 #loomAiWorkspace .loom-field-glyph text {font-family:"Loom Flow-Core","Noto Sans Symbols 2","Apple Symbols","Segoe UI Symbol",Georgia,sans-serif}
+
+/* Safari must show editorial text arrows, never blue emoji-style arrow tiles. */
+#loomAiWorkspace .loom-first-crossing-objects button:not([aria-pressed="true"])::after {
+  content:"→" !important;
+  font-family:Arial,sans-serif !important;
+  font-size:23px;
+  font-variant-emoji:text;
+}
+#loomAiWorkspace .loom-first-crossing-objects button[aria-pressed="true"]::after {
+  content:"✓︎" !important;
+  font-family:Arial,sans-serif !important;
+  font-variant-emoji:text;
+}
