@@ -34,9 +34,9 @@ test('Loom boot binds fresh couture assets and contains a catchable module failu
   const doc = new JSDOM(html).window.document;
   const css = doc.querySelector('link[href*="loom-couture.css"]');
   const module = [...doc.querySelectorAll('script[type="module"]')].find(node => node.textContent.includes('ai-workspace.js'));
-  assert.match(css.href, /20261014-couture-v1/);
+  assert.match(css.href, /20261014-firewall-v2/);
   assert.ok(module, 'the entrypoint must be an observable dynamic module import');
-  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261014-couture-v1'\)/);
+  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261014-firewall-v2'\)/);
   assert.match(module.textContent, /\.catch\(\(\) => window\.td613LoomBootFailure/);
   assert.equal(doc.querySelectorAll('script[type="module"][src*="20261003"]').length, 0);
 });
