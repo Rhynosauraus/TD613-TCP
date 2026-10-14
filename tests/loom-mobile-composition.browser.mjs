@@ -298,7 +298,7 @@ try {
         firstCrossingVisual.visible_chrome.length === 0 &&
         firstCrossingVisual.objects.length===3&&
         firstCrossingVisual.objects.filter(object=>object.id!=='loomFirstCrossingPrivate')
-          .every(object=>!object.visible)&&
+          .every(object=>object.width===0&&object.height===0)&&
         firstCrossingVisual.objects.find(object=>object.id==='loomFirstCrossingPrivate')?.visible===false,
         firstCrossingVisual);
       record('first-use AI firewall has a clear first action and no invented diamond stage',
@@ -448,6 +448,7 @@ try {
     const page=await bindPage(context,posture,served.base,{firstCrossingComplete:false});
     try{
       if(motion==='reduce'){
+        await page.locator('#loomExploreDemo').click();
         await page.locator('[data-first-crossing-item="brief"]').click();
         await page.locator('[data-first-crossing-item="source"]').click();
         await page.locator('#loomFirstCrossingAction').waitFor({state:'visible'});
@@ -538,8 +539,8 @@ try {
       record(`${posture.name}: workspace retains one live field and matching ingress typography`,
         frameComposition.runtime_count===1&&frameComposition.original_runtime_preserved&&frameComposition.runtime_in_background&&
           frameComposition.font_family===frameComposition.ingress_font,frameComposition);
-      if(posture.name==='desktop')record('desktop: workspace is centered with a translucent reading surface',
-        frameComposition.width<posture.viewport.width-100&&frameComposition.center_error<=1&&frameComposition.background==='rgba(6, 13, 20, 0.84)',frameComposition);
+      if(posture.name==='desktop')record('desktop: workspace is centered with an opaque reading surface',
+        frameComposition.width<posture.viewport.width-100&&frameComposition.center_error<=1&&frameComposition.background==='rgb(8, 21, 29)',frameComposition);
       const arrival = await geometry(page, ['aiTask', 'aiPreparePortable', 'loomRulesOpen', 'loomBoundaryOpen', 'aiPortableMode', 'aiDemoMode', 'loomToolsOpen']);
       const bounds = await spill(page);
       record(`${posture.name}: no root or visible horizontal spill`, bounds.document_width <= posture.viewport.width && bounds.outside.length === 0, bounds);
