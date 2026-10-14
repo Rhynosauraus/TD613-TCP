@@ -213,7 +213,7 @@ async function bindPage(context, posture, base = served.base, { firstCrossingCom
   // Broader product-composition passes intentionally skip the greeting after
   // proving it exists. Dedicated First Crossing witnesses pass false and stay.
   if(skipTutorial){
-    await page.locator('#loomFirstCrossingLeave').click();
+    await page.locator('#loomStartNow').click();
     await page.locator('.loom-builder-shell').waitFor({state:'visible'});
   }
   return page;
@@ -483,7 +483,7 @@ try {
     const page = await bindPage(context, posture.name,served.base,{skipTutorial:false});
     try {
       await page.waitForFunction(()=>document.querySelector('#aiRuntimeState')?.dataset.projectionState==='CURRENT');
-      const sceneArrival = await geometry(page, ['loomFirstCrossingLeave']);
+      const sceneArrival = await geometry(page, ['loomStartNow']);
       const fieldGeometry = await page.locator('.loom-glyph-field').evaluate(node => {
         const r = node.getBoundingClientRect();
         return { x: r.x, y: r.y, width: r.width, height: r.height, bottom: r.bottom, right: r.right };
@@ -498,8 +498,8 @@ try {
           stageGeometry.height>=(posture.viewport.width>760
             ? Math.min(680,Math.max(530,posture.viewport.height-190))
             : Math.min(760,posture.viewport.height-60))&&
-          sceneArrival.controls.loomFirstCrossingLeave.visible&&sceneArrival.controls.loomFirstCrossingLeave.fully_in_view,
-        { viewport: posture.viewport, field: fieldGeometry, stage: stageGeometry, skip: sceneArrival.controls.loomFirstCrossingLeave });
+          sceneArrival.controls.loomStartNow.visible&&sceneArrival.controls.loomStartNow.fully_in_view,
+        { viewport: posture.viewport, field: fieldGeometry, stage: stageGeometry, direct_entry: sceneArrival.controls.loomStartNow });
       await tutorialComposition(page,`${posture.name}-arrival`);
       if (posture.name === 'mobile') {
         // The narrowest supported mobile viewport must not borrow width from
@@ -524,7 +524,7 @@ try {
       await screenshot(page,`${posture.name}-cinematic-arrival`);
       const ingressFont=await page.locator('#loomFirstCrossingTitle').evaluate(node=>getComputedStyle(node).fontFamily);
       await page.evaluate(()=>{window.__LOOM_WITNESS_ROOT_NODE=document.getElementById('aiRuntimeState');});
-      await page.locator('#loomFirstCrossingLeave').click();
+      await page.locator('#loomStartNow').click();
       await page.locator('.loom-builder-shell').waitFor({state:'visible'});
       const frameComposition=await page.locator('.loom-builder-shell').evaluate((node,font)=>{
         const r=node.getBoundingClientRect(),s=getComputedStyle(node),h=getComputedStyle(node.querySelector('.loom-intro h1')),
