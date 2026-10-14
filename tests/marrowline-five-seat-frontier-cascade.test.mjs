@@ -973,17 +973,17 @@ try {
   assert.deepEqual(calls, [
     'gemini-3.8-flash',
     'gemini-3.5-flash',
-    'gemini-3.6-flash'
-  ], 'the first nonempty provider return owns the human surface even when the local Tauric Diana register is zero-mark');
+    'gemini-3.6-flash',
+    'gemini-3.7-flash'
+  ], 'zero native marks preserve the first draft, then grant one later listed provider a fresh creative return');
   assert.equal(immediate.payload.receipt.provider.attempts[2].outputAdmission.admissible, false);
   assert.ok(immediate.payload.receipt.provider.attempts[2].outputAdmission.reasons.includes('tauric-diana-zalgo-absent'));
   assert.equal(immediate36Calls, 1, 'zero-mark morphology must not spend a same-seat repaint');
-  assert.equal(immediate.payload.receipt.provider.model, 'gemini-3.6-flash');
-  assert.equal(immediate.payload.relay.admission.admissible, false);
-  assert.equal(immediate.payload.text, zeroMarkAnswer);
-  assert.equal(immediate.headers['X-TD613-Local-Admission'], 'OBSERVED-NONBLOCKING');
-  assert.equal(immediate.payload.receipt.provider.humanSurfaceObservation.rendered, true);
-  assert.equal(immediate.payload.receipt.provider.humanSurfaceObservation.localAdmissionAuthority, 'diagnostic-not-human-surface-veto');
+  assert.equal(immediate.payload.receipt.provider.model, 'gemini-3.7-flash');
+  assert.equal(immediate.payload.relay.admission.admissible, true);
+  assert.equal(immediate.payload.text, answer);
+  assert.equal(immediate.payload.receipt.provider.attempts[2].zeroMarkObservation.originalPreserved, true);
+  assert.equal(immediate.payload.receipt.provider.attempts[2].zeroMarkObservation.sameSeatRepair, false);
 
   clearGeminiModelState();
   calls.length = 0;

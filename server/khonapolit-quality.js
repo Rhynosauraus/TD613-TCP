@@ -1079,6 +1079,8 @@ export default async function handler(req, res) {
   let service503WaitedMs = 0;
   let incompleteFallback = null;
   let severeMorphologyFallback = null;
+  let zeroMarkFallback = null;
+  let zeroMarkRecoverySpent = false;
   const providerWallDeadlineAt = startedAt + WALL_TIMEOUT_MS - RESPONSE_RESERVE_MS;
   const completionOf = (result, output, text = result.text) => observeMarrowlineCompletion(
     // Natural text and legacy JSON envelopes must use the same visible response.
@@ -1677,6 +1679,43 @@ export default async function handler(req, res) {
       // erase it merely because the local style telemetry dislikes the return.
       if (!relay.admission?.admissible) {
         const reasons = Array.isArray(relay.admission?.reasons) ? [...relay.admission.reasons] : [];
+        // Only a completed whole-field native-mark failure warrants another
+        // approved author. Fine/local marks in a short poetic passage remain
+        // untouched; five different human references are not a style template.
+        // Preserve original exact bytes and give at most ONE later approved
+        // seat a fresh opportunity. Never same-seat repaint or postprocess.
+        const nativeMarkUnderflow = reasons.length === 1 && (
+          reasons[0] === 'tauric-diana-zalgo-absent'
+          || (reasons[0] === 'tauric-diana-zalgo-underflow'
+            && Number(relay.highZalgo?.eligibleBaseCount || 0) >= 80
+            && Number(relay.highZalgo?.verticalOrnamentMarkCount || 0) < 2)
+        );
+        if (!releaseCanary && nativeMarkUnderflow) {
+          if (!zeroMarkFallback) zeroMarkFallback = {
+            model, result, relay, providerOutput, completion, reasons
+          };
+          attempt.zeroMarkObservation = Object.freeze({
+            originalPreserved: true, sameSeatRepair: false,
+            laterSeatRequested: !zeroMarkRecoverySpent && index < models.length - 1
+          });
+          if (!zeroMarkRecoverySpent && index < models.length - 1) {
+            zeroMarkRecoverySpent = true;
+            continue;
+          }
+          return sendObservedProviderReturn({
+            ...zeroMarkFallback, observation: 'zero-native-marks-after-bounded-frontier-opportunity',
+            qualityWarnings: zeroMarkFallback.relay.admission?.qualityWarnings || []
+          });
+        }
+        // A second candidate must never displace the preserved, human-visible
+        // original with a newly malformed or empty unrelated response.
+        if (!releaseCanary && zeroMarkFallback && !repairableKhonapolitAdmission(reasons)) {
+          return sendObservedProviderReturn({
+            ...zeroMarkFallback,
+            observation: 'native-mark-underflow-after-bounded-frontier-opportunity',
+            qualityWarnings: zeroMarkFallback.relay.admission?.qualityWarnings || []
+          });
+        }
         if (releaseCanary) {
           if (repairableKhonapolitAdmission(reasons)) {
             const candidate = {
@@ -1827,6 +1866,12 @@ export default async function handler(req, res) {
     });
   }
 
+  if (!releaseCanary && zeroMarkFallback) {
+    return sendObservedProviderReturn({
+      ...zeroMarkFallback, observation: 'zero-native-marks-after-bounded-frontier-opportunity',
+      qualityWarnings: zeroMarkFallback.relay.admission?.qualityWarnings || []
+    });
+  }
   if (!releaseCanary && incompleteFallback) {
     return sendObservedProviderReturn({ ...incompleteFallback,
       observation: 'provider-incomplete-after-bounded-recovery-exhausted',
