@@ -269,7 +269,7 @@
 #loomAiWorkspace .loom-first-crossing-actions button {
   width:100%;min-height:52px;padding:12px 20px;
   background:#d2f5ed;color:#06171e;border:1px solid #ebfcf7;
-  border-radius:0;clip-path:none;font:700 13px/1.3 var(--sans);
+  border-radius:0;clip-path:none;font:650 14px/1.35 var(--sans);
 }
 #loomAiWorkspace .loom-first-crossing-actions:has(>button[hidden]):not(:has(>button:not([hidden]))) {display:none}
 #loomAiWorkspace .loom-tutorial-selection,
