@@ -34,7 +34,7 @@ test('Loom boot binds fresh Phase 09 assets and contains a catchable module fail
   const module = [...doc.querySelectorAll('script[type="module"]')].find(node => node.textContent.includes('ai-workspace.js'));
   assert.match(css.href, /20261013-firewall-couture-v1/);
   assert.ok(module, 'the entrypoint must be an observable dynamic module import');
-  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261014-seven-crossings-v1'\)/);
+  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261014-couture-glass-v2'\)/);
   assert.match(module.textContent, /\.catch\(\(\) => window\.td613LoomBootFailure/);
   assert.equal(doc.querySelectorAll('script[type="module"][src*="20261003"]').length, 0);
 });
@@ -146,7 +146,7 @@ test('the firewall promise explains outgoing checks, returning review and limits
   const doc = new JSDOM(loomWorkspaceTemplate).window.document;
   assert.match(doc.querySelector('#loomFirstCrossingTitle').textContent, /Firewall your online life from AI/i);
   assert.match(doc.querySelector('.loom-intro p').textContent, /ChatGPT, Gemini, and other LLMs/i);
-  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent, /ChatGPT, Gemini, and other AI models/i);
+  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent, /ChatGPT, Gemini, or another AI/i);
   assert.match(doc.querySelector('#loomReturnWorkspace header').textContent, /before accepting/i);
   assert.match(doc.querySelector('[data-tool-panel="boundary"]').textContent, /external AI provider determines its own retention/i);
   assert.match(workspaceSource, /title:'Test a safeguard\.'/);
@@ -636,7 +636,7 @@ test('opening overture contains all eight relations without borrowing the à ill
 test('privacy tutorial retains two selections and optional answer details in document flow', () => {
   const doc = new JSDOM(loomWorkspaceTemplate).window.document;
   assert.equal(doc.querySelectorAll('[data-first-crossing-item]').length,2);
-  assert.match(doc.querySelector('[data-first-crossing-item=source]').textContent,/Your reference/);
+  assert.match(doc.querySelector('[data-first-crossing-item=source]').textContent,/References/);
   assert.doesNotMatch(doc.querySelector('[data-first-crossing-item=source]').textContent,/\/\//);
   assert.match(product,/\.loom-tutorial-proof\{order:4/);
   assert.match(product,/:not\(\[data-first-crossing-step="0"\]\)\s*\.loom-first-crossing-objects\{display:none\}/);
