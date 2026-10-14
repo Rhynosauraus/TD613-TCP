@@ -306,7 +306,7 @@ try {
         await page.locator('#loomFirstCrossingTitle').isVisible() &&
         await page.locator('.loom-boundary-event').isHidden() &&
         await page.locator('[data-first-crossing-item="brief"]').isVisible() &&
-        /ChatGPT.*Gemini.*draft a work email/i.test(await page.locator('#loomFirstCrossingPrompt').textContent()) &&
+        /ChatGPT.*Gemini.*other LLMs.*files.*instructions/i.test(await page.locator('#loomFirstCrossingPrompt').textContent()) &&
         await page.locator('#loomStartNow').count()===0 &&
         await page.locator('#loomExploreDemo').count()===0,
         {first_choice:await page.locator('[data-first-crossing-item="brief"]').isVisible(),
@@ -369,15 +369,15 @@ try {
         await tutorialComposition(page,`tutorial-${glyph}`);await screenshot(page,`tutorial-step-${step}`);
         if(step===3)record('outgoing preview is prepared, not a real provider submission',
           await page.locator('.loom-boundary-event-outgoing').isVisible() &&
-          /Nothing is sent to AI|request is prepared here/.test(await page.locator('#loomFirstCrossingAnswer').textContent()),
+          /prepared handoff remains in your browser|No AI provider is called/.test(await page.locator('#loomFirstCrossingAnswer').textContent()),
           { preview: await page.locator('.loom-boundary-event-outgoing').textContent() });
-        if(step===4)record('firewall privacy lesson exposes the exact tested protected term',
+        if(step===4)record('firewall boundary lesson identifies the locally held out-of-scope source',
           await page.locator('.loom-boundary-event-denial').isVisible() &&
-          /Acquisition talks with Northstar/.test(await page.locator('.loom-boundary-event-denial').textContent()),
+          /Unselected working draft/.test(await page.locator('.loom-boundary-event-denial').textContent()),
           { evidence: await page.locator('.loom-boundary-event-denial').textContent() });
         if(step===4)record('local gate rejection is visible without a fabricated provider-side event',
           await page.locator('.loom-boundary-event-stop').isVisible() &&
-          /BLOCKED/.test(await page.locator('.loom-boundary-event-stop').textContent()),
+          /HELD LOCALLY/.test(await page.locator('.loom-boundary-event-stop').textContent()),
           {blocked:await page.locator('.loom-boundary-event-stop').textContent()});
         if(step===5)record('the return is a fictional answer, never a second firewall diagram',
           await page.locator('#loomTutorialSampleAnswer').isVisible() &&
