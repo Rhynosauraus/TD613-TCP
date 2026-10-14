@@ -194,7 +194,7 @@ test('à completion, rather than the first tap, gates hõt/cōl', () => {
   assert.match(workspaceSource,/snapshot.reducedMotion \|\| snapshot.progress>=1/);
   assert.match(workspaceSource,/if\(id==='source'&&!firstCrossingSourceUnlocked\)return/);
   assert.match(workspaceSource,/button.disabled=!firstCrossingSourceUnlocked && firstCrossingStep===0/);
-  assert.match(runway,/button:disabled \{[\s\S]*?opacity:\.84!important/);
+  assert.match(runway,/button:disabled \{[\s\S]*?opacity:1!important/);
 });
 
 test('How Loom works is a recoverable handoff preview with a living Flow-Core remix', () => {
