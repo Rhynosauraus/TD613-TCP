@@ -359,13 +359,13 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
         firstCrossingGatheringPublished=true;
         setFirstCrossingCue('gathering-named',{
           title:'Only your chosen evidence.',
-          prompt:'Your chosen request and reference are together. The unselected note remains on your side of the firewall.',
+          prompt:'Your chosen request and reference are together. The unselected note remains outside this request.',
           answer:'Review the information before allowing it out. No real request has been sent.',
           action:true
         });
       }else{
         setFirstCrossingCue('gathering-motion',{
-          title:'Your chosen source is gathering.',
+          title:'Gather the evidence you chose.',
           prompt:'Loom marks your selected source and keeps the other note outside this request.',
           answer:'Checking the selected request and source…'
         });
@@ -376,14 +376,14 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
       if(consequenceVisible){
         firstCrossingReadinessPublished=true;
         setFirstCrossingCue('potential-named',{
-          title:'Check the outgoing request.',
+          title:'Inspect the complete task.',
           prompt:'Inspect exactly what you are preparing to give an LLM, including the task, evidence, and rules.',
           answer:'Nothing has been sent. A real AI handoff requires a separate action in Marrowline.',
           stop:true
         });
       }else{
         setFirstCrossingCue('potential-motion',{
-          title:'Check the outgoing request.',
+          title:'Inspect the complete task.',
           prompt:'Loom has prepared a locally reviewable request with its selected evidence and rules.',
           answer:'The local record shows what you prepared, without claiming AI has received it.'
         });
@@ -643,8 +643,8 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
       firstCrossingItems.forEach(button=>button.disabled=true);
       $('loomFirstCrossingBack').hidden=false;
       setFirstCrossingCue('gathering-motion',{
-        title:'Your chosen source is gathering.',
-        prompt:'Your chosen request and reference are together. The unselected note remains on your side of the firewall.',
+        title:'Gather the evidence you chose.',
+        prompt:'Your chosen request and reference are together. The unselected note remains outside this request.',
         answer:'Checking the selected request and source…'
       });
       projectFirstCrossing(firstCrossingEvent('prepared'));
@@ -658,7 +658,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
       const token=++firstCrossingGeneration;
       firstCrossingBindingState='PENDING';
       setFirstCrossingCue('binding',{
-        title:'Test the outgoing boundary.',
+        title:'Check what will travel.',
         prompt:'Loom locally checks this request and its selected material. No AI model has been contacted.',
         answer:'Checking the outgoing content…'
       });
@@ -670,7 +670,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
         firstCrossingStep=2;
         root.dataset.firstCrossingStep='2';
         setFirstCrossingCue('potential-motion',{
-          title:'Check the outgoing request.',
+          title:'Inspect the complete task.',
           prompt:'Loom has prepared a locally reviewable request with its selected evidence and rules.',
           answer:'No external AI has received this demo request.'
         });
