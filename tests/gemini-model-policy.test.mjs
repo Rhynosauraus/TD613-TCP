@@ -260,3 +260,13 @@ clearGeminiModelState();
 await import('./gemini-provider-stack-clinical.test.mjs');
 await import('./gemini-quality-pilot-clinical.test.mjs');
 console.log('gemini-model-policy.test.mjs passed');
+
+// Credential listing is the admission boundary for Gemini 4 Argon.
+{
+ const now=Date.now();
+ const listing=models=>({ok:true,complete:true,status:200,models,observedAt:now,expiresAt:now+600000});
+ const absent=resolveGeminiModelPlan({task:'khonapolit-dialogue',at:now,env:{},providerListing:listing(['gemini-3.8-flash','gemini-3.5-flash'])});
+ assert.ok(!absent.callableModels.includes('gemini-4-argon'));
+ const available=resolveGeminiModelPlan({task:'khonapolit-dialogue',at:now,env:{},providerListing:listing(['gemini-4-argon','gemini-3.8-flash','gemini-3.5-flash'])});
+ assert.deepEqual(available.callableModels.slice(0,2),['gemini-4-argon','gemini-3.8-flash']);
+}

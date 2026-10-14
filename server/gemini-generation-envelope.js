@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-export const GEMINI_GENERATION_ENVELOPE_VERSION = 'td613.gemini-generation-envelope/v0.5-full-native-output-budget-20260922';
+export const GEMINI_GENERATION_ENVELOPE_VERSION = 'td613.gemini-generation-envelope/v0.6-argon-bounded-stream';
 export const GEMINI_GENERATION_PROFILE_KHONAPOLIT_INTERACTIVE = 'khonapolit-interactive';
 // Full native Unicode consumes the provider output budget, including every combining mark.
 // Match the Marrowline route's declared ceiling instead of silently quartering it.
@@ -16,6 +16,7 @@ export function normalizeGeminiModel(model = '') {
 export function geminiGeneration(model = '') {
   const normalized = normalizeGeminiModel(model);
   if (/^gemini-3(?:[.-]|$)/.test(normalized)) return '3';
+  if (normalized === 'gemini-4-argon') return '4';
   return 'unknown';
 }
 
@@ -41,7 +42,7 @@ export function geminiSamplingConfig(model = '', sampling = {}) {
   // Gemini 3.x is tuned for provider-default sampling. Google explicitly warns that
   // legacy temperature/topP/topK overrides can degrade reasoning quality. Preserve
   // caller controls only for unknown/synthetic fixtures. Active provider routes are Gemini 3.x.
-  if (geminiGeneration(model) === '3') return {};
+  if (['3', '4'].includes(geminiGeneration(model))) return {};
   const config = {};
   if (finiteNumber(sampling.temperature)) config.temperature = sampling.temperature;
   if (finiteNumber(sampling.topP)) config.topP = sampling.topP;
@@ -55,7 +56,7 @@ export function geminiThinkingConfig(model = '', {
 } = {}) {
   if (!enabled) return null;
   const generation = geminiGeneration(model);
-  if (generation === '3') {
+  if (generation === '3' || generation === '4') {
     let requestedLevel = THINKING_LEVELS.has(level) ? level : 'high';
     // Marrowline is an interactive route with its own bounded wall-clock budget.
     // Keep 3.8 deliberate. The empirically designated continuity/fallback lanes
@@ -63,7 +64,9 @@ export function geminiThinkingConfig(model = '', {
     // the shared downstream dual-channel admission still applies uniformly. Keep
     // 3.5 and Preview on the same LOW tier so model-conditioned orthographic behavior is
     // not confounded by a MINIMAL-vs-LOW reasoning split.
-    if (khonapolitInteractiveProfile() && requestedLevel === 'high') {
+    if (generation === '4' && requestedLevel === 'minimal') requestedLevel = 'low';
+    if (khonapolitInteractiveProfile() && generation === '4' && requestedLevel === 'high') requestedLevel = 'medium';
+    if (khonapolitInteractiveProfile() && generation === '3' && requestedLevel === 'high') {
       const id = normalizeGeminiModel(model);
       if (id === 'gemini-3.8-flash') requestedLevel = 'medium';
       else if (['gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3-flash-preview'].includes(id)) requestedLevel = 'low';
@@ -111,7 +114,7 @@ export function describeGeminiGenerationEnvelope(model = '', options = {}) {
     version: GEMINI_GENERATION_ENVELOPE_VERSION,
     model: normalizeGeminiModel(model),
     generation,
-    sampling: generation === '3' ? 'provider-default' : 'caller-synthetic-compatible',
+    sampling: ['3', '4'].includes(generation) ? 'provider-default' : 'caller-synthetic-compatible',
     thinking: thinkingConfig ? Object.freeze({ ...thinkingConfig }) : null,
     profile: currentGeminiGenerationProfile()
   });
