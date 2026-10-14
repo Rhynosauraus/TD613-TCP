@@ -696,7 +696,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
 
   function renderFirstCrossingLesson(published=false){
     const lessons={
-      3:{cue:'send',title:'The terms go with the task.',prompt:'A decision brief, selected sources, and instructions can travel together to ChatGPT, Gemini, or another LLM. The model still has to earn your trust.',answer:'Fictional tutorial · this prepared handoff remains in your browser.',next:'Test the boundary →'},
+      3:{cue:'send',title:'Make your terms part of the job.',prompt:'A decision brief, selected sources, and instructions can travel together to ChatGPT, Gemini, or another LLM. The model still has to earn your trust.',answer:'Fictional tutorial · this prepared handoff remains in your browser.',next:'Test the boundary →'},
       4:{cue:'privacy',title:'The boundary gets tested.',prompt:'Loom checked the selected request and held a deliberate attempt to include an unselected working draft. This example never calls an AI provider.',answer:'Local test · one out-of-scope attempt held; the reviewed request stays intact.',next:'Inspect the example return →'},
       5:{cue:'proof',title:'Make the answer show its work.',prompt:'This fictional response is checked against the prepared request and declared source IDs. A real model answer still needs your review.',answer:'Fictional return · local checks only. No provider response was received.',next:'Finish tutorial →'}
     };
