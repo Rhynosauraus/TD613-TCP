@@ -236,6 +236,11 @@
   background:#091b25;
   color:#f3faf7;opacity:1;
 }
+#loomAiWorkspace :is(.loom-first-crossing-objects button,.loom-first-crossing-actions button) {
+  font:650 14px/1.35 var(--sans);
+  border-radius:0;
+  border-top-width:1px;
+}
 #loomAiWorkspace .loom-first-crossing-objects button strong {
   font:680 14px/1.32 var(--sans);grid-column:1;
 }
