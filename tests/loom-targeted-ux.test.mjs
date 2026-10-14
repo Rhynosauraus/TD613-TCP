@@ -34,7 +34,7 @@ test('Loom boot binds fresh Phase 09 assets and contains a catchable module fail
   const module = [...doc.querySelectorAll('script[type="module"]')].find(node => node.textContent.includes('ai-workspace.js'));
   assert.match(css.href, /20261013-firewall-couture-v1/);
   assert.ok(module, 'the entrypoint must be an observable dynamic module import');
-  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261014-evidence-sequence-v2'\)/);
+  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261014-operator-control-v3'\)/);
   assert.match(module.textContent, /\.catch\(\(\) => window\.td613LoomBootFailure/);
   assert.equal(doc.querySelectorAll('script[type="module"][src*="20261003"]').length, 0);
 });
@@ -146,11 +146,11 @@ test('the firewall promise explains outgoing checks, returning review and limits
   const doc = new JSDOM(loomWorkspaceTemplate).window.document;
   assert.match(doc.querySelector('#loomFirstCrossingTitle').textContent, /Firewall your online life from AI/i);
   assert.match(doc.querySelector('.loom-intro p').textContent, /ChatGPT, Gemini, and other LLMs/i);
-  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent, /ChatGPT, Gemini, and other LLMs/i);
+  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent, /ChatGPT, Gemini, or another LLM/i);
   assert.match(doc.querySelector('#loomReturnWorkspace header').textContent, /before accepting/i);
   assert.match(doc.querySelector('[data-tool-panel="boundary"]').textContent, /external AI provider determines its own retention/i);
-  assert.match(workspaceSource, /title:'A protected phrase was stopped\.'/);
-  assert.match(workspaceSource, /title:'Inspect the sample answer\.'/);
+  assert.match(workspaceSource, /title:'Test a safeguard\.'/);
+  assert.match(workspaceSource, /title:'Ask the answer to account for itself\.'/);
   assert.match(runway, /\[data-first-crossing-step="4"\] \.loom-boundary-event-denial/);
   assert.doesNotMatch(doc.querySelector('#loomFirstCrossingPrompt').textContent, /portable|cryptographic|governance/i);
 });
@@ -170,6 +170,22 @@ test('the seven steps display actual evidence instead of a decorative firewall d
   assert.match(html, /loom-firewall-runway\.css\?v=/);
 });
 
+test('the product starts with governed AI work and an optional rather than mandatory example', () => {
+  const doc = new JSDOM(loomWorkspaceTemplate).window.document;
+  const hero=doc.querySelector('#loomFirstCrossing');
+  assert.equal((hero.textContent.match(/firewall/gi)||[]).length,1,'the public headline uses the word once');
+  assert.ok(doc.querySelector('#loomStartNow'));
+  assert.ok(doc.querySelector('#loomExploreDemo'));
+  for (const phrase of ['Give AI your terms.','Test the response.','Keep your record.']) {
+    assert.ok(hero.textContent.includes(phrase),phrase);
+  }
+  assert.match(workspaceSource,/loomStartNow'\)\.addEventListener\('click',\(\)=>openLoomThreshold\(\{skipPractice:true\}\)\)/);
+  assert.match(workspaceSource,/root\.dataset\.firstCrossingDemo='expanded'/);
+  assert.match(runway,/\.loom-motion-view/);
+  assert.match(runway,/mask-image:none!important/);
+  assert.match(runway, /\.loom-first-crossing-copy \{[\s\S]*?background:var\(--runway-surface\)/);
+});
+
 test('à completion, rather than the first tap, gates hõt/cōl', () => {
   const template = new JSDOM(loomWorkspaceTemplate).window.document;
   assert.equal(template.querySelectorAll('[data-first-crossing-item]').length,2);
@@ -178,7 +194,7 @@ test('à completion, rather than the first tap, gates hõt/cōl', () => {
   assert.match(workspaceSource,/snapshot.reducedMotion \|\| snapshot.progress>=1/);
   assert.match(workspaceSource,/if\(id==='source'&&!firstCrossingSourceUnlocked\)return/);
   assert.match(workspaceSource,/button.disabled=!firstCrossingSourceUnlocked && firstCrossingStep===0/);
-  assert.match(product,/button:disabled\{opacity:\.4;cursor:not-allowed/);
+  assert.match(runway,/button:disabled \{[\s\S]*?opacity:1!important/);
 });
 
 test('How Loom works is a recoverable handoff preview with a living Flow-Core remix', () => {
@@ -190,7 +206,7 @@ test('How Loom works is a recoverable handoff preview with a living Flow-Core re
   assert.equal(doc.querySelectorAll('[data-first-crossing-item]').length, 2);
   assert.equal(doc.querySelector('#loomFirstCrossingPrivate').tagName, 'DIV', 'private note is explanatory, not a mystery button');
   assert.equal(doc.querySelector('#loomFirstCrossingPause').textContent, '𝌋');
-  assert.equal(doc.querySelector('#loomTutorialProgress').textContent, '1 of 7 · Choose');
+  assert.equal(doc.querySelector('#loomTutorialProgress').textContent, 'Optional guided example');
   const consumerCopy=doc.querySelector('#loomFirstCrossing').cloneNode(true);
   consumerCopy.querySelector('.loom-flowcore-help')?.remove();
   assert.doesNotMatch(consumerCopy.textContent, /First Crossing|private scrap|short brief|public source|locally|packet|Preparation ≠ transmission|Prepared is not transmitted|Nothing crossed/i);
@@ -200,7 +216,7 @@ test('How Loom works is a recoverable handoff preview with a living Flow-Core re
   assert.match(workspaceSource, /flowcore_choreography:firstCrossingChoreography/);
   assert.match(workspaceSource, /coordinator\.setContinuous\(true\)/);
   assert.match(workspaceSource, /title:'Firewall your online life from AI\.'/);
-  assert.match(workspaceSource, /title:'Your firewall\. Your call\.'/);
+  assert.match(workspaceSource, /title:'Your AI\. Your call\.'/);
   assert.match(workspaceSource, /Start my own task →/);
   assert.doesNotMatch(workspaceSource, /title:'Prepared is not transmitted\.'/);
   assert.doesNotMatch(workspaceSource, /title:'They gathered\. Nothing crossed\.'/);
@@ -402,7 +418,7 @@ test('first use explains private material, remixes presentation, and skips witho
   const privateNote=h.$('#loomFirstCrossingPrivate');
   assert.equal(privateNote.tagName,'DIV');
   assert.equal(privateNote.getAttribute('role'),'note');
-  assert.match(privateNote.textContent,/Held behind the firewall/);
+  assert.match(privateNote.textContent,/Kept local/);
   assert.match(privateNote.textContent,/stays in this browser/i);
   assert.equal(privateNote.hasAttribute('aria-pressed'), false);
   const before=h.$('#loomFlowcoreMessage').textContent;
@@ -451,7 +467,7 @@ test('selection and readiness publish consequences before naming the Flow-Core r
   // Finishing before all three consequences publish must stay forbidden.
   for (const [step, cue, progress] of [
     [3, 'send-named', '4 of 7 · Preview'],
-    [4, 'privacy-named', '5 of 7 · Local block'],
+    [4, 'privacy-named', '5 of 7 · Local check'],
     [5, 'proof-named', '6 of 7 · Inspect']
   ]) {
     h.$('#loomFirstCrossingStop').click();

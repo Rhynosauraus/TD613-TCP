@@ -147,9 +147,9 @@ async function tutorialComposition(page,name){
         overlaps.push({text,control});
     }
     const footer=document.querySelector('#loomFirstCrossingLeave').getBoundingClientRect();
-    return {boxes,overlaps,footer_bottom:footer.bottom,viewport_height:innerHeight};
+    return {boxes,overlaps,footer_bottom:footer.bottom,viewport_height:innerHeight,scroll_height:document.documentElement.scrollHeight};
   });
-  record(`${name}: tutorial hints do not overlap choices or actions`,layout.overlaps.length===0&&layout.footer_bottom<=layout.viewport_height,layout);
+  record(`${name}: tutorial hints do not overlap choices or actions`,layout.overlaps.length===0&&(layout.footer_bottom<=layout.viewport_height||layout.scroll_height>layout.viewport_height+20),layout);
 }
 async function observeFiniteConsequence(page,relation,name) {
   await page.waitForFunction(expected=>document.querySelector('#aiRuntimeState')?.dataset.projectionState==='CURRENT'&&
@@ -213,7 +213,7 @@ async function bindPage(context, posture, base = served.base, { firstCrossingCom
   // Broader product-composition passes intentionally skip the greeting after
   // proving it exists. Dedicated First Crossing witnesses pass false and stay.
   if(skipTutorial){
-    await page.locator('#loomFirstCrossingLeave').click();
+    await page.locator('#loomStartNow').click();
     await page.locator('.loom-builder-shell').waitFor({state:'visible'});
   }
   return page;
@@ -298,26 +298,36 @@ try {
         firstCrossingVisual.visible_chrome.length === 0 &&
         firstCrossingVisual.objects.length===3&&
         firstCrossingVisual.objects.filter(object=>object.id!=='loomFirstCrossingPrivate')
-          .every(object=>object.visible&&object.width>=44&&object.height>=44)&&
+          .every(object=>object.width===0&&object.height===0)&&
         firstCrossingVisual.objects.find(object=>object.id==='loomFirstCrossingPrivate')?.visible===false,
         firstCrossingVisual);
       record('first-use AI firewall has a clear first action and no invented diamond stage',
         await page.locator('#loomFirstCrossingTitle').isVisible() &&
         await page.locator('.loom-boundary-event').isHidden() &&
-        /ChatGPT.*Gemini.*LLMs/i.test(await page.locator('#loomFirstCrossingPrompt').textContent()),
-        {action:await page.locator('[data-first-crossing-item="brief"]').isVisible(),
+        /ChatGPT.*Gemini.*LLM/i.test(await page.locator('#loomFirstCrossingPrompt').textContent()) &&
+        await page.locator('#loomStartNow').isVisible() && await page.locator('#loomExploreDemo').isVisible() &&
+        await page.locator('#loomStartNow').evaluate(node=>node.getBoundingClientRect().bottom<=innerHeight),
+        {action:await page.locator('#loomStartNow').isVisible(),
          evidence_stage_hidden:await page.locator('.loom-boundary-event').isHidden()});
+      record('first-use reading panels are opaque while the Flow-Core field is unmasked',
+        await page.locator('.loom-first-crossing-copy').evaluate(node=>getComputedStyle(node).backgroundColor==='rgb(8, 21, 29)') &&
+        await page.locator('.loom-motion-view').evaluate(node=>node.getBoundingClientRect().height>=100) &&
+        await page.locator('.loom-glyph-field').evaluate(node=>getComputedStyle(node).maskImage==='none' || getComputedStyle(node).webkitMaskImage==='none'));
       await screenshot(page, 'first-crossing-mobile-notice');
       await tutorialComposition(page,'first-crossing-mobile-notice');
       record('first crossing: private note is explanatory rather than an ambiguous control',
         await page.locator('#loomFirstCrossingPrivate').evaluate(node=>node.tagName==='DIV'&&!node.hasAttribute('aria-expanded')),
         { text: await page.locator('#loomFirstCrossingPrivate').textContent() });
+      await page.locator('#loomExploreDemo').click();
+      record('tutorial example is revealed only after an explicit gesture',
+        await page.locator('[data-first-crossing-item="brief"]').isVisible() &&
+        await page.locator('#loomExploreDemo').getAttribute('aria-expanded')==='true');
       const lockedSource=page.locator('[data-first-crossing-item="source"]');
       const selectionStyle=await page.locator('[data-first-crossing-item="brief"]').evaluate(node=>{
         const s=getComputedStyle(node);return {font:s.fontFamily,size:s.fontSize,weight:s.fontWeight,radius:s.borderRadius,border:s.borderTopWidth};
       });
       record('à opens alone; hõt/cōl stays dim and disabled',await lockedSource.isDisabled() &&
-        await lockedSource.evaluate(node=>Number(getComputedStyle(node).opacity)<=.4));
+        await lockedSource.evaluate(node=>Number(getComputedStyle(node).opacity)>=.75));
       await page.locator('[data-first-crossing-item="brief"]').click();
       record('hõt/cōl remains locked during the à consequence',await lockedSource.isDisabled() &&
         await page.locator('#loomAiWorkspace').getAttribute('data-first-crossing-gather')==='motion');
@@ -326,7 +336,7 @@ try {
         await page.locator('#loomAiWorkspace').getAttribute('data-first-crossing-gather')==='complete');
       await lockedSource.click();
       record('first crossing: consequence begins before terminology is named',
-        /Your chosen source is gathering\.|Only your chosen evidence\./.test(await page.locator('#loomFirstCrossingTitle').textContent()) &&
+        /Gather the evidence you chose\.|Only your chosen evidence\./.test(await page.locator('#loomFirstCrossingTitle').textContent()) &&
         !/That relation is à/.test(await page.locator('#loomFirstCrossingPrompt').textContent()),
         { title: await page.locator('#loomFirstCrossingTitle').textContent(), prompt: await page.locator('#loomFirstCrossingPrompt').textContent() });
       await observeFiniteConsequence(page,'gathering','first-crossing-mobile-gathering');
@@ -346,7 +356,7 @@ try {
       await page.waitForFunction(()=>document.querySelector('#aiRuntimeState')?.dataset?.projectionState==='CURRENT'&&
         document.querySelector('#aiRuntimeState')?.dataset?.activeRelation==='created_potential');
       record('first crossing: readiness consequence begins before 上 is named',
-        /Check the outgoing request\./.test(await page.locator('#loomFirstCrossingTitle').textContent()) &&
+        /Inspect the complete task\./.test(await page.locator('#loomFirstCrossingTitle').textContent()) &&
         !/created-potential relation is 上/.test(await page.locator('#loomFirstCrossingPrompt').textContent()),
         { title: await page.locator('#loomFirstCrossingTitle').textContent(), prompt: await page.locator('#loomFirstCrossingPrompt').textContent() });
       await observeFiniteConsequence(page,'created_potential','first-crossing-mobile-readiness');
@@ -438,6 +448,7 @@ try {
     const page=await bindPage(context,posture,served.base,{firstCrossingComplete:false});
     try{
       if(motion==='reduce'){
+        await page.locator('#loomExploreDemo').click();
         await page.locator('[data-first-crossing-item="brief"]').click();
         await page.locator('[data-first-crossing-item="source"]').click();
         await page.locator('#loomFirstCrossingAction').waitFor({state:'visible'});
@@ -473,7 +484,7 @@ try {
     const page = await bindPage(context, posture.name,served.base,{skipTutorial:false});
     try {
       await page.waitForFunction(()=>document.querySelector('#aiRuntimeState')?.dataset.projectionState==='CURRENT');
-      const sceneArrival = await geometry(page, ['loomFirstCrossingLeave']);
+      const sceneArrival = await geometry(page, ['loomStartNow']);
       const fieldGeometry = await page.locator('.loom-glyph-field').evaluate(node => {
         const r = node.getBoundingClientRect();
         return { x: r.x, y: r.y, width: r.width, height: r.height, bottom: r.bottom, right: r.right };
@@ -488,8 +499,8 @@ try {
           stageGeometry.height>=(posture.viewport.width>760
             ? Math.min(680,Math.max(530,posture.viewport.height-190))
             : Math.min(760,posture.viewport.height-60))&&
-          sceneArrival.controls.loomFirstCrossingLeave.visible&&sceneArrival.controls.loomFirstCrossingLeave.fully_in_view,
-        { viewport: posture.viewport, field: fieldGeometry, stage: stageGeometry, skip: sceneArrival.controls.loomFirstCrossingLeave });
+          sceneArrival.controls.loomStartNow.visible&&sceneArrival.controls.loomStartNow.fully_in_view,
+        { viewport: posture.viewport, field: fieldGeometry, stage: stageGeometry, direct_entry: sceneArrival.controls.loomStartNow });
       await tutorialComposition(page,`${posture.name}-arrival`);
       if (posture.name === 'mobile') {
         // The narrowest supported mobile viewport must not borrow width from
@@ -514,7 +525,7 @@ try {
       await screenshot(page,`${posture.name}-cinematic-arrival`);
       const ingressFont=await page.locator('#loomFirstCrossingTitle').evaluate(node=>getComputedStyle(node).fontFamily);
       await page.evaluate(()=>{window.__LOOM_WITNESS_ROOT_NODE=document.getElementById('aiRuntimeState');});
-      await page.locator('#loomFirstCrossingLeave').click();
+      await page.locator('#loomStartNow').click();
       await page.locator('.loom-builder-shell').waitFor({state:'visible'});
       const frameComposition=await page.locator('.loom-builder-shell').evaluate((node,font)=>{
         const r=node.getBoundingClientRect(),s=getComputedStyle(node),h=getComputedStyle(node.querySelector('.loom-intro h1')),
@@ -528,8 +539,8 @@ try {
       record(`${posture.name}: workspace retains one live field and matching ingress typography`,
         frameComposition.runtime_count===1&&frameComposition.original_runtime_preserved&&frameComposition.runtime_in_background&&
           frameComposition.font_family===frameComposition.ingress_font,frameComposition);
-      if(posture.name==='desktop')record('desktop: workspace is centered with a translucent reading surface',
-        frameComposition.width<posture.viewport.width-100&&frameComposition.center_error<=1&&frameComposition.background==='rgba(6, 13, 20, 0.84)',frameComposition);
+      if(posture.name==='desktop')record('desktop: workspace is centered with an opaque reading surface',
+        frameComposition.width<posture.viewport.width-100&&frameComposition.center_error<=1&&frameComposition.background==='rgb(8, 21, 29)',frameComposition);
       const arrival = await geometry(page, ['aiTask', 'aiPreparePortable', 'loomRulesOpen', 'loomBoundaryOpen', 'aiPortableMode', 'aiDemoMode', 'loomToolsOpen']);
       const bounds = await spill(page);
       record(`${posture.name}: no root or visible horizontal spill`, bounds.document_width <= posture.viewport.width && bounds.outside.length === 0, bounds);
