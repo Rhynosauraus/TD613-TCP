@@ -249,7 +249,7 @@
 }
 #loomAiWorkspace .loom-first-crossing-objects button::after {font-size:18px}
 #loomAiWorkspace .loom-first-crossing-objects button:disabled {
-  opacity:.84!important;
+  opacity:1!important;
   background:#08141e;
   border-color:#5d787d;
   color:#e3eeed;
@@ -302,7 +302,6 @@
 #loomAiWorkspace .loom-tutorial-waiting {display:none}
 #loomAiWorkspace[data-first-crossing-step="0"]:not([data-first-crossing-demo="expanded"]) .loom-first-crossing-objects,
 #loomAiWorkspace[data-first-crossing-step="0"]:not([data-first-crossing-demo="expanded"]) .loom-first-crossing-answer,
-#loomAiWorkspace[data-first-crossing-step="0"]:not([data-first-crossing-demo="expanded"]) #loomFirstCrossingLeave,
 #loomAiWorkspace[data-first-crossing-step="0"]:not([data-first-crossing-demo="expanded"]) #loomFirstCrossingBack {display:none!important}
 #loomAiWorkspace[data-first-crossing-step="0"]:not([data-first-crossing-demo="expanded"]) .loom-practice-controls{
   justify-content:flex-end;border:0;
