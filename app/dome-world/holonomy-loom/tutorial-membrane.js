@@ -2,11 +2,11 @@
 // credit and never replace the underlying observed request relation.
 export const LOOM_TUTORIAL_OPERATORS = Object.freeze([
   { glyph: 'à', relations: ['gathering'], family: 'phi-gossamer', label: 'Choose a question' },
-  { glyph: 'hõt', relations: ['bounded_emergence', 'protected_continuity'], family: 'moire-shear', label: 'Choose what to share' },
+  { glyph: 'à · cōl', relations: ['gathering', 'protected_continuity'], family: 'moire-shear', label: 'Choose what to share' },
   { glyph: '上', relations: ['created_potential'], family: 'phasonic-rise', label: 'Review the request' },
-  { glyph: '出', relations: ['release'], family: 'gradient-stampede', label: 'Preview sending' },
-  { glyph: '米', relations: ['recurrence'], family: 'revisit-lemniscate', label: 'Check privacy' },
-  { glyph: '下', relations: ['released_tendency'], family: 'threnodic-gossamer', label: 'Review the answer' },
+  { glyph: '出 · cōl', relations: ['release','protected_continuity'], family: 'gradient-stampede', label: 'Preview sending' },
+  { glyph: '米 · hõt · cōl', relations: ['recurrence','bounded_emergence','protected_continuity'], family: 'revisit-lemniscate', label: 'Check privacy' },
+  { glyph: '下 · hõt', relations: ['released_tendency','bounded_emergence'], family: 'threnodic-gossamer', label: 'Review the answer' },
   { glyph: '𝄐', relations: ['structural_rest'], family: 'quiet-recurrence', label: 'Your own task' }
 ].map(item => Object.freeze({ ...item, relations: Object.freeze(item.relations) })));
 
@@ -38,19 +38,9 @@ export function loomOpeningPresentation(score) {
       id: `ingress-overture-${score?.id ?? 'full-ensemble'}`,
       relations: complete ? relations : canonical,
       family: score?.family ?? 'phi-gossamer',
-      // Weighted theatrical casting, confined to the fictional ingress. The
-      // eight canonical relation IDs remain unchanged and the 39 carriers
-      // retain the AnimationCoordinator's one shared clock.
-      presentation_slots: [
-        // Repeated cōl/hõt are intentionally dominant in the 39 fixed carriers.
-        // Rest is part of this unsent overture, never an observed live event.
-        'protected_continuity','bounded_emergence','structural_rest','protected_continuity',
-        'bounded_emergence','gathering','protected_continuity','bounded_emergence',
-        'structural_rest','protected_continuity','bounded_emergence','release',
-        'protected_continuity','bounded_emergence','created_potential','structural_rest',
-        'protected_continuity','bounded_emergence','recurrence','protected_continuity',
-        'bounded_emergence','structural_rest','released_tendency'
-      ],
+      // Exactly 39 slots: five of each relation, with four rests.
+      // Interleaving distributes all relations through the renderer's depth planes.
+      presentation_slots: Array.from({length:39},(_,index)=>canonical[index%8]),
       evidence_class: 'TUTORIAL_ILLUSTRATION_ONLY'
     }
   };

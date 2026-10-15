@@ -20,16 +20,18 @@
         "app/dome-world/holonomy-loom/tutorial-membrane.js",
         "app/dome-world/holonomy-loom/first-crossing-practice.js",
         "app/dome-world/holonomy-loom/instrument-state-view.js",
-        "app/dome-world/holonomy-loom/loom-couture.css"
+        "app/dome-world/holonomy-loom/loom-couture.css",
+        "app/dome-world/holonomy-loom/tutorial-copy.js"
       ],
       "evidence_basis": [
         "declared design plus executed local synthetic guard/digest tests",
         "illustration is separately labelled from actual unsent event evidence"
       ],
       "transformations": [
-        "selected information, carried instructions, and reviewed work before technical naming",
-        "consequence before next gesture",
-        "optional explanation with close and Escape"
+        "seven explicit user-controlled scenes; inspection does not advance",
+        "Back and Skip cancel asynchronous binding publication",
+        "39 balanced opening slots; scene relations concentrate semantic motion",
+        "one detailed research surface with separate finite, formal and episode evidence tabs"
       ],
       "station_owners": [
         "Dome-World"
@@ -59,7 +61,7 @@
       "steps": [
         {
           "step_id": "request",
-          "label": "Choose the fictional request",
+          "label": "Explore the fictional project",
           "phase": "NOTICE",
           "required_fields": [
             "fictional material",
@@ -76,7 +78,7 @@
         },
         {
           "step_id": "references",
-          "label": "See selected references and excluded private note",
+          "label": "Inspect approved references and excluded private planning",
           "phase": "WORLD_ANSWERS",
           "required_fields": [
             "fictional material",
@@ -95,7 +97,7 @@
         },
         {
           "step_id": "check",
-          "label": "Check the selected local binding",
+          "label": "Review the exact locally bound request",
           "phase": "ACT",
           "required_fields": [
             "fictional material",
@@ -114,7 +116,7 @@
         },
         {
           "step_id": "send",
-          "label": "Illustrate deliberate send; retain actual unsent facts",
+          "label": "Inspect the portable governance artifact; transmission remains fictional",
           "phase": "WORLD_ANSWERS",
           "required_fields": [
             "fictional material",
@@ -133,7 +135,7 @@
         },
         {
           "step_id": "privacy",
-          "label": "See a blocked planted private-term egress attempt and scoped Gate explanation",
+          "label": "Compare finite observer recovery as clues are joined",
           "phase": "WORLD_ANSWERS",
           "required_fields": [
             "fictional material",
@@ -152,7 +154,7 @@
         },
         {
           "step_id": "proof",
-          "label": "Inspect a digest-bound fictional answer and receipt",
+          "label": "Inspect the digest-bound fictional return and receipt",
           "phase": "NAME",
           "required_fields": [
             "fictional material",
@@ -171,7 +173,7 @@
         },
         {
           "step_id": "rest",
-          "label": "Rest or start a real request voluntarily",
+          "label": "Enter real Loom voluntarily or replay",
           "phase": "REST",
           "required_fields": [
             "fictional material",
@@ -209,7 +211,7 @@
         "Registered later tasks retain root rules and earlier evidence; Check leaves the head unchanged.",
         "Known clean, literal, joined and incomplete fictional captures reach the installed verifier.",
         "Footer acknowledgment preserves findings and exact provider bytes.",
-        "The Gate footer offers \u4e0b method disclosure with exact reports and the full conventional nomenclature; opening the drawer changes no evidence or custody."
+        "The Gate footer offers 下 method disclosure with exact reports and the full conventional nomenclature; opening the drawer changes no evidence or custody."
       ],
       "alternative_explanations": [
         "Shared local compilers can produce conserved records without independent foreign execution.",
@@ -403,10 +405,10 @@
   "world_delta": {
     "observation_status": "UNRESOLVED",
     "causal_trace": [
-      "Declared: selected inputs and excluded material are visible before sending.",
-      "Declared: installed local guard blocks a planted private-term export.",
-      "Declared: the fictional return binds the checked request and answer bytes.",
-      "Declared: reviewed lessons settle at Rest without provider or custody credit."
+      "Declared: selected inputs and excluded private planning remain inspectable.",
+      "Executed locally: binding checks, digest return and planted egress block.",
+      "Calculated: finite parity comparison shows joined control leakage without external provider credit.",
+      "Observed locally in Chromium: seven scenes, navigation, composition and reduced motion; not human comprehension."
     ],
     "losses": [],
     "missingness": [
@@ -420,14 +422,15 @@
     ],
     "glyph_candidates": [],
     "static_equivalent": {
-      "summary": "All operator glyphs and consequences remain distinct in reduced motion; help closes by \u00d7 or Escape and Skip stays available.",
+      "summary": "All operator glyphs and consequences remain distinct in reduced motion; help closes by × or Escape and Skip stays available.",
       "steps": [
-        "select request and reference",
-        "check selected input",
-        "review send illustration",
-        "see privacy control",
-        "inspect fictional return",
-        "Rest or enter workspace"
+        "Explore the fictional project",
+        "Inspect approved references and excluded private planning",
+        "Review the exact locally bound request",
+        "Inspect the portable governance artifact; transmission remains fictional",
+        "Compare finite observer recovery as clues are joined",
+        "Inspect the digest-bound fictional return and receipt",
+        "Enter real Loom voluntarily or replay"
       ]
     }
   },

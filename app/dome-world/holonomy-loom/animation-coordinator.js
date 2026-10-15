@@ -43,6 +43,7 @@ export class AnimationCoordinator {
   #now;
   #onState;
   #durationMs;
+  #defaultDurationMs;
   #frameInterval;
   #passes = new Map();
   #presentationHolds = new Set();
@@ -77,6 +78,7 @@ export class AnimationCoordinator {
     }
     if (onState !== undefined && typeof onState !== 'function') throw new TypeError('onState must be a function');
     this.#durationMs = boundedNumber(durationMs, 'durationMs', 1, 60000);
+    this.#defaultDurationMs=this.#durationMs;
     this.#frameInterval = 1000 / boundedNumber(maxFps, 'maxFps', 1, 120);
     this.#requestFrame = requestFrame;
     this.#cancelFrame = cancelFrame;
@@ -238,7 +240,8 @@ export class AnimationCoordinator {
     return true;
   }
 
-  setPacket(packet, { animate = true } = {}) {
+  setPacket(packet, { animate = true, durationMs = this.#defaultDurationMs } = {}) {
+    this.#durationMs=boundedNumber(durationMs, 'durationMs', 1, 60000);
     this.#assertWritable();
     if (typeof animate !== 'boolean') throw new TypeError('animate must be boolean');
     if (!packet || typeof packet.scene?.id !== 'string' || !packet.scene.id.trim()) {

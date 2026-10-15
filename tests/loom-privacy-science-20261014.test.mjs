@@ -33,18 +33,19 @@ test('missing capture is a held channel, never fabricated zero information',()=>
   assert.equal(out.evaluation.finite_synthetic_calculation.routes.protected.signed_excess_bits,null);
 });
 
-test('real Loom UI exposes scientific calculator in both intro and tools without sharing protected bodies',()=>{
+test('real Loom UI exposes scientific one detailed calculator and a compact tutorial encounter without sharing protected bodies',()=>{
   const dom=new JSDOM(loomWorkspaceTemplate);
   const doc=dom.window.document;
-  assert.ok(doc.querySelector('#loomScienceIntro'));
+  assert.equal(doc.querySelector('#loomScienceIntro'),null);
+  assert.ok(doc.querySelector('#loomTutorialObserver'));
   assert.ok(doc.querySelector('#loomScienceTools'));
   assert.ok(doc.querySelector('#loomOpenPrivacyScience'));
-  const root=doc.querySelector('#loomScienceIntro');
+  const root=doc.querySelector('#loomScienceTools');
   const view=mountLoomPrivacyScienceView(root,{environment:dom.window,getLocalFacts:()=>({
     selected_files:2,withheld_files:1,session_prepared:true,
     local_return_admitted:false,gate_report_count:1
   })});
-  assert.match(root.textContent,/Privacy mathematics/);
+  assert.match(root.textContent,/Finite observer calculation/);
   assert.match(root.textContent,/Empirical five-surface measurement: L unmeasured/);
   assert.match(root.textContent,/2 selected file\(s\), 1 withheld file\(s\)/);
   assert.equal(view.inspect().case_id,'parity');
