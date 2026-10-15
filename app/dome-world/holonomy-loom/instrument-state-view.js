@@ -752,6 +752,9 @@ export function mountLoomInstrumentStateView(root, { fullPage = false } = {}) {
         if(!visible){setText(node,'');setProjectedAttribute(node,'visibility','hidden');setProjectedAttribute(restFlightGlyphs[i],'visibility','hidden');continue;}
         const relationKey=observed?.relation_key??ambientRelation;
         const ambientOnly=!illustration&&!observed&&Boolean(ambientRelation);
+        // Multi-letter glyphs receive equivalent optical emphasis in ingress.
+        if(ambientOnly&&['protected_continuity','bounded_emergence'].includes(relationKey))setProjectedAttribute(node,'textLength','86');else node.removeAttribute('textLength');
+        setProjectedAttribute(node,'lengthAdjust','spacingAndGlyphs');
         const depthClass=node.getAttribute('class');
         const nearPlane=depthClass==='flight-near';
         const midPlane=depthClass==='flight-mid';

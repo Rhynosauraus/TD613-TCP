@@ -42,12 +42,65 @@ function appendText(doc,container,tag,text,className=''){
   return node;
 }
 
+/** Small encounter with the same finite kernel used by the research view. */
+export function mountLoomObserverPreview(host,{environment=globalThis}={}){
+  const doc=environment.document;
+  appendText(doc,host,'p','Declared finite model · calculated locally');
+  const channels=doc.createElement('fieldset');
+  appendText(doc,channels,'legend','Clues available to the observer');
+  for(const [index,id] of ['first','second','third'].entries()){
+    const label=doc.createElement('label'),input=doc.createElement('input');
+    input.type='checkbox';input.value=id;input.checked=true;
+    label.append(input,doc.createTextNode(`Clue ${index+1}`));channels.append(label);
+  }
+  const results=doc.createElement('div');results.className='loom-observer-results';results.setAttribute('aria-live','polite');
+  const lesson=appendText(doc,host,'p','');
+  const render=()=>{
+    const selected=[...channels.querySelectorAll('input:checked')].map(input=>input.value);
+    const result=calculateLoomPrivacyScience('parity',selected).evaluation.finite_synthetic_calculation;
+    results.replaceChildren();
+    for(const [name,route] of [['Control',result.routes.control],['Protected',result.routes.protected]]){
+      const p=appendText(doc,results,'p',name);
+      appendText(doc,p,'strong',`${route.selected_view.total_bits.toFixed(1)} bits`);
+      appendText(doc,p,'span',`Optimal target recovery: ${(route.selected_view.total_recovery*100).toFixed(0)}%`);
+    }
+    lesson.textContent=selected.length===3?'All three control clues reveal the bit. Every pair hides it. The protected route keeps this target hidden in the declared model.':'This selected view hides the target bit. Add the remaining clues to inspect the joined result.';
+    host.dataset.selectedChannels=selected.join(',');
+  };
+  channels.addEventListener('change',render);host.append(channels,results,lesson);render();
+  return Object.freeze({refresh:render});
+}
+
 export function mountLoomPrivacyScienceView(host,{environment=globalThis,getLocalFacts=()=>({})}={}){
   if(!host)throw new TypeError('Privacy mathematics needs a visible host.');
   const doc=environment.document;
-  const headline=appendText(doc,host,'h3','Privacy mathematics · calculated, not assumed');
+  const container=host;
+  appendText(doc,container,'h3','Inspect what the result rests on.');
+  appendText(doc,container,'p','The observer test calculates what disclosed traces reveal under a declared model. The route companion carries executable transport and holonomy mathematics. The episode record shows which measurements came from the same captured exchange.');
+  const tabs=doc.createElement('div');tabs.className='loom-research-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Research evidence');
+  const panels=['Observer test','Route mathematics','Episode evidence'].map((label,index)=>{
+    const button=doc.createElement('button');button.type='button';button.textContent=label;button.id=`loomResearchTab${index}`;button.setAttribute('role','tab');
+    const panel=doc.createElement('section');panel.className='loom-research-panel';panel.id=`loomResearchPanel${index}`;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);button.setAttribute('aria-controls',panel.id);
+    const activate=()=>panels.forEach((entry,i)=>{entry.panel.hidden=i!==index;entry.button.setAttribute('aria-selected',String(i===index));entry.button.tabIndex=i===index?0:-1;});
+    button.addEventListener('click',activate);
+    button.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?2:(index+(event.key==='ArrowRight'?1:2))%3;panels[next].button.click();panels[next].button.focus();}});
+    tabs.append(button);container.append(panel);return {button,panel};
+  });
+  container.prepend(tabs);panels[0].button.click();
+  const math=buildPortableLoomResearchMathContract();
+  appendText(doc,panels[1].panel,'h4','Executable transport and holonomy mathematics');
+  appendText(doc,panels[1].panel,'p','The standard portable artifact carries source-checked F₃₁ transport, noncommuting GL₂(F₃₁) holonomy, and the finite feasible-region calculation. Its embedded fixture report is computed locally when exported. A receiving model can inspect that report; a new episode requires a fresh local execution.');
+  appendText(doc,panels[1].panel,'pre','node portable-loom-tomography-audit.mjs --self-check\nnode portable-loom-tomography-audit.mjs --episode /path/to/captured-episode.json');
+  const source=doc.createElement('a');source.href='https://github.com/tauric-diana-613/TD613-TCP/blob/main/scripts/export-standard-portable-loom.mjs';source.textContent='Inspect the canonical exporter and source manifest ↗';source.target='_blank';source.rel='noopener noreferrer';panels[1].panel.append(source);
+  const detail=doc.createElement('details');appendText(doc,detail,'summary','Inspect the calculated research contract');appendText(doc,detail,'pre',JSON.stringify(math,null,2).replaceAll('Golden Egg','five-surface').replaceAll('golden_egg','five_surface').replaceAll('golden-egg','five-surface'));panels[1].panel.append(detail);
+  appendText(doc,panels[2].panel,'h4','Five surfaces from one captured episode');
+  appendText(doc,panels[2].panel,'p','L: observer leakage ≤0.5 bits. R: authorized-work reconstruction distance ≤0.2. J: preregistered joining synergy ≤0.1 bits. G: independently grounded geometry with calibration and uncertainty. C: actual matched control/protected returns.');
+  appendText(doc,panels[2].panel,'p','This view has no captured empirical episode. Qualification requires one immutable episode, continuous custody, preregistered distinct routes, a common comparison frame, and all five surfaces.');
+  appendText(doc,panels[2].panel,'p','Conditional information remains separate from historical L. Finite signed excess remains separate from empirical J. Animation supplies no measured G.');
+  host=panels[0].panel;
+  const headline=appendText(doc,host,'h4','Finite observer calculation');
   headline.className='loom-science-title';
-  appendText(doc,host,'p','Explore how an observer can reconstruct a secret from several clues. These are fully specified mathematical examples. Your real AI exchange needs independently captured evidence.','loom-science-explanation');
+  appendText(doc,host,'p','Select the observed channels and inspect the complete declared probability law.','loom-science-explanation');
   const options=doc.createElement('label');
   options.textContent='Declared mathematical example';
   const select=doc.createElement('select');

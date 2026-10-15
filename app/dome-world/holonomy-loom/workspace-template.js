@@ -1,6 +1,8 @@
+import { LOOM_TUTORIAL_SCREENS } from './tutorial-copy.js';
+import { FIRST_CROSSING_PRACTICE } from './first-crossing-practice.js';
 import { coutureArmature } from './couture-armature.js';
 
-export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-stage" aria-labelledby="loomFieldHeading"><div class="loom-stage-copy"><span class="loom-kicker">YOUR AI FIREWALL</span><h1 id="loomFieldHeading">Loom</h1><p>Your rules should travel with every AI request. Decide what ChatGPT, Gemini, or another model receives, then examine the answer and the information it could reveal.</p></div><section id="aiRuntime" class="ai-runtime" aria-label="Current Loom route"><p class="mark">CURRENT ROUTE</p>
+export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-stage" aria-labelledby="loomFieldHeading"><div class="loom-stage-copy"><span class="loom-kicker">GOVERNED AI CONTINUITY</span><h1 id="loomFieldHeading">Loom</h1><p>Your rules should travel with every AI request. Decide what ChatGPT, Gemini, or another model receives, then examine the answer and the information it could reveal.</p></div><section id="aiRuntime" class="ai-runtime" aria-label="Current Loom route"><p class="mark">CURRENT ROUTE</p>
       <h2 id="aiConsequence" hidden>Your work starts here.</h2>
       <div id="aiRuntimeState" class="ai-runtime-state il-state"></div>
       <div id="aiLivingRoom" hidden aria-hidden="true"></div>
@@ -14,10 +16,10 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
   <section id="loomFirstCrossing" class="loom-first-crossing" aria-labelledby="loomFirstCrossingTitle" hidden tabindex="-1">
     <div class="loom-motion-view" aria-hidden="true"><span>FLOW-CORE / LIVING FIELD</span><span>𝌋</span></div>
     <div class="loom-first-crossing-copy">
-      <div class="loom-tutorial-meta"><span class="loom-threshold-kicker">SEE HOW YOUR AI FIREWALL WORKS · INTERACTIVE DEMO</span><span id="loomTutorialProgress" class="loom-tutorial-progress">1 of 7 · Choose</span></div>
-      <h2 id="loomFirstCrossingTitle">Make AI behave. Keep your private life yours.</h2>
-      <p id="loomFirstCrossingPrompt">Put ChatGPT, Gemini, and other AI models to work without handing over your entire life. Choose what they receive, carry your rules with the work, and examine the answer—and what someone else could infer.</p>
-      <div class="loom-value-route" aria-label="Three parts of the AI firewall"><span>01 <strong>Set your AI rules</strong></span><span>02 <strong>Control what it sees</strong></span><span>03 <strong>Test what comes back</strong></span></div><p class="loom-tutorial-operator-note" aria-label="Current Flow-Core illustration"><span id="loomTutorialOperatorGlyph" class="loom-tutorial-operator-glyph" aria-hidden="true">à</span><span id="loomTutorialOperatorLabel">Gather the question</span></p><p class="loom-private-continuity-note"><strong>cōl</strong> Your private conversation stays out of this example.</p>
+      <div class="loom-tutorial-meta"><span class="loom-threshold-kicker">SEE HOW GOVERNED AI CONTINUITY WORKS · INTERACTIVE DEMO</span><span id="loomTutorialProgress" class="loom-tutorial-progress">1 / 7 · The proposition</span></div>
+      <h2 id="loomFirstCrossingTitle">${LOOM_TUTORIAL_SCREENS[0].title}</h2>
+      <p class="loom-demo-context">Interactive demo · fictional project · runs locally</p><p id="loomFirstCrossingPrompt">${LOOM_TUTORIAL_SCREENS[0].body}</p>
+      <p class="loom-tutorial-operator-note" aria-label="Current Flow-Core illustration"><span id="loomTutorialOperatorGlyph" class="loom-tutorial-operator-glyph" aria-hidden="true">à</span><span id="loomTutorialOperatorLabel">The full Flow-Core ensemble</span></p>
     </div>
     <details class="loom-flowcore-help">
       <summary>What is Flow-Core runtime?</summary>
@@ -32,45 +34,33 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
         <p id="loomFlowcoreCopyNotice" class="loom-flowcore-copy-notice" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
     </details>
-    <div class="loom-boundary-event" aria-label="Fictional outgoing check">
-      <div class="loom-boundary-event-outgoing">
-        <span class="loom-boundary-event-kicker">What this example sends</span>
-        <strong>Your question, chosen context, and instructions.</strong>
-        <p>Inspect the full request before handing it to a model.</p>
-      </div>
-      <div class="loom-boundary-event-denial">
-        <span class="loom-boundary-event-kicker">What AI would not receive</span>
-        <div class="loom-boundary-event-collision">
-          <code>cōl · unselected private context</code>
-          <span class="loom-boundary-event-stop">NOT PART OF THE EXAMPLE REQUEST</span>
-        </div>
-        <p>Your private conversation was left out. Other clues could still give away more than expected.</p>
-      </div>
-    </div>
-    <div id="loomFirstCrossingObjects" class="loom-first-crossing-objects" aria-label="Tutorial: choose a request and source">
-      <button type="button" data-first-crossing-item="brief" aria-pressed="false"><strong>The job you want AI to do</strong><small>Give the model a clear assignment.</small></button>
-      <button type="button" data-first-crossing-item="source" aria-pressed="false"><strong>What the AI needs to know</strong><small>Share useful context, not your entire history.</small></button>
-      <div id="loomFirstCrossingPrivate" class="loom-first-crossing-private" role="note"><strong>cōl · Not selected</strong><small>Your private conversation stays off this request.</small></div>
+    <div id="loomFirstCrossingObjects" class="loom-first-crossing-objects" aria-label="Inspect the fictional request and references">
+      <button type="button" data-first-crossing-item="brief" aria-expanded="false"><strong>Your request</strong><small>Prepare a public brief for a community music workshop.</small><span data-tutorial-item-text hidden>${FIRST_CROSSING_PRACTICE.task}</span></button>
+      <button type="button" data-first-crossing-item="source" aria-expanded="false"><strong>References</strong><small>Use the approved facts; keep private planning local.</small><span data-tutorial-item-text hidden>${FIRST_CROSSING_PRACTICE.documents[1].text}</span></button>
+      <details id="loomFirstCrossingPrivate" class="loom-first-crossing-private" hidden><summary>cōl · Private planning · local only</summary><p id="loomTutorialPrivateText"></p></details>
     </div>
     <div class="loom-first-crossing-actions">
-      <button type="button" id="loomFirstCrossingAction" disabled>Check the request →</button>
+      <button type="button" id="loomFirstCrossingAction">Explore this project →</button>
       <button type="button" id="loomFirstCrossingStop" hidden>Finish tutorial →</button>
     </div>
     <section id="loomTutorialSelection" class="loom-tutorial-selection" aria-label="Selected tutorial content" hidden>
       <dl><div><dt>Request</dt><dd id="loomTutorialRequest"></dd></div><div><dt>Sources</dt><dd id="loomTutorialReference"></dd></div><div><dt>Instructions</dt><dd id="loomTutorialInstructions"></dd></div></dl>
-      <p>Unselected conversation <span>Kept outside the example request</span></p>
+      <p>Private planning <span>Kept outside this request</span></p><details><summary>Inspect exact request</summary><pre id="loomTutorialRequestRecord"></pre></details>
     </section>
-    <blockquote id="loomTutorialSampleAnswer" class="loom-tutorial-sample-answer" hidden><span>Example reply · no AI provider was called</span><p id="loomTutorialSampleAnswerText"></p></blockquote>
+    <blockquote id="loomTutorialSampleAnswer" class="loom-tutorial-sample-answer" hidden><span>Example return · local check</span><p id="loomTutorialSampleAnswerText"></p></blockquote>
     <div class="loom-practice-controls">
-      <button type="button" id="loomFirstCrossingBack" hidden>← Start over</button>
+      <button type="button" id="loomFirstCrossingBack" hidden>← Back</button>
       <button type="button" id="loomReplayFirstCrossing" class="loom-replay-first-crossing" hidden>Start over</button>
       <button type="button" id="loomFirstCrossingPause" class="loom-field-toggle" aria-label="Remix the Flow-Core animation" title="Remix the Flow-Core animation">𝌋</button>
       <button type="button" id="loomFirstCrossingLeave">Skip tutorial →</button>
     </div>
     <p id="loomFirstCrossingAnswer" class="loom-first-crossing-answer" aria-live="polite"></p>
-    <details class="loom-research-proof" aria-label="How would we test conversation privacy?"><summary>Can anyone else put the pieces together?</summary><p>A private exchange can leave clues behind. Loom's research measures how well the AI completes your assignment and what an outside observer might reconstruct from the same journey.</p><p>The demo illustrates these risks; the mathematics and checks are available for inspection. An AI provider can still access the information you actually send, and this demonstration makes no claim about its storage or an outsider's real-world access.</p><details class="loom-research-technical"><summary>View the research method and thresholds</summary><p>One real comparison must measure leakage, faithful reconstruction of the intended work, how clues combine, the geometry of the route, and actual returns on both paths. The research targets are L ≤ 0.5 bits, R ≤ 0.2 and J ≤ 0.1, with measured G and observed C. Results from separate conversations cannot stand in for one complete journey.</p></details></details>
-    <details class="loom-science-intro" aria-label="Explore mathematical privacy examples"><summary>How Loom tests what outsiders could learn</summary><div id="loomScienceIntro" class="loom-science-host"></div></details><p id="loomTutorialWaiting" class="loom-tutorial-waiting" role="status" hidden>Preparing the next step…</p>
-    <details id="loomTutorialProof" class="loom-tutorial-proof" hidden><summary>See the checks <span aria-hidden="true">+</span></summary><div class="loom-tutorial-check-summary" role="note"><p><strong>Did AI receive this demo?</strong> No. It ran entirely in your browser.</p><p><strong>What stayed private?</strong> The unselected conversation. The example also exercised a local guard, while broader information exposure remains a separate research question.</p><p><strong>What still needs testing?</strong> What an outsider could reconstruct from an actual exchange.</p></div><p>Keep the example request and review record for reference. In a real Loom session, inspect the returned work before carrying it forward.</p><details class="loom-tutorial-technical"><summary>View machine-readable receipt</summary><pre id="loomTutorialProofRecord"></pre></details></details>
+    <section id="loomTutorialArtifact" class="loom-tutorial-artifact" hidden><div class="loom-artifact-strip"><span>Task</span><span>Approved context</span><span>Publication rules</span><span>Request binding</span></div><details><summary>Inspect the portable artifact</summary><pre id="loomTutorialArtifactRecord"></pre></details></section>
+    <section id="loomTutorialObserver" class="loom-observer-preview" aria-label="Finite observer comparison" hidden></section>
+    <button type="button" id="loomTutorialResearchOpen" class="loom-research-link" hidden>Inspect reconstruction and tomography →</button>
+    <details id="loomTutorialProof" class="loom-tutorial-proof" hidden><summary>Inspect return record</summary><p>Request binding and referenced sources are checked locally. Review the publication boundary in the returned brief before continuing.</p><pre id="loomTutorialProofRecord"></pre></details>
+    <p id="loomTutorialWaiting" role="status" hidden>Checking selected material…</p>
+
   </section>
 <span class="loom-edition" aria-hidden="true">TD613 · Human authority, by design</span>
 </div>
@@ -79,7 +69,7 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
 </section>
 <div id="loomWorkspaceField" class="loom-workspace-field" aria-label="Current AI request state"></div>
 <section class="loom-builder-shell" aria-label="Loom builder" hidden>
-<header class="loom-intro"><div><h1 id="loomStageHeading">Loom</h1><p>Put AI to work on your terms. Govern the request, bring the rules along, and review the result before accepting it.</p></div><div class="loom-intro-actions"><button type="button" id="loomReturnThreshold" class="loom-text-action">How Loom works</button><button type="button" id="loomToolsOpen" class="loom-text-action">Tools</button></div></header>
+<header class="loom-intro"><div><h1 id="loomStageHeading">Prepare your own work.</h1><p>Set the task, choose its references, and review the rules before preparing a governed continuation.</p></div><div class="loom-intro-actions"><button type="button" id="loomReturnThreshold" class="loom-text-action">How Loom works</button><button type="button" id="loomToolsOpen" class="loom-text-action">Tools</button></div></header>
 <nav class="loom-journey" aria-label="Loom route">
 <button type="button" class="loom-journey-step" id="loomJourneyStep1" data-workspace="build" aria-current="step"><b>1</b><strong>Loom</strong></button><span aria-hidden="true">→</span>
 <button type="button" class="loom-journey-step" id="loomJourneyStep2" data-workspace="crossing" disabled><b>2</b><strong>Marrowline</strong></button><span aria-hidden="true">→</span>
@@ -115,7 +105,7 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
 </div>
 </div>
 </section>
-<dialog id="loomTools" class="loom-tools" aria-labelledby="loomToolsTitle"><header><h2 id="loomToolsTitle">Loom tools</h2><button type="button" id="loomToolsClose" aria-label="Close Loom tools">×</button></header><nav aria-label="Tool workspaces"><button type="button" data-tool="rules">AI instructions</button><button type="button" data-tool="boundary">Privacy</button><button type="button" data-tool="session">Session</button><button type="button" data-tool="model">Model test</button><button type="button" data-tool="science">Privacy science</button><button type="button" data-tool="challenge">Receiver assay</button><button type="button" data-tool="legacy">Compatibility</button></nav>
+<dialog id="loomTools" class="loom-tools" aria-labelledby="loomToolsTitle"><header><h2 id="loomToolsTitle">Loom tools</h2><button type="button" id="loomToolsClose" aria-label="Close Loom tools">×</button></header><nav aria-label="Tool workspaces"><button type="button" data-tool="rules">AI instructions</button><button type="button" data-tool="boundary">Privacy</button><button type="button" data-tool="session">Session</button><button type="button" data-tool="model">Model test</button><button type="button" data-tool="science">Research</button><button type="button" data-tool="challenge">Receiver assay</button><button type="button" data-tool="legacy">Compatibility</button></nav>
 <section data-tool-panel="rules" id="aiRulesDrawer"><h3>Instructions for AI</h3><p>These instructions travel with your request. Ask the model to use your selected sources, avoid inventing facts, and explain uncertainty.</p><label for="aiRules">One rule per line</label><textarea id="aiRules" aria-label="Rules that travel" rows="4"></textarea><h3>Private checks</h3><p>Enter words or phrases that should stay private. Loom checks for them locally in outgoing content and model-test replies, and stops when it finds a match.</p><label for="aiPrivate">Words or phrases to keep private</label><textarea id="aiPrivate" aria-label="Private words or phrases" rows="3"></textarea></section>
 <section data-tool-panel="boundary" hidden><h3>What your AI firewall controls</h3><p>You decide which question, sources, and instructions leave this browser. The example shows how selected and unselected context are separated. It cannot measure what a provider or an observer may infer.</p><p>Unselected files stay in this browser. Once you send a request, the external AI provider determines its own retention, memory, and processing. A saved private backup may contain local-only files; store it securely. Returned work requires a separate local review before admission.</p></section>
 <section data-tool-panel="session" hidden><h3>Prepared session</h3><details id="aiSubmittedTask" hidden><summary>Exact task</summary><p id="aiSubmittedTaskText"></p></details>      <section id="aiSessionSummary" class="ai-session-summary" hidden aria-label="Loom Session">

@@ -1,11 +1,13 @@
+import { LOOM_TUTORIAL_SCREENS } from './tutorial-copy.js';
+import { mountLoomObserverPreview } from './privacy-science-view.js?v=20261015-continuity-v1';
 import { PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT, derivePortableLoomSourceContext } from '../../engine/portable-loom-receiver-output-contract.js';
 import { inspectPortableLoomReceiverConformance } from '../../engine/portable-loom-receiver-conformance.js';
-import { FIRST_CROSSING_PRACTICE, bindFirstCrossingPractice, checkFirstCrossingPrivacy, createFirstCrossingReturnProof } from './first-crossing-practice.js?v=20261015-couture79-v1';
-import { LOOM_TUTORIAL_OPERATORS, loomTutorialPresentation, loomOpeningPresentation } from './tutorial-membrane.js?v=20261015-couture79-v1';
+import { FIRST_CROSSING_PRACTICE, bindFirstCrossingPractice, checkFirstCrossingPrivacy, createFirstCrossingReturnProof } from './first-crossing-practice.js?v=20261015-continuity-v1';
+import { LOOM_TUTORIAL_OPERATORS, loomTutorialPresentation, loomOpeningPresentation } from './tutorial-membrane.js?v=20261015-continuity-v1';
 import { nextFlowcoreChoreography } from './flowcore-choreography.js?v=20261013-phase09-v1';
 import { mountReturnedSessionReview } from './returned-session-review.js';
-import { loomWorkspaceTemplate } from './workspace-template.js?v=20261015-couture79-v1';
-import { mountLoomPrivacyScienceView } from './privacy-science-view.js';
+import { loomWorkspaceTemplate } from './workspace-template.js?v=20261015-continuity-v1';
+import { mountLoomPrivacyScienceView } from './privacy-science-view.js?v=20261015-continuity-v1';
 import { createPortableLoomGateReport, describePortableLoomGateReport } from '../../engine/portable-loom-gate.js';
 import { createLoomGateDisclosure } from '../loom-gate-disclosure.js';
 import { portableLoomFooterText } from '../../engine/portable-loom-output.js';
@@ -13,7 +15,7 @@ import { STANDARD_PORTABLE_LOOM_RULES } from '../../engine/portable-loom-policy.
 import { readLoomDocument, buildLoomAiRequest, inspectLoomAiResponse } from './ai-intake.js';
 import { createLoomAiHandoff, createPortableLoomAiPacket, createCanonicalPortableLoomPacket, createPortableLoomAiPrompt, createLoomAiGovernance, createLoomAiTaskGovernor } from './ai-handoff.js';
 import { assessLoomProjectAnswer } from './ai-project-checks.js';
-import { mountLoomRuntimeStateView } from './runtime-state-view.js?v=20261015-couture79-v1';
+import { mountLoomRuntimeStateView } from './runtime-state-view.js?v=20261015-continuity-v1';
 import { renderLoomAiResult } from './ai-result-view.js';
 import { readLoomAiFailure, describeLoomAiFailure } from './ai-failure.js';
 import { AnimationCoordinator } from './animation-coordinator.js';
@@ -78,13 +80,16 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     });
     if(focus){const target=name==='build'?$('aiTask'):name==='crossing'?$('aiResult'):$('loomReturnWorkspace');target.focus?.({preventScroll:true});target.scrollIntoView?.({block:'nearest',behavior:'auto'});}
   }
+  let toolsReturnFocus=null;
   function openTools(name='rules') {
+    if(!$('loomTools').open)toolsReturnFocus=environment.document.activeElement;
     const dialog=$('loomTools');
     dialog.querySelectorAll('[data-tool-panel]').forEach(panel=>panel.hidden=panel.dataset.toolPanel!==name);
     dialog.querySelectorAll('[data-tool]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.tool===name)));
     if(name==='science')scienceViews.forEach(view=>view.refresh());
     if(!dialog.open){if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');}
   }
+  $('loomTools').addEventListener('close',()=>toolsReturnFocus?.focus?.({preventScroll:true}));
   $('loomToolsOpen').addEventListener('click',()=>openTools());
   $('loomRulesOpen').addEventListener('click',()=>openTools('rules'));
   $('loomBoundaryOpen').addEventListener('click',()=>openTools('boundary'));
@@ -108,8 +113,8 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     local_return_admitted:locallyAdmitted,
     gate_report_count:gateReports.length
   });
-  for(const id of ['loomScienceIntro','loomScienceTools'])
-    scienceViews.push(mountLoomPrivacyScienceView($(id),{environment,getLocalFacts:privacyLocalFacts}));
+  scienceViews.push(mountLoomPrivacyScienceView($('loomScienceTools'),{environment,getLocalFacts:privacyLocalFacts}));
+  mountLoomObserverPreview($('loomTutorialObserver'),{environment});
   $('loomOpenPrivacyScience').addEventListener('click',()=>openTools('science'));
   const gateDisclosure=createLoomGateDisclosure(environment.document,{id:'loomGateHow',onGate:()=>openTools('challenge')});
   $('loomGateAlerts').after(gateDisclosure.section);
@@ -192,70 +197,45 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   const thresholdStage = root.querySelector('.loom-stage');
   const builderShell = root.querySelector('.loom-builder-shell');
   const firstCrossingItems = [...root.querySelectorAll('[data-first-crossing-item]')];
-  function setFirstCrossingCue(cue,{title,prompt,answer,action=false,stop=false}){
-    if(root.dataset.firstCrossingCue===cue)return;
-    const tutorial=$('loomFirstCrossing'),check=$('loomFirstCrossingAction'),finish=$('loomFirstCrossingStop');
-    const focused=environment.document.activeElement;
-    // Keep focus on visible tutorial content while its finite consequence is
-    // forming. Once the next action appears, move only from this waiting
-    // region; opening help or choosing another control keeps its own focus.
-    if((focused===check&&!action)||(focused===finish&&!stop))tutorial.focus?.({preventScroll:true});
+  function setFirstCrossingCue(cue,{prompt,answer}={}){
+    const screen=LOOM_TUTORIAL_SCREENS[firstCrossingStep];
+    const pending=firstCrossingBindingState==='PENDING';
+    const held=firstCrossingBindingState==='HELD';
     root.dataset.firstCrossingCue=cue;
-    const progress={
-      choose:'1 of 7 · Choose what travels',
-      'gathering-motion':'2 of 7 · Gather context',
-      'gathering-named':'2 of 7 · Gather context',
-      binding:'3 of 7 · Review before sending',
-      'binding-held':'3 of 7 · Review before sending',
-      'potential-motion':'3 of 7 · Review before sending',
-      'potential-named':'3 of 7 · Review before sending',
-      'send-motion':'4 of 7 · Preview the handoff', 'send-named':'4 of 7 · Preview the handoff',
-      'privacy-motion':'5 of 7 · Check privacy', 'privacy-named':'5 of 7 · Check privacy',
-      'proof-motion':'6 of 7 · Check the answer', 'proof-named':'6 of 7 · Check the answer',
-      'lesson-held':'Review tutorial check', complete:'7 of 7 · You are in control'
-    };
-    $('loomTutorialProgress').textContent=progress[cue]??'How Loom works';
-    // The illustrated relation stays legible through readiness checks:
-    // a new button is a consequence, not an entirely new reading frame.
-    const operator=LOOM_TUTORIAL_OPERATORS[firstCrossingStep];
-    if(operator){
-      const note=[
-        'Gather the right context',
-        'Leave private details out',
-        'See what the model receives',
-        'Keep your rules with the work',
-        'Consider what outsiders could infer',
-        'Review before trusting the answer',
-        'The final call stays with you'
-      ][firstCrossingStep];
-      $('loomTutorialOperatorGlyph').textContent=operator.glyph;
-      $('loomTutorialOperatorLabel').textContent=note;
-      root.dataset.tutorialGlyph=operator.glyph;
-      root.dataset.tutorialMotionFamily=operator.family;
-    }
-    $('loomFirstCrossingTitle').textContent=title;
-    if(cue==='choose' && root.dataset.loomIntro==='true'){
-      // Authored headline only: incoming/model text never reaches innerHTML.
-      $('loomFirstCrossingTitle').innerHTML='<span class="loom-headline-line">Make AI behave.</span> <span class="loom-headline-line"><em>Keep your private life yours.</em></span>';
-    }
-    $('loomFirstCrossingPrompt').textContent=prompt;
-    $('loomFirstCrossingAnswer').textContent=answer;
-    // A scientific disclosure belongs to the completed tutorial, never its first scene.
-    $('loomScienceIntro').closest('details').hidden=firstCrossingStep!==6;
+    root.dataset.firstCrossingStep=String(firstCrossingStep);
+    root.dataset.loomIntro=String(firstCrossingStep===0);
+    $('loomTutorialProgress').textContent=`${firstCrossingStep+1} / 7 · ${screen.label}`;
+    $('loomFirstCrossingTitle').textContent=held?'This review needs attention.':screen.title;
+    $('loomFirstCrossingPrompt').textContent=held?prompt:screen.body;
+    $('loomFirstCrossingAnswer').textContent=held?answer:pending?'Checking the exact selected material…':screen.consequence;
+    $('loomTutorialOperatorGlyph').textContent=LOOM_TUTORIAL_OPERATORS[firstCrossingStep].glyph;
+    $('loomTutorialOperatorLabel').textContent=screen.operator;
+    root.dataset.tutorialGlyph=LOOM_TUTORIAL_OPERATORS[firstCrossingStep].glyph;
+    root.dataset.tutorialMotionFamily=LOOM_TUTORIAL_OPERATORS[firstCrossingStep].family;
+    $('loomFirstCrossingObjects').hidden=firstCrossingStep>1;
     $('loomTutorialSelection').hidden=firstCrossingStep!==2;
     $('loomTutorialSampleAnswer').hidden=firstCrossingStep!==5;
-    $('loomTutorialWaiting').hidden=true; // The answer region is the single accessible progress witness.
-    // One persistent action footprint per scene. The relevant control stays
-    // mounted and disabled while a consequence animates, then wakes in place.
-    const early=firstCrossingStep<=1;
-    check.hidden=!early;
-    finish.hidden=early||firstCrossingStep===6;
-    check.disabled=!action;
-    finish.disabled=!stop;
-    check.setAttribute('aria-disabled',String(!action));
-    finish.setAttribute('aria-disabled',String(!stop));
-    const next=action?check:stop?finish:null;
-    if(next&&environment.document.activeElement===tutorial)next.focus?.({preventScroll:true});
+    $('loomTutorialProof').hidden=firstCrossingStep!==5;
+    $('loomTutorialArtifact').hidden=firstCrossingStep!==3;
+    $('loomTutorialObserver').hidden=firstCrossingStep!==4;
+    $('loomTutorialResearchOpen').hidden=![4,6].includes(firstCrossingStep);
+    $('loomFirstCrossingPrivate').hidden=firstCrossingStep!==1;
+    $('loomTutorialWaiting').hidden=!pending;
+    const check=$('loomFirstCrossingAction'),finish=$('loomFirstCrossingStop');
+    check.hidden=firstCrossingStep>1;
+    finish.hidden=firstCrossingStep<2||firstCrossingStep===6;
+    const active=firstCrossingStep<=1?check:finish;
+    active.textContent=held?'Retry local check →':screen.action;
+    active.disabled=pending;active.setAttribute('aria-disabled',String(pending));
+    $('loomFirstCrossingBack').hidden=firstCrossingStep===0;
+    $('loomFirstCrossingLeave').hidden=firstCrossingStep===6;
+    $('loomBegin').hidden=firstCrossingStep!==6;
+    if(firstCrossingStep===6)$('loomBegin').textContent=screen.action;
+    renderFirstCrossingSelection();
+  }
+  function focusTutorial(){
+    $('loomFirstCrossing').focus?.({preventScroll:true});
+    $('loomFirstCrossing').scrollIntoView?.({block:'start',behavior:'auto'});
   }
   const storageRead = key => { try { return environment.localStorage?.getItem(key) ?? null; } catch { return null; } };
   const storageWrite = (key,value) => { try { environment.localStorage?.setItem(key,value); } catch {} };
@@ -372,75 +352,8 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     observe: () => thresholdObservation ?? ({ events: [...events], replay: { index: replayIndex },
       source_revision: portableSession?.source_revision || 'browser-unpinned' })
   });
-  coordinator.registerPass('first-crossing-consequence-order', snapshot => {
-    if(!firstCrossingActive || !snapshot.packet.scene?.id?.startsWith('first-crossing-'))return;
-    if(firstCrossingBindingState==='PENDING'||firstCrossingBindingState==='HELD')return;
-    const expectedRelation=firstCrossingStep===2?'created_potential':'gathering';
-    const projectionCurrent=$('aiRuntimeState').dataset.projectionState==='CURRENT' && $('aiRuntimeState').dataset.activeRelation===expectedRelation;
-    // The hõt/cōl source gesture opens only after the à gather field has
-    // actually completed its finite presentation. A click never grants it.
-    if(firstCrossingStep===0 && firstCrossingSelected.has('brief') && !firstCrossingSourceUnlocked){
-      // The AnimationCoordinator has already paused its sole clock for scene
-      // compilation. A finished à-only score, rather than an async inspector
-      // dataset (which can lag this snapshot), is the visual unlock witness.
-      const gathered=snapshot.packet.presentation?.tutorial_operator;
-      const gatherCompleted=gathered?.glyph==='à' && gathered?.evidence_class==='TUTORIAL_ILLUSTRATION_ONLY'
-        && (snapshot.reducedMotion || snapshot.progress>=1);
-      if(gatherCompleted){
-        firstCrossingSourceUnlocked=true;
-        root.dataset.firstCrossingGather='complete';
-        renderFirstCrossingSelection();
-        $('loomFirstCrossingAnswer').textContent='Choose the context the AI needs, and leave the rest private.';
-      }
-      return;
-    }
-    const alreadyPublished=firstCrossingStep===1?firstCrossingGatheringPublished:firstCrossingReadinessPublished;
-    // A presentation remix cannot withdraw a consequence already observed for
-    // this same selection/binding. Restarting the tutorial resets these flags.
-    const consequenceVisible=alreadyPublished||(projectionCurrent && (snapshot.reducedMotion || snapshot.progress>=.9));
-    if(firstCrossingStep===1){
-      if(consequenceVisible){
-        firstCrossingGatheringPublished=true;
-        setFirstCrossingCue('gathering-named',{
-          title:'Give AI a job, not your life story.',
-          prompt:'One useful question. Enough context to answer it. Your other conversations and documents stay outside this request.',
-          answer:'Your selected request is ready. Read it before continuing.',
-          action:true
-        });
-      }else{
-        setFirstCrossingCue('gathering-motion',{
-          title:'Give AI a job, not your life story.',
-          prompt:'One useful question. Enough context to answer it. Your other conversations and documents stay outside this request.',
-          answer:'Keeping the selected question and context together…'
-        });
-      }
-      return;
-    }
-    if(firstCrossingStep===2){
-      if(consequenceVisible){
-        firstCrossingReadinessPublished=true;
-        setFirstCrossingCue('potential-named',{
-          title:'See what AI would actually receive.',
-          prompt:'The request includes your question, the context you selected, and the rules the model must follow. Check all three together.',
-          answer:'Tutorial · this request stays in your browser.',
-          stop:true
-        });
-      }else{
-        setFirstCrossingCue('potential-motion',{
-          title:'See what AI would actually receive.',
-          prompt:'The request includes your question, the context you selected, and the rules the model must follow. Check all three together.',
-          answer:'Checking the exact details selected for AI…'
-        });
-      }
-    }
-    if(firstCrossingStep>=3&&firstCrossingStep<=5){
-      const current=$('aiRuntimeState').dataset.projectionState==='CURRENT';
-      if(firstCrossingLessonPublished||(current&&(snapshot.reducedMotion||snapshot.progress>=.9))){
-        firstCrossingLessonPublished=true;
-        renderFirstCrossingLesson(true);
-      }
-    }
-  });
+  // Tutorial actions are enabled by actual local checks and explicit gestures.
+  // Presentation progress never grants authority or withholds a reading frame.
   // Deep technical inspection belongs in the session workspace. The endpoint
   // pair and canonical relation remain embodied in the cinematic field so the
   // visual scene can communicate the actual route rather than becoming decor.
@@ -555,10 +468,9 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   }
   function renderFirstCrossingSelection(){
     for(const button of firstCrossingItems){
-      const id=button.dataset.firstCrossingItem;
-      button.setAttribute('aria-pressed',String(firstCrossingSelected.has(id)));
-      button.dataset.held=String(id==='private'&&!firstCrossingSelected.has('private'));
-      if(id==='source')button.disabled=!firstCrossingSourceUnlocked && firstCrossingStep===0;
+      button.disabled=false;
+      button.removeAttribute('aria-pressed');
+      button.setAttribute('aria-expanded',String(button.dataset.inspectOpen==='true'));
     }
   }
   function restoreThresholdField(){
@@ -592,195 +504,102 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     $('loomFirstCrossingStop').hidden=true;
     if(lastPacket)showPacket(lastPacket);
   }
-  function completeFirstCrossing(){
-    // Hidden controls may receive re-entrant events. Local binding alone does
-    // not claim practice completion before its current consequence publishes.
-    if(!firstCrossingActive||firstCrossingStep!==5||firstCrossingBindingState!=='VERIFIED'||!firstCrossingLessonPublished)return;
-    firstCrossingStep=6;
-    root.dataset.firstCrossingStep='6';
-    $('loomTutorialProof').hidden=true;
-    firstCrossingWasAlreadyComplete=true;
-    storageWrite(FIRST_CROSSING_KEY,'complete');
-    setFirstCrossingCue('complete',{
-      title:'The final say stays with you.',
-      prompt:'Your AI firewall goes beyond choosing what to send. It carries your rules with the work, checks what returns, and provides tools to investigate what an outsider might piece together from scattered clues.',
-      answer:'This demo used fictional material. Open Loom to prepare a real request and inspect the evidence from your own exchange.'
-    });
-    $('loomBegin').hidden=false;
-    $('loomBegin').textContent='Try Loom →';
-    if(environment.document.activeElement===$('loomFirstCrossing'))$('loomBegin').focus?.({preventScroll:true});
-    $('loomReplayFirstCrossing').hidden=true;
-    $('loomFirstCrossingLeave').hidden=true;
+  function renderTutorialStep({focus=false}={}){
+    setFirstCrossingCue(`step-${firstCrossingStep}`);
+    firstCrossingGatheringPublished=true;
+    firstCrossingReadinessPublished=firstCrossingBindingState==='VERIFIED';
+    firstCrossingLessonPublished=firstCrossingBindingState==='VERIFIED';
     if(firstCrossingPacket){
-      firstCrossingPacket={...firstCrossingPacket,scene:{...firstCrossingPacket.scene,id:'first-crossing-complete'},geometry:{...firstCrossingPacket.geometry,rest:false},presentation:loomTutorialPresentation(6)};
-      // The fictional finale can breathe in a continuous 𝄐 score; this must
-      // never reanimate an observed rest relation in the working Loom.
-      coordinator.setContinuous(true);
-      coordinator.setPacket(firstCrossingPacket);
-      coordinator.play();
+      firstCrossingPacket={...firstCrossingPacket,
+        scene:{...firstCrossingPacket.scene,id:`first-crossing-lesson-${firstCrossingStep}`},
+        geometry:{...firstCrossingPacket.geometry,rest:false},
+        presentation:firstCrossingStep===0?loomOpeningPresentation(firstCrossingChoreography):loomTutorialPresentation(firstCrossingStep)};
+      coordinator.setContinuous(firstCrossingStep!==6);
+      coordinator.setPacket(firstCrossingPacket,{durationMs:[1200,1400,1200,1600,1600,1600,1800][firstCrossingStep]});
+      if(!firstCrossingPaused)coordinator.play();else coordinator.pause();
     }
+    if(focus)focusTutorial();
+  }
+  function completeFirstCrossing(){
+    if(!firstCrossingActive||firstCrossingStep!==5||firstCrossingBindingState!=='VERIFIED')return;
+    firstCrossingStep=6;firstCrossingWasAlreadyComplete=true;
+    storageWrite(FIRST_CROSSING_KEY,'complete');
+    renderTutorialStep({focus:true});
   }
   function startFirstCrossing({replay=false}={}){
     clearThresholdTimers();
-    firstCrossingWasAlreadyComplete=firstCrossingWasAlreadyComplete||storageRead(FIRST_CROSSING_KEY)==='complete';
-    firstCrossingReplayMode=Boolean(replay);
-    firstCrossingActive=true;
-    root.dataset.loomIntro='true';
     firstCrossingGeneration++;
-    firstCrossingBindingState='IDLE';
-    firstCrossingPaused=false;
-    firstCrossingGatheringPublished=false;
-    firstCrossingSourceUnlocked=false;
-    root.dataset.firstCrossingGather='idle';
-    firstCrossingReadinessPublished=false;
-    firstCrossingLessonPublished=false;
-    firstCrossingBinding=null;
-    firstCrossingStep=0;
-    firstCrossingEvents=[];
-    firstCrossingPacket=null;
-    firstCrossingSelected=new Set();
-    root.dataset.firstCrossing='active';
+    firstCrossingActive=true;firstCrossingReplayMode=replay;
+    firstCrossingStep=0;firstCrossingBindingState='IDLE';firstCrossingBinding=null;
+    firstCrossingPaused=false;firstCrossingEvents=[];firstCrossingSelected=new Set();
+    firstCrossingSourceUnlocked=true;
     $('loomTutorialRequest').textContent=FIRST_CROSSING_PRACTICE.task;
-    $('loomTutorialReference').textContent=FIRST_CROSSING_PRACTICE.documents.find(item=>item.id==='source').text.replace(/^Fictional approved context: /,'');
+    $('loomTutorialReference').textContent=FIRST_CROSSING_PRACTICE.documents.find(item=>item.id==='source').text;
     $('loomTutorialInstructions').textContent=FIRST_CROSSING_PRACTICE.rules.join('\n');
-    root.dataset.firstCrossingStep='0';
-    $('loomTutorialProof').hidden=true;
-    root.dataset.thresholdState='closed';
-    thresholdStage.hidden=false;
-    builderShell.hidden=true;
-    placeRuntimeField(false);
-    $('loomThresholdGate').hidden=true;
-    $('loomFirstCrossing').hidden=false;
-    $('loomBegin').hidden=true;
+    $('loomTutorialPrivateText').textContent=FIRST_CROSSING_PRACTICE.documents.find(item=>item.id==='private').text;
+    $('loomTutorialProofRecord').textContent='';
+    $('loomTutorialRequestRecord').textContent='';
+    $('loomTutorialArtifactRecord').textContent='';
+    root.dataset.firstCrossing='active';root.dataset.thresholdState='closed';
+    thresholdStage.hidden=false;builderShell.hidden=true;placeRuntimeField(false);
+    $('loomThresholdGate').hidden=true;$('loomFirstCrossing').hidden=false;
     $('loomReplayFirstCrossing').hidden=true;
-    $('loomFirstCrossingBack').hidden=true;
-    $('loomFirstCrossingLeave').hidden=false;
-    firstCrossingChoreography=nextFlowcoreChoreography(firstCrossingChoreography?.id, environment.Math?.random?.() ?? Math.random());
-    setFirstCrossingCue('choose',{
-      title:'Make AI behave. Keep your private life yours.',
-      prompt:'Put ChatGPT, Gemini, and other AI models to work without handing over your entire life. Loom helps you control what they receive, carry your rules into the conversation, and examine what comes back—including clues someone else could piece together.',
-      answer:'Choose the assignment first. The context choice becomes available after the gathering animation. This example stays in your browser.'
-    });
+    firstCrossingItems.forEach(button=>{button.dataset.inspectOpen='false';button.querySelector('[data-tutorial-item-text]').hidden=true;});
+    firstCrossingChoreography=nextFlowcoreChoreography(firstCrossingChoreography?.id,environment.Math?.random?.()??Math.random());
     flowcoreMessage.textContent=firstCrossingChoreography.message;
-    $('loomFirstCrossingAction').textContent='Check AI Request →';
-    $('loomFirstCrossingPause').textContent='𝌋';
-    $('loomFirstCrossingPause').setAttribute('aria-pressed','false');
-    firstCrossingItems.forEach(button=>{button.disabled=button.dataset.firstCrossingItem==='source';button.setAttribute('aria-pressed','false');delete button.dataset.held;});
-    const neutral=firstCrossingEvent('prepared');
-    const packet=projectLoomRequestEvent(neutral);
-    packet.scene={...packet.scene,id:'first-crossing-notice',project_title:'How Loom works',rules_count:1,documents:FIRST_CROSSING_PRACTICE.documents.map(item=>({id:item.id,name:item.name,share:false}))};
-    packet.geometry={...packet.geometry,rest:false};
-    packet.presentation={...packet.presentation,...loomOpeningPresentation(firstCrossingChoreography)};
+    const event=firstCrossingEvent('prepared');
+    firstCrossingPacket=projectLoomRequestEvent(event);
+    firstCrossingPacket.scene={...firstCrossingPacket.scene,id:'first-crossing-notice',project_title:'How Loom works'};
     thresholdObservation={events:[],replay:{index:null},source_revision:'browser-unpinned'};
-    firstCrossingPacket=packet;
-    coordinator.setContinuous(true);
-    coordinator.setPacket(packet);
-    coordinator.play();
-    $('loomFirstCrossing').focus?.({preventScroll:true});
+    renderTutorialStep({focus:true});
   }
   async function actFirstCrossing(){
     if(!firstCrossingActive||firstCrossingBindingState==='PENDING')return;
     if(firstCrossingStep===0){
-      const correct=firstCrossingSelected.has('brief')&&firstCrossingSelected.has('source')&&!firstCrossingSelected.has('private')&&firstCrossingSelected.size===2;
-      if(!correct){
-        $('loomFirstCrossingAnswer').textContent=firstCrossingSelected.has('private')
-          ? 'Leave the private conversation out of this request. Choose only the question and context.'
-          : 'Choose the question and context to begin.';
-        return;
-      }
-      if(firstCrossingItems.includes(environment.document.activeElement))$('loomFirstCrossing').focus?.({preventScroll:true});
-      root.dataset.loomIntro='false';
+      firstCrossingSelected=new Set(['brief','source']);
       firstCrossingStep=1;
-      root.dataset.firstCrossingStep='1';
-      firstCrossingItems.forEach(button=>button.disabled=true);
-      $('loomFirstCrossingBack').hidden=false;
-      setFirstCrossingCue('gathering-motion',{
-        title:'Give AI a job, not your life story.',
-        prompt:'One useful question. Enough context to answer it. Your other conversations and documents stay outside this request.',
-        answer:'Keeping the selected question and context together…'
-      });
       projectFirstCrossing(firstCrossingEvent('prepared'));
-      $('loomFirstCrossingAction').textContent='Check AI Request →';
-      return;
+      renderTutorialStep({focus:true});return;
     }
-    if(firstCrossingStep===1){
-      // Enforce consequence-before-gesture independently of DOM visibility.
-      // A binding HOLD retains the already-published gathering for its retry.
-      if(!firstCrossingGatheringPublished)return;
-      const token=++firstCrossingGeneration;
-      firstCrossingBindingState='PENDING';
-      setFirstCrossingCue('binding',{
-        title:'See what AI would actually receive.',
-        prompt:'The request includes your question, the context you selected, and the rules the model must follow. Check all three together.',
-        answer:'Checking your selected material…'
-      });
-      try{
-        const binding=await bindFirstCrossingPractice([...firstCrossingSelected],environment);
-        if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
-        firstCrossingBindingState='VERIFIED';
-        firstCrossingBinding=binding;
-        firstCrossingStep=2;
-        root.dataset.firstCrossingStep='2';
-        setFirstCrossingCue('potential-motion',{
-          title:'See what AI would actually receive.',
-          prompt:'The request includes your question, the context you selected, and the rules the model must follow. Check all three together.',
-          answer:'Tutorial · this request stays in your browser.'
-        });
-        projectFirstCrossing(firstCrossingEvent('checking',binding.facts??binding));
-        $('loomFirstCrossingStop').textContent='出 Send request · demo →';
-      }catch(error){
-        if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
-        firstCrossingBindingState='HELD';
-        setFirstCrossingCue('binding-held',{title:'This review needs attention.',prompt:error.message,answer:'Review the issue, then try again.',action:true});
-      }
+    if(firstCrossingStep!==1)return;
+    const token=++firstCrossingGeneration;
+    firstCrossingBindingState='PENDING';setFirstCrossingCue('binding');
+    try{
+      const binding=await bindFirstCrossingPractice([...firstCrossingSelected],environment);
+      if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
+      firstCrossingBinding=binding;firstCrossingBindingState='VERIFIED';firstCrossingStep=2;
+      const request={task:FIRST_CROSSING_PRACTICE.task,documents:FIRST_CROSSING_PRACTICE.documents.filter(item=>firstCrossingSelected.has(item.id)),rules:FIRST_CROSSING_PRACTICE.rules};
+      $('loomTutorialRequestRecord').textContent=JSON.stringify(request,null,2);
+      $('loomTutorialArtifactRecord').textContent=JSON.stringify({input_class:binding.input_class,request_id:binding.request_id,input_digest:binding.input_digest,selected_document_ids:binding.selected_document_ids,publication_rules:FIRST_CROSSING_PRACTICE.rules,evidence_class:binding.evidence_class,provider_called:false,custody_mutated:false},null,2);
+      projectFirstCrossing(firstCrossingEvent('checking',binding.facts??binding));
+      renderTutorialStep({focus:true});
+    }catch(error){
+      if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
+      firstCrossingBindingState='HELD';setFirstCrossingCue('binding-held',{prompt:error.message,answer:'Review the issue, then retry the local check.'});focusTutorial();
     }
-  }
-
-  function renderFirstCrossingLesson(published=false){
-    const lessons={
-      3:{cue:'send',title:'Your rules travel with the work.',prompt:'An AI should get a clear assignment, the context you approved, and the instructions you set. This preview lets you examine that complete handoff before using a model.',answer:'Example only. Nothing has been sent to an AI provider.',next:'米 Examine exposure →'},
-      4:{cue:'privacy',title:'What could someone piece together?',prompt:'Platforms, institutions, scammers, and adversarial systems may learn from more than the words in one request. Names, dates, and scattered clues can expose the rest of a story. Loom includes mathematical tools for examining that risk.',answer:'The fictional private conversation was left out. Wider disclosure requires a separate, measured test.',next:'下 Examine the answer →'},
-      5:{cue:'proof',title:'An answer is only half the story.',prompt:'Bring the reply back beside the original assignment. Check what it used, what it missed, and whether it followed your instructions. Loom keeps the return open for your review.',answer:'This fictional response came from the demo, not an AI provider.',next:'Finish tutorial →'}
-    };
-    const lesson=lessons[firstCrossingStep];
-    if(!lesson)return;
-    setFirstCrossingCue(`${lesson.cue}-${published?'named':'motion'}`,{title:lesson.title,prompt:lesson.prompt,answer:lesson.answer,stop:published});
-    $('loomFirstCrossingStop').textContent=lesson.next;
   }
   async function advanceFirstCrossing(){
     if(!firstCrossingActive||firstCrossingBindingState!=='VERIFIED')return;
     if(firstCrossingStep===5){completeFirstCrossing();return;}
-    if((firstCrossingStep===2&&!firstCrossingReadinessPublished)||(firstCrossingStep>=3&&!firstCrossingLessonPublished)||firstCrossingStep<2||firstCrossingStep>4)return;
-    const next=firstCrossingStep+1, token=++firstCrossingGeneration;
-    firstCrossingLessonPublished=false;
-    firstCrossingBindingState='PENDING';
-    $('loomFirstCrossingStop').disabled=true;
-    $('loomFirstCrossingStop').setAttribute('aria-disabled','true');
-    if(environment.document.activeElement===$('loomFirstCrossingStop'))$('loomFirstCrossing').focus?.({preventScroll:true});
+    if(firstCrossingStep<2||firstCrossingStep>4)return;
+    const next=firstCrossingStep+1,token=++firstCrossingGeneration;
+    firstCrossingBindingState='PENDING';setFirstCrossingCue('checking');
     try{
       if(next===4)checkFirstCrossingPrivacy();
       if(next===5){
         const proof=await createFirstCrossingReturnProof(firstCrossingBinding,environment);
         if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
         $('loomTutorialProofRecord').textContent=JSON.stringify(proof,null,2);
-        $('loomTutorialSampleAnswerText').textContent=proof.answer.replace(/^Fictional example answer: /,'');
+        $('loomTutorialSampleAnswerText').textContent=proof.answer;
       }
       if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
-      firstCrossingBindingState='VERIFIED';firstCrossingStep=next;root.dataset.firstCrossingStep=String(next);
-      $('loomTutorialProof').hidden=next!==5;
-      renderFirstCrossingLesson();
-      firstCrossingPacket={...firstCrossingPacket,scene:{...firstCrossingPacket.scene,id:`first-crossing-lesson-${next}`},presentation:loomTutorialPresentation(next)};
-      // Keep the actual unsent local-binding facts and their event history.
-      // These send/return illustrations cannot fabricate provider observations.
-      coordinator.setContinuous(true);coordinator.setPacket(firstCrossingPacket);coordinator.play();
+      firstCrossingBindingState='VERIFIED';firstCrossingStep=next;
+      renderTutorialStep({focus:true});
     }catch(error){
       if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
-      firstCrossingBindingState='VERIFIED';firstCrossingLessonPublished=true;
-      setFirstCrossingCue('lesson-held',{title:'This local tutorial check needs another try.',prompt:error.message,answer:'Your work stays here. Retry this step or leave the tutorial.',stop:true});
-      $('loomFirstCrossingStop').textContent='Retry local check →';
+      firstCrossingBindingState='HELD';setFirstCrossingCue('lesson-held',{prompt:error.message,answer:'The earlier checked request is retained. Go back to review it.'});focusTutorial();
     }
   }
-
   function openLoomThreshold({skipPractice=false}={}){
     if(!skipPractice&&!firstCrossingWasAlreadyComplete&&storageRead(FIRST_CROSSING_KEY)!=='complete'){
       if(!firstCrossingActive)startFirstCrossing();
@@ -1182,39 +1001,30 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   $('aiPortableMode').addEventListener('click',()=>setMode('portable'));
   $('aiDemoMode').addEventListener('click',()=>setMode('demo'));
   firstCrossingItems.forEach(button=>button.addEventListener('click',()=>{
-    if(!firstCrossingActive||firstCrossingStep!==0)return;
-    const id=button.dataset.firstCrossingItem;
-    if(id==='source'&&!firstCrossingSourceUnlocked)return;
-    if(id==='brief'&&firstCrossingSelected.has('brief'))return;
-    if(firstCrossingSelected.has(id))firstCrossingSelected.delete(id);else firstCrossingSelected.add(id);
-    if(id==='brief')root.dataset.firstCrossingGather='motion';
-    renderFirstCrossingSelection();
-    const correct=firstCrossingSelected.has('brief')&&firstCrossingSelected.has('source')&&!firstCrossingSelected.has('private')&&firstCrossingSelected.size===2;
-    if(correct){
-      $('loomFirstCrossingAnswer').textContent='Previewing what AI can use…';
-      actFirstCrossing();
-      return;
-    }
-    projectFirstCrossing(firstCrossingEvent('prepared'),{rest:false});
-    const selectedOperator=id==='source'&&firstCrossingSelected.has(id)?1:0;
-    firstCrossingPacket={...firstCrossingPacket,presentation:loomTutorialPresentation(selectedOperator)};
-    coordinator.setPacket(firstCrossingPacket);coordinator.play();
-    $('loomFirstCrossingAnswer').textContent=firstCrossingSelected.size===0?'Choose the approved question to begin.':'Gathering your request…';
+    if(!firstCrossingActive||firstCrossingStep>1)return;
+    const open=button.dataset.inspectOpen!=='true';
+    button.dataset.inspectOpen=String(open);button.setAttribute('aria-expanded',String(open));
+    button.querySelector('[data-tutorial-item-text]').hidden=!open;
   }));
   $('loomFirstCrossingPause').addEventListener('click',()=>{
-    // 𝌋 is a presentation remix only. It changes no request, selection,
-    // authority, custody, or event history.
-    firstCrossingChoreography=nextFlowcoreChoreography(firstCrossingChoreography?.id, environment.Math?.random?.() ?? Math.random());
+    firstCrossingChoreography=nextFlowcoreChoreography(firstCrossingChoreography?.id,environment.Math?.random?.()??Math.random());
     flowcoreMessage.textContent=firstCrossingChoreography.message;
     root.dataset.flowcoreChoreography=firstCrossingChoreography.id;
-    if(firstCrossingPacket){
-      firstCrossingPacket={...firstCrossingPacket,presentation:{...firstCrossingPacket.presentation,...(firstCrossingStep===0?loomOpeningPresentation(firstCrossingChoreography):loomTutorialPresentation(firstCrossingStep,firstCrossingChoreography))}};
-      coordinator.setContinuous(true); // fictional tutorial only; preserves one host clock
-      coordinator.setPacket(firstCrossingPacket);
-      coordinator.play();
-    }
+    const presentation=firstCrossingStep===0?loomOpeningPresentation(firstCrossingChoreography):loomTutorialPresentation(firstCrossingStep,firstCrossingChoreography);
+    firstCrossingPacket={...firstCrossingPacket,presentation};
+    coordinator.setPacket(firstCrossingPacket,{durationMs:1600});
+    coordinator.setContinuous(firstCrossingStep!==6);
+    if(firstCrossingPaused)coordinator.pause();else coordinator.play();
   });
-  $('loomFirstCrossingBack').addEventListener('click',()=>startFirstCrossing({replay:true}));
+  $('loomFirstCrossingBack').addEventListener('click',()=>{
+    if(!firstCrossingActive||firstCrossingStep===0)return;
+    firstCrossingGeneration++;
+    firstCrossingStep--;
+    if(firstCrossingStep<=1){firstCrossingBinding=null;firstCrossingBindingState='IDLE';}
+    else firstCrossingBindingState='VERIFIED';
+    renderTutorialStep({focus:true});
+  });
+  $('loomTutorialResearchOpen').addEventListener('click',()=>openTools('science'));
   $('loomFirstCrossingLeave').addEventListener('click',()=>openLoomThreshold({skipPractice:true}));
   $('loomFirstCrossingAction').addEventListener('click',actFirstCrossing);
   $('loomFirstCrossingStop').addEventListener('click',advanceFirstCrossing);

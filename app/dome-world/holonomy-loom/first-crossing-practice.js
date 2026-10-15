@@ -14,19 +14,14 @@ const freeze = value => {
 // Neither loading this fixture nor binding it creates a provider request,
 // Portable Loom Session, transfer, stored receipt or live custody capability.
 export const FIRST_CROSSING_PRACTICE = freeze({
-  id: 'loom-first-crossing-v4-private-conversation',
-  input_class: 'CANONICAL_FICTIONAL_PRACTICE',
-  fictional: true,
-  task: "I'm considering taking a job in another city. Help me weigh the choice using only the context I've shared. Give me two useful ways to think about it and one question to consider.",
-  rules: [
-    "Stay within the selected context. Give two concrete considerations and one useful follow-up question. Treat everything else as unknown."
-  ],
-  documents: [
-    { id: 'brief', name: 'Approved question', text: "Fictional question: I'm thinking about taking a job in another city and I'm not sure whether to go.", share: true },
-    { id: 'source', name: 'Approved context', text: 'Fictional context: I have good friends where I live now. The new job could help me grow. I have a month before I need to decide.', share: true },
-    { id: 'private', name: 'Private conversation', text: "Fictional private conversation: My sister and I argued about the move last night. That conversation isn't part of the request.", share: false }
-  ],
-  protectedTerms: ['My sister and I argued about the move last night']
+  id:'loom-community-music-workshop-v1',input_class:'CANONICAL_FICTIONAL_PRACTICE',fictional:true,
+  task:'Draft a public brief for a free community music workshop. Give the audience, format, and next planning step. Use the approved project facts and follow the publication rules.',
+  rules:['Keep the venue and date unconfirmed. Use only the approved facts. Preserve those boundaries in later revisions. Return the draft with its source references.'],
+  documents:[
+    {id:'brief',name:'Your request',text:'Draft a public brief for a free community music workshop. Give the audience, format, and next planning step. Use the approved project facts and follow the publication rules.',share:true},
+    {id:'source',name:'Approved references',text:'The workshop welcomes beginners. Instruments will be available to borrow. The session lasts 90 minutes. Registration details will be announced after the venue is confirmed.',share:true},
+    {id:'private',name:'Private planning',text:"INTERNAL-DEMO-PRIVATE-47: the preferred venue is Cedar Hall; the tentative date is November 21; a volunteer's medical accommodation is being arranged privately.",share:false}
+  ],protectedTerms:['INTERNAL-DEMO-PRIVATE-47','Cedar Hall','November 21']
 });
 
 function selectedPracticeIds(selectedIds) {
@@ -118,7 +113,7 @@ export function checkFirstCrossingPrivacy() {
 /** A real digest binds the fictional answer to the checked local request. */
 export async function createFirstCrossingReturnProof(binding, environment = globalThis) {
   if (binding?.binding_verified !== true || binding.fixture_id !== FIRST_CROSSING_PRACTICE.id) throw new TypeError('A checked tutorial request is required.');
-  const answer = "You could write down what you'd gain by moving and what you'd miss about staying. You could also talk to someone who has made a similar change. With a month to decide, you have time to explore both. One question: what matters most to you about where you live?";
+  const answer = 'Community Music Workshop\n\nA free, 90-minute workshop welcomes beginners to make music together. Instruments will be available to borrow.\n\nVenue and date: to be confirmed.\n\nNext step: confirm the venue, then publish registration details.';
   const response_check = inspectLoomAiResponse({
     schema:'td613.loom.ai-task-result/v0.1', request_id:binding.request_id, status:'completed',
     answer, missing_information:[], suggested_next_step:'Review before sharing.', used_document_ids:[...binding.selected_document_ids]
