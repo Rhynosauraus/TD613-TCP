@@ -277,9 +277,9 @@ try {
           await page.locator('[data-first-crossing-item="brief"]').click();
         }
         if(step===4){
-          await page.locator('#loomTutorialObserver input[value="third"]').uncheck();
+          await page.locator('#loomTutorialObserver label:has(input[value="third"])').click();
           record(`${name}: pair hides target`,!(await page.locator('.loom-observer-results').innerText()).includes('1.0 bits'));
-          await page.locator('#loomTutorialObserver input[value="third"]').check();
+          await page.locator('#loomTutorialObserver label:has(input[value="third"])').click();
           record(`${name}: joined control reveals target`,(await page.locator('.loom-observer-results').innerText()).includes('1.0 bits'));
           await page.locator('#loomTutorialResearchOpen').click();
           record(`${name}: one detailed research surface`,await page.locator('#loomScienceTools').isVisible()&&await page.locator('#loomScienceIntro').count()===0);
@@ -288,11 +288,31 @@ try {
           await page.locator('#loomToolsClose').click();
           record(`${name}: research returns to same step`,await page.locator('#loomAiWorkspace').getAttribute('data-first-crossing-step')==='4');
         }
+        if(step===2){
+          const read=page.locator('#loomTutorialSelection .loom-scene-inspection').first();
+          record(`${name}: request starts as an inspection invitation`,!(await read.evaluate(node=>node.open)));
+          await read.locator('summary').click();
+          record(`${name}: literal request opens on demand`,await page.locator('#loomTutorialRequest').isVisible()&&(await page.locator('#loomTutorialReference').innerText()).includes('90 minutes'));
+          await read.locator('summary').click();
+        }
+        const sceneStyle=await page.locator('#loomFirstCrossing').evaluate(node=>{
+          const panels=[...node.querySelectorAll('.loom-tutorial-selection,.loom-tutorial-sample-answer,.loom-tutorial-artifact,.loom-observer-preview')].filter(n=>!n.hidden);
+          return panels.map(n=>{const s=getComputedStyle(n);return {id:n.id,border:s.borderTopWidth,background:s.backgroundColor};});
+        });
+        record(`${name} step ${step}: open scene without default evidence cards`,sceneStyle.every(x=>x.border==='0px'&&x.background==='rgba(0, 0, 0, 0)'),sceneStyle);
         if(step===5){
+          const returned=page.locator('#loomTutorialSampleAnswer details');
+          record(`${name}: return starts as an inspection invitation`,!(await returned.evaluate(node=>node.open)));
+          await returned.locator('summary').click();
           record(`${name}: useful fictional return`,(await page.locator('#loomTutorialSampleAnswerText').innerText()).includes('Community Music Workshop'));
           await page.locator('#loomTutorialProof summary').click();
           record(`${name}: private note excluded from return record`,!(await page.locator('#loomTutorialProofRecord').innerText()).includes('INTERNAL-DEMO-PRIVATE-47'));
           await page.locator('#loomTutorialProof summary').click();
+          await returned.locator('summary').click();
+        }
+        if((viewport.width===390&&viewport.height===844)||(viewport.width>=1280&&viewport.height>=800)){
+          const frame=await page.evaluate(()=>({height:innerHeight,document:document.documentElement.scrollHeight}));
+          record(`${name} step ${step}: unexpanded scene fits its viewport`,frame.document<=frame.height+1,frame);
         }
         await screenshot(page,`${name}-step-${step}`);
         if(step<6)await page.locator(action).click();

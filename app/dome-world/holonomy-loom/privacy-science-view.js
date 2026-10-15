@@ -45,9 +45,9 @@ function appendText(doc,container,tag,text,className=''){
 /** Small encounter with the same finite kernel used by the research view. */
 export function mountLoomObserverPreview(host,{environment=globalThis}={}){
   const doc=environment.document;
-  appendText(doc,host,'p','Declared finite model · calculated locally');
+  appendText(doc,host,'p','Finite observer model · calculated locally');
   const channels=doc.createElement('fieldset');
-  appendText(doc,channels,'legend','Clues available to the observer');
+  appendText(doc,channels,'legend','Join the disclosed clues');
   for(const [index,id] of ['first','second','third'].entries()){
     const label=doc.createElement('label'),input=doc.createElement('input');
     input.type='checkbox';input.value=id;input.checked=true;
@@ -64,7 +64,7 @@ export function mountLoomObserverPreview(host,{environment=globalThis}={}){
       appendText(doc,p,'strong',`${route.selected_view.total_bits.toFixed(1)} bits`);
       appendText(doc,p,'span',`Optimal target recovery: ${(route.selected_view.total_recovery*100).toFixed(0)}%`);
     }
-    lesson.textContent=selected.length===3?'All three control clues reveal the bit. Every pair hides it. The protected route keeps this target hidden in the declared model.':'This selected view hides the target bit. Add the remaining clues to inspect the joined result.';
+    lesson.textContent=selected.length===3?'Three clues reveal the control bit. Every pair hides it. The protected route stays at chance.':'This view hides the bit. Join all three clues to reveal the control.';
     host.dataset.selectedChannels=selected.join(',');
   };
   channels.addEventListener('change',render);host.append(channels,results,lesson);render();

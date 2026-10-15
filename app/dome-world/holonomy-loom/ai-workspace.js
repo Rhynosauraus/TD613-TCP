@@ -1,13 +1,13 @@
-import { LOOM_TUTORIAL_SCREENS } from './tutorial-copy.js';
-import { mountLoomObserverPreview } from './privacy-science-view.js?v=20261015-continuity-v1';
+import { LOOM_TUTORIAL_SCREENS } from './tutorial-copy.js?v=20261015-couture-v3';
+import { mountLoomObserverPreview } from './privacy-science-view.js?v=20261015-couture-v3';
 import { PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT, derivePortableLoomSourceContext } from '../../engine/portable-loom-receiver-output-contract.js';
 import { inspectPortableLoomReceiverConformance } from '../../engine/portable-loom-receiver-conformance.js';
 import { FIRST_CROSSING_PRACTICE, bindFirstCrossingPractice, checkFirstCrossingPrivacy, createFirstCrossingReturnProof } from './first-crossing-practice.js?v=20261015-continuity-v1';
 import { LOOM_TUTORIAL_OPERATORS, loomTutorialPresentation, loomOpeningPresentation } from './tutorial-membrane.js?v=20261015-continuity-v1';
 import { nextFlowcoreChoreography } from './flowcore-choreography.js?v=20261013-phase09-v1';
 import { mountReturnedSessionReview } from './returned-session-review.js';
-import { loomWorkspaceTemplate } from './workspace-template.js?v=20261015-continuity-v1';
-import { mountLoomPrivacyScienceView } from './privacy-science-view.js?v=20261015-continuity-v1';
+import { loomWorkspaceTemplate } from './workspace-template.js?v=20261015-couture-v3';
+import { mountLoomPrivacyScienceView } from './privacy-science-view.js?v=20261015-couture-v3';
 import { createPortableLoomGateReport, describePortableLoomGateReport } from '../../engine/portable-loom-gate.js';
 import { createLoomGateDisclosure } from '../loom-gate-disclosure.js';
 import { portableLoomFooterText } from '../../engine/portable-loom-output.js';
@@ -511,6 +511,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     if(lastPacket)showPacket(lastPacket);
   }
   function renderTutorialStep({focus=false}={}){
+    if(focus)root.querySelectorAll('.loom-scene-inspection').forEach(detail=>{detail.open=false;});
     setFirstCrossingCue(`step-${firstCrossingStep}`);
     firstCrossingGatheringPublished=true;
     firstCrossingReadinessPublished=firstCrossingBindingState==='VERIFIED';
