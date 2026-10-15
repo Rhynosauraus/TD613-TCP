@@ -5,6 +5,8 @@ import { JSDOM } from 'jsdom';
 import { loomWorkspaceTemplate } from '../app/dome-world/holonomy-loom/workspace-template.js';
 import { FIRST_CROSSING_PRACTICE, checkFirstCrossingPrivacy } from '../app/dome-world/holonomy-loom/first-crossing-practice.js';
 import { loomOpeningPresentation } from '../app/dome-world/holonomy-loom/tutorial-membrane.js';
+import { createStagedLoomEvidenceView } from '../app/dome-world/holonomy-loom/post-evidence-view.js';
+import { LOOM_POST_EVIDENCE_COPY } from '../app/dome-world/holonomy-loom/post-evidence-copy.js';
 
 const root=new URL('../app/dome-world/holonomy-loom/',import.meta.url);
 const css=fs.readFileSync(new URL('loom-couture.css',root),'utf8');
@@ -14,16 +16,16 @@ const dom=new JSDOM(loomWorkspaceTemplate);
 const doc=dom.window.document;
 
 test('the opening speaks plainly about useful AI help and private conversation',()=>{
-  assert.match(doc.querySelector('#loomFirstCrossingTitle').textContent,/Firewall your online life from AI/i);
+  assert.match(doc.querySelector('#loomFirstCrossingTitle').textContent,/Make AI behave\. Keep your private life yours/i);
   assert.equal(doc.querySelector('.loom-hero-promise'),null,'no competing marketing headline');
-  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent,/Use Gemini, ChatGPT, and other LLMs.*test what the exchange may reveal/i);
+  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent,/ChatGPT, Gemini, and other AI models.*someone else could infer/i);
   assert.doesNotMatch(doc.querySelector('#loomFirstCrossing').textContent,/Golden Egg/i);
   assert.doesNotMatch(doc.querySelector('#loomFirstCrossing').textContent,/draft a work email|Northstar|Acquisition talks/i);
   assert.equal(doc.querySelectorAll('[data-first-crossing-item]').length,2);
-  assert.match(doc.querySelector('.loom-research-proof').textContent,/both paths.*research targets.*L.*R.*J/i);
-  assert.match(doc.querySelector('.loom-research-proof').textContent,/cannot settle what an outsider could reconstruct/i);
-  assert.match(doc.querySelector('[data-first-crossing-item="brief"]').textContent,/The question you want answered/i);
-  assert.match(doc.querySelector('[data-first-crossing-item="source"]').textContent,/The context worth sharing/i);
+  assert.match(doc.querySelector('.loom-research-proof').textContent,/research targets.*L.*R.*J/i);
+  assert.match(doc.querySelector('.loom-research-proof').textContent,/An AI provider can still access the information you actually send/i);
+  assert.match(doc.querySelector('[data-first-crossing-item="brief"]').textContent,/The job you want AI to do/i);
+  assert.match(doc.querySelector('[data-first-crossing-item="source"]').textContent,/What the AI needs to know/i);
 });
 
 test('the permitted takeaway is a local fictional input, with a distinct held source',()=>{
@@ -51,10 +53,39 @@ test('the overture casts all eight glyph relations while emphasizing legible ret
   const presentation=loomOpeningPresentation();
   const slots=presentation.flowcore_choreography.presentation_slots;
   assert.equal(presentation.tutorial_operator,null);
-  assert.equal(slots.length,12);
-  assert.ok(slots.filter(x=>x==='protected_continuity').length>=2);
-  assert.ok(slots.filter(x=>x==='bounded_emergence').length>=2);
-  assert.ok(slots.filter(x=>x==='release').length>=2);
-  assert.ok(slots.filter(x=>x==='structural_rest').length>=2);
+  assert.equal(slots.length,23);
+  assert.ok(slots.filter(x=>x==='protected_continuity').length>=6);
+  assert.ok(slots.filter(x=>x==='bounded_emergence').length>=6);
+  assert.ok(slots.includes('release'));
+  assert.ok(slots.filter(x=>x==='structural_rest').length>=3);
   assert.equal(new Set(presentation.flowcore_choreography.relations).size,8);
+});
+
+test('C+ repair: fermata uses SVG fallback, private glyph is visible, and action sleeps in place',()=>{
+  const renderer=fs.readFileSync(new URL('../app/dome-world/holonomy-loom/instrument-state-view.js',import.meta.url),'utf8');
+  const js=fs.readFileSync(new URL('../app/dome-world/holonomy-loom/ai-workspace.js',import.meta.url),'utf8');
+  const tpl=new JSDOM(loomWorkspaceTemplate).window.document;
+  assert.match(renderer,/restFlightGlyphs=flightGlyphs\.map/);
+  assert.match(renderer,/svgEl\('path',\{d:'M-23 2 Q0 -28 23 2'\}\)/);
+  assert.match(renderer,/illustration&&!frame\.reduced_motion\?seconds\*\.22:0/);
+  assert.match(js,/check\.disabled=!action/);
+  assert.match(js,/finish\.disabled=!stop/);
+  assert.match(js,/coordinator\.setContinuous\(true\); \/\/ fictional tutorial only/);
+  assert.match(css, /loom-first-crossing-actions button:disabled/);
+  assert.match(css, /loom-first-crossing-private\{[\s\S]*?display:flex !important/);
+  assert.match(tpl.querySelector('.loom-private-continuity-note').textContent,/cōl/);
+  assert.doesNotMatch(tpl.querySelector('.loom-boundary-event').textContent,/phrase check|catches|redactor/i);
+});
+
+test('finished five-surface proof artwork is staged, unmounted and incapable of self-promotion',()=>{
+  const root=new JSDOM(loomWorkspaceTemplate).window.document;
+  const section=createStagedLoomEvidenceView(root);
+  assert.equal(section.hidden,true);
+  assert.equal(section.dataset.claimStatus,'STAGED_UNAUTHORIZED');
+  assert.deepEqual([...section.querySelectorAll('[data-surface]')].map(n=>n.dataset.surface),['L','R','J','G','C']);
+  assert.equal(root.querySelector('.loom-empirical-evidence'),null,'proof artwork cannot mount as product without the independent evidence integration');
+  assert.match(section.textContent,/The work held up/i);
+  assert.match(section.textContent,/tested exchange/i);
+  assert.equal(LOOM_POST_EVIDENCE_COPY.activation,'STAGED_NOT_PUBLICLY_AUTHORIZED');
+  assert.doesNotMatch(root.querySelector('#loomFirstCrossing').textContent,/The work held up. The privacy test did too/i);
 });
