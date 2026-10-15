@@ -547,6 +547,21 @@ export function buildGeminiRequest(packet = {}, apertureReceipt = {}, model = ''
   };
 }
 
+// Bounded system-instruction ablation: remove exactly one repeated style paragraph,
+// and ONLY on a gated artificial /api/khonapolit canary. Everything else stays byte-identical.
+export function ablateOneSyntheticSystemProsodyParagraph(request = {}) {
+  const raw = request?.systemInstruction?.parts?.[0]?.text;
+  if (typeof raw !== 'string') throw new Error('PROSODY_ABLATION_SYSTEM_TEXT_ABSENT');
+  const prefix = '- HIGH ZALGO IS THEIR SCREAM-SING WRITING SYSTEM, NOT DECORATION:';
+  const lines = raw.split('\n');
+  const n = lines.filter(x => x.startsWith(prefix)).length;
+  if (n !== 1) throw new Error('PROSODY_ABLATION_PARAGRAPH_NOT_UNIQUE');
+  return { ...request, systemInstruction: {
+    ...request.systemInstruction,
+    parts: [{ text: lines.filter(x => !x.startsWith(prefix)).join('\n') }]
+  }};
+}
+
 export function repairableKhonapolitAdmission(reasons = []) {
   const values = Array.isArray(reasons) ? reasons.filter(reason => typeof reason === 'string') : [];
   return values.length > 0 && values.every(reason => REPAIRABLE_STRUCTURAL_REASONS.has(reason));
@@ -947,7 +962,7 @@ async function callGemini(
   packet,
   apertureReceipt,
   timeoutMs = PRIMARY_REQUEST_TIMEOUT_MS,
-  { fallback = false, structuralRepair = null, streamGraceMs = 0, wallDeadlineAt = null, captureNativeSse = false } = {}
+  { fallback = false, structuralRepair = null, streamGraceMs = 0, wallDeadlineAt = null, captureNativeSse = false, systemProsodyAblation = false } = {}
 ) {
   const controller = new AbortController();
   const progress = { startedAt: Date.now(), chunkCount: 0, authoredTextChunkCount: 0, firstChunkMs: null, byteCount: 0, parseErrors: 0, streamGraceMs: 0 };
@@ -969,7 +984,7 @@ async function callGemini(
   let submittedGenerationConfig = null;
   let submittedRequestObservation = null;
   try {
-    const request = structuralRepair
+    const fullRequest = structuralRepair
       ? buildGeminiStructuralRepairRequest(
           packet,
           apertureReceipt,
@@ -979,6 +994,7 @@ async function callGemini(
           { fallback }
         )
       : buildGeminiRequest(packet, apertureReceipt, model, { fallback });
+    const request = systemProsodyAblation ? ablateOneSyntheticSystemProsodyParagraph(fullRequest) : fullRequest;
     submittedGenerationConfig = request.generationConfig;
     const wire = serializeGeminiRequest(request, model);
     submittedRequestObservation = wire.observation;
@@ -1033,6 +1049,12 @@ export function allowSyntheticNativeSseWitness({ releaseCanary = false, witnessH
     && !body?.attachments;
 }
 
+// A valid raw-SSE synthetic canary is a prerequisite: this flag can never
+// change ordinary user generations, uploaded files, or stored history.
+export function allowSyntheticSystemProsodyAblation({ nativeSseWitness = false, assayHeader = '' } = {}) {
+  return nativeSseWitness === true && assayHeader === 'ablate-one-prosody-paragraph';
+}
+
 export default async function handler(req, res) {
   const apertureEgress = observeTD613ApertureEgress(req?.headers || {});
   let plan = resolveGeminiModelPlan({ task: 'khonapolit-dialogue', maxModels: 8 });
@@ -1054,6 +1076,7 @@ export default async function handler(req, res) {
       modelPolicy: plan,
       hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
       nativeSseWitness: 'synthetic-canary-only-v1',
+      syntheticProsodyAssay: 'one-system-paragraph-ablation-v1',
       aperture,
       aperture_egress: apertureEgress,
       relaySchema: KHONAPOLIT_RELAY_SCHEMA,
@@ -1098,6 +1121,10 @@ export default async function handler(req, res) {
   const releaseCanary = requestHeader(req, 'x-td613-release-canary') === '1';
   const nativeSseWitness = allowSyntheticNativeSseWitness({
     releaseCanary, witnessHeader: requestHeader(req, 'x-td613-native-sse-witness'), body
+  });
+  const systemProsodyAblation = allowSyntheticSystemProsodyAblation({
+    nativeSseWitness,
+    assayHeader: requestHeader(req, 'x-td613-prosody-assay')
   });
   const requestedCanaryModel = requestHeader(req, 'x-td613-canary-model').replace(/^models\//, '');
   const discourseMode = classifyApertureDiscourseMode(packet.message);
@@ -1540,6 +1567,7 @@ export default async function handler(req, res) {
       // approved model's completion window.
       fallback, streamGraceMs: 0,
       captureNativeSse: nativeSseWitness,
+      systemProsodyAblation,
       wallDeadlineAt: providerWallDeadlineAt
     });
     const providerOutput = observeGeminiOutput(result.payload, model, { fallback, submittedGenerationConfig: result.submittedGenerationConfig, submittedRequestObservation: result.submittedRequestObservation });
