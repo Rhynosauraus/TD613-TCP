@@ -1,4 +1,4 @@
-import { LOOM_TUTORIAL_SCREENS } from './tutorial-copy.js';
+import { LOOM_TUTORIAL_SCREENS } from './tutorial-copy.js?v=20261015-couture-v3';
 import { FIRST_CROSSING_PRACTICE } from './first-crossing-practice.js';
 import { coutureArmature } from './couture-armature.js';
 
@@ -16,9 +16,9 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
   <section id="loomFirstCrossing" class="loom-first-crossing" aria-labelledby="loomFirstCrossingTitle" hidden tabindex="-1">
     <div class="loom-motion-view" aria-hidden="true"><span>FLOW-CORE / LIVING FIELD</span><span>𝌋</span></div>
     <div class="loom-first-crossing-copy">
-      <div class="loom-tutorial-meta"><span class="loom-threshold-kicker">Firewall your online life from AI.</span><span id="loomTutorialProgress" class="loom-tutorial-progress">1 / 7 · The proposition</span></div>
+      <div class="loom-tutorial-meta"><span class="loom-threshold-kicker">Loom · Portable governance</span><span id="loomTutorialProgress" class="loom-tutorial-progress">1 / 7 · The proposition</span></div>
       <h2 id="loomFirstCrossingTitle">${LOOM_TUTORIAL_SCREENS[0].title}</h2>
-      <p class="loom-demo-context">Interactive demo · fictional project · runs locally</p><p id="loomFirstCrossingPrompt">${LOOM_TUTORIAL_SCREENS[0].body}</p>
+      <p class="loom-demo-context">Fictional project · local demonstration</p><p id="loomFirstCrossingPrompt">${LOOM_TUTORIAL_SCREENS[0].body}</p>
       <p class="loom-tutorial-operator-note" aria-label="Current Flow-Core illustration"><span id="loomTutorialOperatorGlyph" class="loom-tutorial-operator-glyph" aria-hidden="true">à</span><span id="loomTutorialOperatorLabel">The full Flow-Core ensemble</span></p>
     </div>
     <details class="loom-flowcore-help">
@@ -42,12 +42,13 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
     <div class="loom-first-crossing-actions">
       <button type="button" id="loomFirstCrossingAction">Explore this project →</button>
       <button type="button" id="loomFirstCrossingStop" hidden>Finish tutorial →</button>
+      <button type="button" id="loomBegin" class="loom-begin" hidden>Try Loom →</button>
     </div>
     <section id="loomTutorialSelection" class="loom-tutorial-selection" aria-label="Selected tutorial content" hidden>
-      <dl><div><dt>Request</dt><dd id="loomTutorialRequest"></dd></div><div><dt>Sources</dt><dd id="loomTutorialReference"></dd></div><div><dt>Instructions</dt><dd id="loomTutorialInstructions"></dd></div></dl>
-      <p>Private planning <span>Kept outside this request</span></p><details><summary>Inspect exact request</summary><pre id="loomTutorialRequestRecord"></pre></details>
+      <details class="loom-scene-inspection"><summary>Read the checked request <span aria-hidden="true">↗</span></summary><dl><div><dt>Request</dt><dd id="loomTutorialRequest"></dd></div><div><dt>Sources</dt><dd id="loomTutorialReference"></dd></div><div><dt>Instructions</dt><dd id="loomTutorialInstructions"></dd></div></dl><p>Private planning stays outside this request.</p></details>
+      <details class="loom-scene-inspection"><summary>Inspect exact request bytes <span aria-hidden="true">↗</span></summary><pre id="loomTutorialRequestRecord"></pre></details>
     </section>
-    <blockquote id="loomTutorialSampleAnswer" class="loom-tutorial-sample-answer" hidden><span>Example return · local check</span><p id="loomTutorialSampleAnswerText"></p></blockquote>
+    <section id="loomTutorialSampleAnswer" class="loom-tutorial-sample-answer" hidden><span>Example return · local check</span><details class="loom-scene-inspection"><summary>Community Music Workshop <span>Read the returned brief ↗</span></summary><p id="loomTutorialSampleAnswerText"></p></details></section>
     <div class="loom-practice-controls">
       <button type="button" id="loomFirstCrossingBack" hidden>← Back</button>
       <button type="button" id="loomReplayFirstCrossing" class="loom-replay-first-crossing" hidden>Start over</button>
@@ -65,7 +66,6 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
 <span class="loom-edition" aria-hidden="true">TD613 · Human authority, by design</span>
 </div>
 <div class="loom-hero-route" aria-hidden="true"><span data-hero-step="loom"><b>1</b> Loom</span><i>→</i><span data-hero-step="marrowline"><b>2</b> Marrowline</span><i>→</i><span data-hero-step="return"><b>3</b> Return</span></div>
-<button type="button" id="loomBegin" class="loom-begin">Try Loom →</button>
 </section>
 <div id="loomWorkspaceField" class="loom-workspace-field" aria-label="Current AI request state"></div>
 <section class="loom-builder-shell" aria-label="Loom builder" hidden>

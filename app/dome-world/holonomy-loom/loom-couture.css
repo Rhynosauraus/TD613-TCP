@@ -364,80 +364,114 @@ body{background:var(--ink);overflow-x:clip}
 @media(max-width:600px){
 }
 
-/* TD613 approved seven-screen tutorial. One authoritative scene composition. */
-#loomAiWorkspace[data-first-crossing="active"] .loom-stage{display:block;min-height:calc(100svh - 76px);padding:40px clamp(20px,6vw,96px) 32px}
+/* LOOM COUTURE · Seven open scenes in one living field.
+   The default view is an encounter. Exact documents open on inspection. */
+#loomAiWorkspace[data-first-crossing="active"] .loom-stage{display:block;min-height:calc(100svh - 76px);padding:clamp(28px,5vh,64px) clamp(24px,6vw,100px) 24px}
 #loomAiWorkspace[data-first-crossing="active"] .loom-threshold-layer{max-width:1280px;margin:0 auto;width:100%}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing{display:flex;flex-direction:column;gap:18px;width:min(720px,100%);max-width:100%;padding:0;margin:0;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;scroll-margin-top:24px}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing{display:flex;flex-direction:column;align-items:flex-start;gap:20px;min-height:calc(100svh - 176px);width:min(660px,100%);max-width:100%;padding:0;margin:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;scroll-margin-top:24px}
 #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing::before{display:none}
 #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing:focus{outline:none}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy{order:0;max-width:650px;padding:0;background:transparent;border:0}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy h2{font:400 clamp(42px,4.3vw,60px)/1.05 var(--sans);letter-spacing:-.045em;max-width:20ch;margin:0 0 18px;text-wrap:balance;color:var(--paper)}
-#loomAiWorkspace[data-first-crossing-step="0"] .loom-first-crossing-copy h2{font-size:clamp(50px,5.6vw,80px);max-width:18ch}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy>p{font:400 18px/1.55 var(--sans);color:#e1dbe8;max-width:56ch;margin:0}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-meta{display:flex;flex-wrap:wrap;gap:10px 24px;margin-bottom:22px;color:#c7c2d2;font:500 11px/1.5 var(--sans);letter-spacing:.06em;text-transform:uppercase}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-operator-note{display:flex;align-items:center;gap:12px;margin-top:16px;font:400 13px/1.5 var(--sans);color:#d8c5ed}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-operator-glyph{font:400 25px/1.2 "Loom Flow-Core",var(--sans)}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy{order:0;width:100%;max-width:660px;padding:0;background:none;border:0}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy h2{font:400 clamp(44px,4.6vw,68px)/1.01 var(--sans);letter-spacing:-.047em;max-width:20ch;margin:0 0 20px;text-wrap:balance;color:var(--paper)}
+#loomAiWorkspace[data-first-crossing-step="0"] .loom-first-crossing-copy h2{font-size:clamp(56px,6vw,88px);max-width:15ch}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy>p{font:400 18px/1.5 var(--sans);color:#e1dbe8;max-width:48ch;margin:0}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy>p.loom-demo-context{font:400 10px/1.5 var(--sans);letter-spacing:.045em;color:#b8b4c7;margin:0 0 12px}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-meta{display:flex;flex-wrap:wrap;gap:6px 20px;margin-bottom:24px;color:#b8b4c7;font:500 10px/1.5 var(--sans);letter-spacing:.12em;text-transform:uppercase}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-operator-note{display:flex;align-items:center;gap:16px;margin-top:18px;font:400 12px/1.5 var(--sans);color:#d8c5ed}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-operator-glyph{flex:none;white-space:nowrap;font:400 28px/1.2 "Loom Flow-Core",var(--sans)}
 #loomAiWorkspace[data-first-crossing-step="0"] .loom-tutorial-operator-note{display:none}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects{order:2;display:grid;border-top:1px solid var(--line);width:min(620px,100%);gap:0}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button{display:grid;grid-template-columns:1fr auto;gap:4px 12px;min-height:68px;width:100%;padding:12px 0;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;color:var(--paper);text-align:left;box-shadow:none;clip-path:none}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button strong{font:500 17px/1.3 var(--sans)}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button small{grid-column:1;font:400 13px/1.5 var(--sans);color:#c7c2d2}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button::after{content:'+';grid-row:1/3;grid-column:2;align-self:center;font:300 24px var(--sans)}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects{order:2;display:grid;grid-template-columns:1fr 1fr;gap:0 28px;border:0;width:min(620px,100%)}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button{position:relative;display:block;min-height:76px;width:100%;padding:16px 25px 16px 0;background:none;border:0;border-block:1px solid var(--line);border-radius:0;color:var(--paper);text-align:left;box-shadow:none;clip-path:none}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button strong{display:block;font:400 19px/1.3 var(--sans)}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button small{display:block;margin-top:7px;font:400 12px/1.5 var(--sans);color:#b8b4c7}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button::after{content:'+';position:absolute;right:0;top:15px;font:300 24px var(--sans);color:#d8c5ed}
 #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button[aria-expanded="true"]::after{content:'−'}
-#loomAiWorkspace[data-first-crossing="active"] [data-tutorial-item-text]{grid-column:1/-1;font:400 15px/1.55 var(--sans);padding:8px 0}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-private{padding:10px 0;border-bottom:1px solid var(--line);font:400 14px/1.55 var(--sans);color:#baf8f1}
+#loomAiWorkspace[data-first-crossing="active"] [data-tutorial-item-text]{display:block;font:400 14px/1.55 var(--sans);padding-top:12px}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-private{grid-column:1/-1;padding:8px 0 0;border:0;font:400 13px/1.5 var(--sans);color:#baf8f1}
 #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-private summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
 #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-actions{order:8;display:flex;gap:12px;margin:0;position:static;background:none;border:0;padding:0}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-actions button,#loomAiWorkspace[data-first-crossing="active"] .loom-begin{min-height:48px;padding:12px 22px;border:1px solid #d8c5ed;border-radius:3px;background:rgba(216,197,237,.12);box-shadow:none;color:var(--paper);font:500 15px/1.4 var(--sans);clip-path:none;position:static;transform:none;width:auto}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-actions button,#loomAiWorkspace[data-first-crossing="active"] .loom-begin{min-height:48px;padding:8px 0;border:0;border-bottom:1px solid #cbb6d9;border-radius:0;background:none;box-shadow:none;color:var(--paper);font:400 20px/1.4 var(--sans);clip-path:none;position:static;transform:none;width:auto;text-align:left}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-actions button:hover{color:#baf8f1;border-bottom-color:#baf8f1}
 #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-actions button::after{content:none}
-#loomAiWorkspace[data-first-crossing="active"] button:focus-visible,#loomAiWorkspace[data-first-crossing="active"] summary:focus-visible{outline:2px solid #baf8f1;outline-offset:3px}
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-answer{order:7;font:400 14px/1.5 var(--sans);max-width:60ch;margin:0;color:#c7c2d2;min-height:0}
-#loomAiWorkspace[data-first-crossing="active"] .loom-practice-controls{order:9;display:flex;flex-wrap:wrap;gap:6px 18px;position:static;padding:0;margin:0;border:0;background:transparent;backdrop-filter:none}
-#loomAiWorkspace[data-first-crossing="active"] .loom-practice-controls button{padding:6px 0;border:0;background:none;color:#c7c2d2;font:400 13px/1.4 var(--sans);min-height:44px}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection,#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-sample-answer,#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-artifact,#loomAiWorkspace[data-first-crossing="active"] .loom-observer-preview{order:3;padding:18px 20px;border:1px solid var(--line);border-radius:4px;background:rgba(14,12,24,.26);max-width:100%;margin:0;font:400 16px/1.55 var(--sans)}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection dl{display:grid;gap:12px;margin:0}
+#loomAiWorkspace[data-first-crossing="active"] button:focus-visible,#loomAiWorkspace[data-first-crossing="active"] summary:focus-visible{outline:2px solid #baf8f1;outline-offset:4px}
+#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-answer{order:7;font:400 12px/1.5 var(--sans);max-width:52ch;margin:0;color:#b8b4c7;min-height:0}
+#loomAiWorkspace:is([data-first-crossing-cue="step-0"],[data-first-crossing-cue="step-4"],[data-first-crossing-cue="step-5"],[data-first-crossing-cue="step-6"]) .loom-first-crossing-answer{display:none}
+#loomAiWorkspace[data-first-crossing="active"] .loom-practice-controls{order:9;display:flex;flex-wrap:wrap;align-items:center;gap:6px 24px;position:static;padding:12px 0 0;margin:auto 0 0;border:0;background:none;backdrop-filter:none;width:100%}
+#loomAiWorkspace[data-first-crossing="active"] .loom-practice-controls button{padding:6px 0;border:0;background:none;color:#b8b4c7;font:400 12px/1.4 var(--sans);min-height:44px}
+#loomAiWorkspace[data-first-crossing="active"] #loomFirstCrossingPause{font-size:20px;color:#d8c5ed;min-width:44px}
+#loomAiWorkspace[data-first-crossing="active"] #loomFirstCrossingLeave{margin-left:auto}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection,#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-sample-answer,#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-artifact,#loomAiWorkspace[data-first-crossing="active"] .loom-observer-preview{order:3;padding:0;border:0;border-radius:0;background:none;max-width:100%;width:100%;margin:0;font:400 16px/1.5 var(--sans);box-shadow:none}
+#loomAiWorkspace[data-first-crossing="active"] .loom-scene-inspection{border-top:1px solid var(--line);margin:0}
+#loomAiWorkspace[data-first-crossing="active"] .loom-scene-inspection>summary{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:10px 0;min-height:48px;cursor:pointer;list-style:none;color:#d8c5ed;font:400 16px/1.4 var(--sans)}
+#loomAiWorkspace[data-first-crossing="active"] .loom-scene-inspection>summary::-webkit-details-marker{display:none}
+#loomAiWorkspace[data-first-crossing="active"] .loom-scene-inspection[open]{padding-bottom:14px}
+#loomAiWorkspace[data-first-crossing="active"] .loom-scene-inspection[open]>summary{color:#baf8f1}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection dl{display:grid;gap:16px;margin:16px 0}
 #loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection dl>div{display:block;padding:0;border:0}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection dt{font:500 12px/1.4 var(--sans);color:#baf8f1;margin-bottom:4px}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection dd{margin:0;font:400 15px/1.5 var(--sans)}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection>p{display:flex;justify-content:space-between;gap:12px;font-size:12px;border-top:1px solid var(--line);padding-top:12px}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection details{margin-top:12px}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-proof{order:4;font:400 14px/1.5 var(--sans);max-width:100%;margin:0}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection dt{font:400 11px/1.4 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:#baf8f1;margin-bottom:5px}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection dd{margin:0;font:400 15px/1.55 var(--sans)}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-proof{order:4;font:400 13px/1.5 var(--sans);max-width:100%;margin:0;color:#b8b4c7}
 #loomAiWorkspace[data-first-crossing="active"] details summary{min-height:44px;cursor:pointer}
 #loomAiWorkspace[data-first-crossing="active"] pre{font-size:12px;max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-sample-answer p{white-space:pre-line;margin:8px 0;font:400 16px/1.55 var(--sans)}
-#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-sample-answer>span{font-size:12px;color:#baf8f1}
-#loomAiWorkspace[data-first-crossing="active"] .loom-artifact-strip{display:flex;gap:10px 20px;flex-wrap:wrap;font-size:14px;color:#d8c5ed}
-#loomAiWorkspace[data-first-crossing="active"] .loom-research-link{order:5;padding:0;min-height:44px;border:0;background:none;text-align:left;font:500 14px/1.5 var(--sans);color:#baf8f1}
-#loomAiWorkspace[data-first-crossing="active"] #loomBegin{display:block;margin:22px 0 0}
-#loomAiWorkspace .loom-observer-preview fieldset{border:0;padding:0;margin:8px 0;display:flex;flex-wrap:wrap;gap:8px 18px}
-#loomAiWorkspace .loom-observer-preview label{display:flex;gap:8px;align-items:center;min-height:44px;font-size:14px}
-#loomAiWorkspace .loom-observer-preview input{width:18px;height:18px;accent-color:#baf8f1}
-#loomAiWorkspace .loom-observer-results{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-#loomAiWorkspace .loom-observer-results p{margin:0;font-size:14px}
-#loomAiWorkspace .loom-observer-results strong{display:block;font-size:22px;color:#d8c5ed}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-sample-answer p{white-space:pre-line;margin:14px 0;font:400 16px/1.55 var(--sans)}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-sample-answer>span{display:block;font:400 10px/1.5 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#b8b4c7;margin-bottom:12px}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-sample-answer summary{display:block;font:400 26px/1.2 var(--sans);color:var(--paper);padding:16px 0}
+#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-sample-answer summary span{display:block;margin-top:12px;font:400 13px/1.5 var(--sans);color:#d8c5ed}
+#loomAiWorkspace[data-first-crossing="active"] .loom-artifact-strip{display:flex;gap:8px 16px;flex-wrap:wrap;padding:16px 0 8px;border-top:1px solid var(--line);font:400 13px/1.5 var(--sans);color:#d8c5ed}
+#loomAiWorkspace[data-first-crossing="active"] .loom-research-link{order:5;padding:0;min-height:44px;border:0;background:none;text-align:left;font:400 13px/1.5 var(--sans);color:#baf8f1}
+#loomAiWorkspace[data-first-crossing="active"] #loomBegin{margin:0}
+#loomAiWorkspace .loom-observer-preview>p:first-child{font:400 10px/1.5 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#b8b4c7;margin:0}
+#loomAiWorkspace .loom-observer-preview fieldset{border:0;padding:0;margin:8px 0 4px;display:flex;gap:8px 24px;flex-wrap:wrap}
+#loomAiWorkspace .loom-observer-preview legend{font:400 12px/1.5 var(--sans);color:#b8b4c7;margin:0 0 4px}
+#loomAiWorkspace .loom-observer-preview label{position:relative;display:inline-flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;font:400 13px/1.5 var(--sans);color:#b8b4c7}
+#loomAiWorkspace .loom-observer-preview input{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+#loomAiWorkspace .loom-observer-preview label::before{content:'';width:8px;height:8px;border:1px solid #8a7b9b;border-radius:50%}
+#loomAiWorkspace .loom-observer-preview label:has(input:checked){color:#e1dbe8}
+#loomAiWorkspace .loom-observer-preview label:has(input:checked)::before{background:#baf8f1;border-color:#baf8f1;box-shadow:0 0 12px #baf8f133}
+#loomAiWorkspace .loom-observer-preview label:has(input:focus-visible){outline:2px solid #baf8f1;outline-offset:4px}
+#loomAiWorkspace .loom-observer-results{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:8px 0}
+#loomAiWorkspace .loom-observer-results p{margin:0;font:400 12px/1.5 var(--sans);color:#b8b4c7}
+#loomAiWorkspace .loom-observer-results span{display:block;font-size:11px}
+#loomAiWorkspace .loom-observer-results strong{display:block;font:400 36px/1.1 var(--sans);letter-spacing:-.03em;color:#d8c5ed;margin:4px 0}
+#loomAiWorkspace .loom-observer-preview>p:last-child{font:400 12px/1.5 var(--sans);color:#b8b4c7;margin:12px 0 0;max-width:48ch}
 #loomAiWorkspace .loom-research-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0;border-bottom:1px solid var(--line)}
 #loomAiWorkspace .loom-research-tabs button[aria-selected="true"]{border-bottom-color:#baf8f1;color:#baf8f1}
 #loomAiWorkspace .loom-research-panel{max-width:100%;overflow-wrap:anywhere}
+#loomAiWorkspace[data-first-crossing-step="4"] .loom-stage{padding-top:24px}
+#loomAiWorkspace[data-first-crossing-step="4"] .loom-first-crossing{gap:12px}
+#loomAiWorkspace[data-first-crossing-step="4"] .loom-first-crossing-copy h2{font-size:clamp(44px,4vw,56px)}
+#loomAiWorkspace[data-first-crossing-step="4"] .loom-tutorial-meta{margin-bottom:20px}
+#loomAiWorkspace[data-first-crossing-step="4"] .loom-tutorial-operator-note{margin-top:12px}
+#loomAiWorkspace[data-first-crossing-step="4"] .loom-observer-preview fieldset{margin:4px 0}
+#loomAiWorkspace[data-first-crossing-step="4"] .loom-observer-results{margin:6px 0}
 @media(max-width:699px){
-  #loomAiWorkspace[data-first-crossing="active"] .loom-stage{padding:22px 20px 28px;min-height:calc(100svh - 64px)}
-  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing{gap:14px;width:100%}
-  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy h2{font-size:32px;line-height:1.08;max-width:22ch;margin-bottom:14px}
-  #loomAiWorkspace[data-first-crossing-step="0"] .loom-first-crossing-copy h2{font-size:39px;max-width:19ch}
-  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy>p{font-size:16px;line-height:1.55}
-  #loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-meta{font-size:10px;gap:6px;margin-bottom:15px}
-  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-actions button{width:100%}
-  #loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection,#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-sample-answer,#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-artifact,#loomAiWorkspace[data-first-crossing="active"] .loom-observer-preview{padding:14px}
-  #loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-selection dd{font-size:14px}
-  #loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-operator-note{font-size:12px}
-  .loom-topbar{height:auto;min-height:64px;padding:8px 20px;gap:10px;flex-wrap:wrap}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-stage{padding:24px 24px 16px;min-height:calc(100svh - 64px)}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing{min-height:calc(100svh - 104px);gap:18px;width:100%}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy h2{font-size:36px;line-height:1.03;max-width:21ch;margin-bottom:18px}
+  #loomAiWorkspace[data-first-crossing-step="0"] .loom-first-crossing-copy h2{font-size:46px;max-width:14ch}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy>p{font-size:16px;line-height:1.5}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-meta{font-size:9px;gap:4px 12px;margin-bottom:24px}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects{gap:0 20px}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button strong{font-size:17px}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-objects button small{font-size:11px}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-actions button{font-size:19px;width:auto}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-operator-note{font-size:11px;gap:12px}
+  #loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-operator-glyph{font-size:24px}
+  #loomAiWorkspace .loom-observer-results strong{font-size:32px}
+  #loomAiWorkspace[data-first-crossing-step="4"] .loom-first-crossing{gap:12px}
+  #loomAiWorkspace[data-first-crossing-step="4"] .loom-tutorial-meta{margin-bottom:20px}
+  #loomAiWorkspace[data-first-crossing-step="4"] .loom-tutorial-operator-note{margin-top:12px}
+  #loomAiWorkspace[data-first-crossing-step="4"] .loom-observer-preview fieldset{margin:4px 0}
+  #loomAiWorkspace[data-first-crossing-step="4"] .loom-observer-results{margin:6px 0}
+  .loom-topbar{height:auto;min-height:64px;padding:8px 24px;gap:10px;flex-wrap:wrap}
   .loom-topbar nav{gap:14px;flex-wrap:wrap}
-  #loomAiWorkspace[data-first-crossing="active"] #loomBegin{width:100%}
 }
-@media(max-width:359px){#loomAiWorkspace[data-first-crossing="active"] .loom-stage{padding-inline:16px}#loomAiWorkspace[data-first-crossing-step="0"] .loom-first-crossing-copy h2{font-size:36px}}
-
-#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy>p.loom-demo-context{font:400 11px/1.4 var(--sans);color:#c7c2d2;margin-bottom:12px}
+@media(max-width:359px){#loomAiWorkspace[data-first-crossing="active"] .loom-stage{padding-inline:20px}#loomAiWorkspace[data-first-crossing-step="0"] .loom-first-crossing-copy h2{font-size:40px}#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy h2{font-size:32px}#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-operator-glyph{font-size:20px}}
+@media(min-width:1100px) and (max-height:820px){#loomAiWorkspace[data-first-crossing="active"] .loom-stage{padding-top:24px}#loomAiWorkspace[data-first-crossing="active"] .loom-first-crossing-copy h2{font-size:52px}#loomAiWorkspace[data-first-crossing-step="0"] .loom-first-crossing-copy h2{font-size:72px}#loomAiWorkspace[data-first-crossing="active"] .loom-tutorial-meta{margin-bottom:18px}}
 
 /* The canonical rest mark uses the same font-independent arc/dot construction
    as the field; CJK operator text uses the bundled Flow-Core subset. */
 #loomAiWorkspace[data-first-crossing-step="6"] .loom-tutorial-operator-glyph{font-size:0}
 #loomAiWorkspace[data-first-crossing-step="6"] .loom-tutorial-operator-glyph::before{content:"";display:inline-block;width:32px;height:28px;background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 48'%3E%3Cpath d='M9 29 Q32 -1 55 29' fill='none' stroke='%23d8c5ed' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='33' r='4' fill='%23d8c5ed'/%3E%3C/svg%3E")}
+
+@media(min-width:1100px) and (max-height:820px){#loomAiWorkspace[data-first-crossing-step="4"] .loom-stage{padding-top:8px}}
