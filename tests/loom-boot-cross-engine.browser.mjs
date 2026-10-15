@@ -154,6 +154,10 @@ try {
         try {
           await page.goto(`${base}/dome-world/holonomy-loom.html`, { waitUntil: 'domcontentloaded' });
           await page.waitForFunction(() => document.documentElement.dataset.loomBoot === 'ready', null, {timeout:16000});
+          // Interactive boot precedes the digest compiler. Observe its bounded
+          // readiness protocol before judging rendered field geometry; an
+          // unresolved projection must still fail rather than borrow old pixels.
+          await page.waitForFunction(() => document.querySelector('#aiRuntimeState')?.dataset.projectionState === 'CURRENT', null, {timeout:3000});
           await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
           const geometry = await page.evaluate(() => {
             const root = document.querySelector('#loomAiWorkspace');
@@ -198,6 +202,7 @@ try {
         try{
           await page.goto(`${base}/dome-world/holonomy-loom.html`,{waitUntil:'domcontentloaded'});
           await page.waitForFunction(()=>document.documentElement.dataset.loomBoot==='ready',null,{timeout:16000});
+          await page.waitForFunction(()=>document.querySelector('#aiRuntimeState')?.dataset.projectionState==='CURRENT',null,{timeout:3000});
           await page.evaluate(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done))));
           const box=await page.evaluate(()=>{
             const rect=selector=>{
