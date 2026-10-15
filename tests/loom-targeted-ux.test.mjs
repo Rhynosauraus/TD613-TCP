@@ -39,7 +39,7 @@ test('Loom boot binds fresh couture assets and contains a catchable module failu
   const module = [...doc.querySelectorAll('script[type="module"]')].find(node => node.textContent.includes('ai-workspace.js'));
   assert.match(css.href, /20261015-glyph-v2/);
   assert.ok(module, 'the entrypoint must be an observable dynamic module import');
-  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261015-continuity-v1'\)/);
+  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261015-glyph-v2'\)/);
   assert.match(module.textContent, /\.catch\(\(\) => window\.td613LoomBootFailure/);
   assert.equal(doc.querySelectorAll('script[type="module"][src*="20261003"]').length, 0);
 });
@@ -581,4 +581,19 @@ test('Loom versioned entry loads the actual rewritten template and nested instru
   assert.match(runtimeModuleSource,/instrument-state-view\.js\?v=20261015-continuity-v1/);
   assert.match(templateSource,/loomScienceTools/);
   assert.match(instrumentSource,/Keep all 39 illustrated carriers/);
+});
+
+
+test('queued Tools close cannot steal a newer focus choice or a reopened dialog', async t=>{
+  const h=practiceHarness(t);
+  h.$('#loomFirstCrossingLeave').click();
+  await until(()=>!h.$('.loom-builder-shell').hidden,'editable builder');
+  const boundary=h.$('#loomBoundaryOpen'),rules=h.$('#loomRulesOpen'),dialog=h.$('#loomTools'),input=h.$('#aiRules');
+  boundary.focus();boundary.click();dialog.removeAttribute('open');
+  rules.focus();dialog.dispatchEvent(new h.environment.Event('close'));
+  assert.equal(h.environment.document.activeElement,rules,'late close preserves a newer outside focus choice');
+  rules.click();input.focus();dialog.dispatchEvent(new h.environment.Event('close'));
+  assert.equal(h.environment.document.activeElement,input,'late close preserves focus in a reopened dialog');
+  dialog.removeAttribute('open');dialog.dispatchEvent(new h.environment.Event('close'));
+  assert.equal(h.environment.document.activeElement,rules,'closed dialog restores opener when focus is stranded inside');
 });
