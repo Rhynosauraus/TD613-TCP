@@ -2,12 +2,9 @@
 // It recomputes canonical, separately sourced mathematical fixtures; it does
 // not infer a protected conversation, run a provider, or manufacture evidence.
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runHardenedDiscreteTransportTomographyAssay } from './tomography/app/dome-world/previews/a15-r0/discrete-transport-tomography-closed-loop-hardened.js';
-import { runNoncommutingTwoFaceHolonomyTomographyHoldout } from './tomography/app/dome-world/previews/a15-r0/noncommuting-two-face-holonomy-tomography.js';
-import { buildGoldenEggFeasibleRegion } from './tomography/app/dome-world/previews/a15-r0/golden-egg-feasible-region.js';
-import { evaluateGoldenEggEpisodeCandidate } from './tomography/app/engine/dollhouse-claim-lift-runtime.js';
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const artifact = JSON.parse(await readFile(join(dir, 'portable-loom-standard.json'), 'utf8'));
@@ -23,6 +20,46 @@ if (artifact.portable_task?.documents?.length || artifact.session?.work_units?.l
 if (contract.empirical_acquisition !== 'NOT_RUN' || contract.qualified_same_episode !== false) {
   throw new Error('A standard export cannot pre-seed Golden Egg evidence.');
 }
+
+// Fail closed on missing, modified, substituted, or unexpected mathematical
+// source files BEFORE loading executable modules. The manifest is a consistency
+// receipt, not an external signature or proof of empirical provenance.
+const sourcePaths = Object.freeze([
+  'app/dome-world/previews/a15-r0/discrete-transport-tomography-closed-loop.js',
+  'app/dome-world/previews/a15-r0/discrete-transport-tomography-closed-loop-hardened.js',
+  'app/dome-world/previews/a15-r0/noncommuting-two-face-holonomy-tomography.js',
+  'app/dome-world/previews/a15-r0/golden-egg-feasible-region.js',
+  'app/dome-world/previews/a15-r0/open-research-field.js',
+  'app/dome-world/previews/a15-r0/boolean-synergy-census.js',
+  'app/dome-world/previews/a15-r0/a15-r0-contracts.js',
+  'app/dome-world/previews/a15-r0/a15-r0-contracts-core.js',
+  'app/dome-world/ash-a15-empirical-profile-journeys.js',
+  'app/engine/dollhouse-claim-lift-runtime.js'
+]);
+const entries = contract.mathematical_source_files;
+if (!Array.isArray(entries) || entries.length !== sourcePaths.length) {
+  throw new Error('PORTABLE_TOMOGRAPHY_SOURCE_MANIFEST_INVALID');
+}
+for (let i = 0; i < sourcePaths.length; i++) {
+  const entry = entries[i];
+  if (!entry || entry.path !== sourcePaths[i] || !/^[a-f0-9]{64}$/.test(entry.sha256)) {
+    throw new Error('PORTABLE_TOMOGRAPHY_SOURCE_MANIFEST_INVALID');
+  }
+  const source = await readFile(join(dir, 'tomography', entry.path));
+  if (createHash('sha256').update(source).digest('hex') !== entry.sha256) {
+    throw new Error('PORTABLE_TOMOGRAPHY_SOURCE_HASH_MISMATCH: ' + entry.path);
+  }
+}
+// Dynamic imports are intentional: running code before the digest check would
+// defeat the purpose of preserving a verified mathematical source set.
+const { runHardenedDiscreteTransportTomographyAssay } = await import(
+  './tomography/app/dome-world/previews/a15-r0/discrete-transport-tomography-closed-loop-hardened.js');
+const { runNoncommutingTwoFaceHolonomyTomographyHoldout } = await import(
+  './tomography/app/dome-world/previews/a15-r0/noncommuting-two-face-holonomy-tomography.js');
+const { buildGoldenEggFeasibleRegion } = await import(
+  './tomography/app/dome-world/previews/a15-r0/golden-egg-feasible-region.js');
+const { evaluateGoldenEggEpisodeCandidate } = await import(
+  './tomography/app/engine/dollhouse-claim-lift-runtime.js');
 
 const transport = runHardenedDiscreteTransportTomographyAssay();
 const surface = runNoncommutingTwoFaceHolonomyTomographyHoldout();

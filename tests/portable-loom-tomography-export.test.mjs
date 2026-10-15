@@ -55,6 +55,35 @@ test('standard portable artifact runs exact canonical mathematical companion wit
   assert.equal(evaluation.empirical_promotion_authority,false);
   assert.equal(evaluation.evaluation.empirical_candidate_qualified,false);
   assert.ok(['HELD','INADMISSIBLE'].includes(evaluation.evaluation.status));
+  // A manifest entry alone never executes or authenticates mathematics.
+  // The companion must reject tampered source bytes before module import,
+  // including when asked to evaluate a supplied episode.
+  const mathPath=join(destination,'tomography',contract.mathematical_source_files[0].path);
+  const pristine=await readFile(mathPath);
+  try{
+    await writeFile(mathPath,Buffer.concat([pristine,Buffer.from('\\n// tampered after export\\n')]));
+    for(const args of [['--self-check'],['--episode',episodeFile]]){
+      assert.throws(
+        ()=>execFileSync(process.execPath,[script,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']}),
+        error=>String(error.stderr).includes('PORTABLE_TOMOGRAPHY_SOURCE_HASH_MISMATCH'),
+        'tampered mathematical source must fail before either evaluation route'
+      );
+    }
+  }finally{
+    await writeFile(mathPath,pristine);
+  }
+  const alteredContract={...contract,mathematical_source_files:contract.mathematical_source_files.map((entry,index)=>
+    index===0?{...entry,path:'../unexpected.js'}:entry)};
+  await writeFile(join(destination,'portable-loom-math-contract.json'),JSON.stringify(alteredContract));
+  try{
+    assert.throws(
+      ()=>execFileSync(process.execPath,[script,'--self-check'],{encoding:'utf8',stdio:['ignore','pipe','pipe']}),
+      error=>String(error.stderr).includes('PORTABLE_TOMOGRAPHY_SOURCE_MANIFEST_INVALID'),
+      'source substitution must fail independently of the manifest contents'
+    );
+  }finally{
+    await writeFile(join(destination,'portable-loom-math-contract.json'),JSON.stringify(contract));
+  }
   const markdown=await readFile(join(destination,'portable-loom-standard.md'),'utf8');
   assert.match(markdown,/Executable mathematics \(local companion\)/);
   assert.match(markdown,/NOT_RUN/);
