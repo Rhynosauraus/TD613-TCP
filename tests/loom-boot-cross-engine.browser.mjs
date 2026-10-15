@@ -250,7 +250,7 @@ try {
             return {width:innerWidth,height:innerHeight,
               stage:rect('#loomAiWorkspace .loom-stage'),
               copy:rect('.loom-first-crossing-copy'),
-              primary:rect('[data-first-crossing-item="brief"]'),
+              primary:rect('#loomFirstCrossingObjects > #loomFirstCrossingAction'),
               field:rect('#aiRuntimeState .loom-glyph-field'),
               carrierCount:document.querySelectorAll('#aiRuntimeState .loom-field-flight text').length,
               rootScrollHeight:document.documentElement.scrollHeight,

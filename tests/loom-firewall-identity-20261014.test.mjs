@@ -17,7 +17,7 @@ const doc=dom.window.document;
 
 test('the opening preserves the firewall framing and names the governed continuity operations',()=>{
  assert.match(doc.querySelector('#loomFirstCrossingTitle').textContent,/Firewall your online life from AI/);
- assert.match(doc.querySelector('.loom-threshold-kicker').textContent,/Portable governance/);
+ assert.match(doc.querySelector('.loom-threshold-kicker').textContent,/Tutorial.*fictional conversation/);
  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent,/ChatGPT, Gemini, and other LLMs/);
  assert.doesNotMatch(doc.querySelector('#loomFirstCrossing').textContent,/Golden Egg|draft a work email/i);
  assert.equal(doc.querySelectorAll('[data-first-crossing-item]').length,2);

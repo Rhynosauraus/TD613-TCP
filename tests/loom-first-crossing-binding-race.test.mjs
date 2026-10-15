@@ -84,16 +84,22 @@ async function finish(h){
  }
 }
 
-test('first paint exposes inspection and an explicit project action without motion gating',async t=>{
- const h=setup(t);
- for(const id of ['brief','source']){
-  const control=h.$(`[data-first-crossing-item="${id}"]`);
-  assert.equal(control.disabled,false);control.click();assert.equal(control.getAttribute('aria-expanded'),'true');
- }
- assert.equal(h.root.dataset.firstCrossingStep,'0');
- assert.equal(h.$('#loomFirstCrossingAction').disabled,false);
- assert.equal(h.$('#loomTutorialMotion'),null);
+test('opening editorial row is the native next-scene action and restores after Back',async t=>{
+ const h=setup(t),action=h.$('#loomFirstCrossingAction');
+ assert.equal(action.parentElement.id,'loomFirstCrossingObjects');
+ assert.equal(action.querySelector('strong').textContent,'Your request');
+ assert.equal(h.$('#loomFirstCrossingTitle em').textContent,'from AI.');
+ assert.equal(h.$('[data-first-crossing-item="source"]').disabled,true);
+ assert.equal(h.$('[data-first-crossing-item="brief"]').hidden,true);
+ assert.equal(action.disabled,false);
  h.advance(20000);assert.equal(h.root.dataset.firstCrossingStep,'0');
+ action.click();assert.equal(h.root.dataset.firstCrossingStep,'1');
+ assert.ok(action.parentElement.classList.contains('loom-first-crossing-actions'));
+ const reference=h.$('[data-first-crossing-item="source"]');
+ assert.equal(reference.disabled,false);reference.click();assert.equal(reference.getAttribute('aria-expanded'),'true');
+ h.$('#loomFirstCrossingBack').click();assert.equal(h.root.dataset.firstCrossingStep,'0');
+ assert.equal(h.$('#loomFirstCrossingAction'),action);
+ assert.equal(action.parentElement.id,'loomFirstCrossingObjects');
  assert.equal(h.requests.length,0);assert.equal(h.ui.inspect().session,null);
 });
 
