@@ -2,6 +2,7 @@ import test from 'node:test';
 // Keep firewall-identity regressions in the mandatory targeted validation shard.
 import './loom-firewall-identity-20261014.test.mjs';
 import './portable-loom-tomography-export.test.mjs';
+import './loom-privacy-science-20261014.test.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { webcrypto } from 'node:crypto';
@@ -22,6 +23,7 @@ const workspaceSource = fs.readFileSync(new URL('../app/dome-world/holonomy-loom
 const runtimeStateSource = fs.readFileSync(new URL('../app/dome-world/holonomy-loom/runtime-state-view.js', import.meta.url), 'utf8');
 const instrumentSource = fs.readFileSync(new URL('../app/dome-world/holonomy-loom/instrument-state-view.js', import.meta.url), 'utf8');
 const templateSource = fs.readFileSync(new URL('../app/dome-world/holonomy-loom/workspace-template.js', import.meta.url), 'utf8');
+const runtimeModuleSource = fs.readFileSync(new URL('../app/dome-world/holonomy-loom/runtime-state-view.js', import.meta.url), 'utf8');
 
 test('Loom loading veil replaces inherited visibility gate that strands WebKit tutorial', () => {
   assert.doesNotMatch(html, /html\[data-loom-boot=["']loading["']\]\s+main\s*\{\s*visibility\s*:\s*hidden/i);
@@ -35,9 +37,9 @@ test('Loom boot binds fresh couture assets and contains a catchable module failu
   const doc = new JSDOM(html).window.document;
   const css = doc.querySelector('link[href*="loom-couture.css"]');
   const module = [...doc.querySelectorAll('script[type="module"]')].find(node => node.textContent.includes('ai-workspace.js'));
-  assert.match(css.href, /20261014-temporal-glyphs-v1/);
+  assert.match(css.href, /20261014-visible-cinema-and-copy-v1/);
   assert.ok(module, 'the entrypoint must be an observable dynamic module import');
-  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261014-temporal-glyphs-v1'\)/);
+  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261014-visible-cinema-and-copy-v1'\)/);
   assert.match(module.textContent, /\.catch\(\(\) => window\.td613LoomBootFailure/);
   assert.equal(doc.querySelectorAll('script[type="module"][src*="20261003"]').length, 0);
 });
@@ -138,7 +140,7 @@ test('Flow-Core remains a single accessible header guide with eight text-only gl
   const glyphs=[...help.querySelectorAll('[data-flowcore-copy]')];
   assert.deepEqual(glyphs.map(node=>node.dataset.flowcoreCopy),['à','米','出','hõt','cōl','上','下','𝄐']);
   assert.ok(glyphs.every(node=>node.tagName==='BUTTON'&&node.textContent===node.dataset.flowcoreCopy));
-  assert.doesNotMatch(help.textContent, /click.*copy|tap.*copy|copy.*glyph/i);
+  assert.match(help.textContent,/Tap a glyph to copy it/i);
   assert.match(workspaceSource, /\.loom-topbar nav'\)\?\.prepend\(flowcoreHelp\)/);
   assert.match(workspaceSource, /navigator\?\.clipboard\?\.writeText/);
   assert.match(product, /\.loom-topbar \.loom-flowcore-help\[open\] \.loom-flowcore-panel\{display:block\}/);
@@ -148,12 +150,12 @@ test('Flow-Core remains a single accessible header guide with eight text-only gl
 test('the firewall promise explains outgoing checks, returning review and limits', () => {
   const doc = new JSDOM(loomWorkspaceTemplate).window.document;
   assert.match(doc.querySelector('#loomFirstCrossingTitle').textContent, /Firewall your online life from AI/i);
-  assert.match(doc.querySelector('.loom-intro p').textContent, /Review what you send.*whole exchange could reveal/i);
-  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent, /You can ask ChatGPT, Gemini, or another LLM.*exchange might reveal/i);
-  assert.match(doc.querySelector('#loomReturnWorkspace header').textContent, /before accepting/i);
+  assert.match(doc.querySelector('.loom-intro p').textContent, /firewall for AI requests.*review the answer before you accept it/i);
+  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent, /Use Gemini, ChatGPT, and other LLMs.*test what the exchange may reveal/i);
+  assert.match(doc.querySelector('#loomReturnWorkspace header').textContent, /before carrying it forward/i);
   assert.match(doc.querySelector('[data-tool-panel="boundary"]').textContent, /external AI provider determines its own retention/i);
-  assert.match(workspaceSource, /title:'The clues add up\.'/);
-  assert.match(workspaceSource, /title:'Did the answer help\?'/);
+  assert.match(workspaceSource, /title:'A phrase check is only the beginning\.'/);
+  assert.match(workspaceSource, /title:'Bring the answer back\. Read it yourself\.'/);
   assert.match(runway, /data-first-crossing-step="4"\] \.loom-boundary-event-denial/);
   assert.doesNotMatch(doc.querySelector('#loomFirstCrossingPrompt').textContent, /portable|cryptographic|governance/i);
 });
@@ -163,7 +165,7 @@ test('the seven steps display actual evidence instead of a decorative firewall d
   const stage = doc.querySelector('.loom-boundary-event');
   assert.ok(stage);
   assert.equal(doc.querySelector('.loom-firewall-theater'), null, 'retire generic diamond and platform diagram');
-  assert.match(stage.textContent, /One useful question and its context/i);
+  assert.match(stage.textContent, /Your question and only the context it needs/i);
   assert.match(stage.textContent, /One excluded phrase/);
   assert.match(stage.textContent, /HELD LOCALLY/);
   assert.match(runway, /data-first-crossing-step="3"\] \.loom-boundary-event-outgoing/);
@@ -220,7 +222,7 @@ test('How Loom works is a recoverable handoff preview with a living Flow-Core re
   assert.match(workspaceSource, /flowcore_choreography:firstCrossingChoreography/);
   assert.match(workspaceSource, /coordinator\.setContinuous\(true\)/);
   assert.match(workspaceSource, /title:'Firewall your online life from AI\.'/);
-  assert.match(workspaceSource, /title:'What could a stranger work out\?'/);
+  assert.match(workspaceSource, /title:'Stay in control of what AI sees\.'/);
   assert.match(workspaceSource, /Try Loom →/);
   assert.doesNotMatch(workspaceSource, /title:'Prepared is not transmitted\.'/);
   assert.doesNotMatch(workspaceSource, /title:'They gathered\. Nothing crossed\.'/);
@@ -422,8 +424,8 @@ test('first use explains private material, remixes presentation, and skips witho
   const privateNote=h.$('#loomFirstCrossingPrivate');
   assert.equal(privateNote.tagName,'DIV');
   assert.equal(privateNote.getAttribute('role'),'note');
-  assert.match(privateNote.textContent,/Rest of the conversation/);
-  assert.match(privateNote.textContent,/Not included in the example request/i);
+  assert.match(privateNote.textContent,/Keep the rest private/);
+  assert.match(privateNote.textContent,/This stays outside the AI request/i);
   assert.equal(privateNote.hasAttribute('aria-pressed'), false);
   const before=h.$('#loomFlowcoreMessage').textContent;
   h.$('#loomFirstCrossingPause').click();
@@ -470,9 +472,9 @@ test('selection and readiness publish consequences before naming the Flow-Core r
   // send illustration, privacy egress check, and digest-bound return inspection.
   // Finishing before all three consequences publish must stay forbidden.
   for (const [step, cue, progress] of [
-    [3, 'send-named', '4 of 7 · Carry'],
-    [4, 'privacy-named', '5 of 7 · Test'],
-    [5, 'proof-named', '6 of 7 · Return']
+    [3, 'send-named', '4 of 7 · Preview the handoff'],
+    [4, 'privacy-named', '5 of 7 · Check privacy'],
+    [5, 'proof-named', '6 of 7 · Check the answer']
   ]) {
     h.$('#loomFirstCrossingStop').click();
     await until(() => h.root.dataset.firstCrossingStep === String(step)
@@ -490,7 +492,7 @@ test('selection and readiness publish consequences before naming the Flow-Core r
   assert.ok(proof.receipt_digest);
   h.$('#loomFirstCrossingStop').click();
   assert.equal(h.root.dataset.firstCrossingCue, 'complete', 'reduced motion retains deliberate legitimate completion');
-  assert.equal(h.$('#loomTutorialProgress').textContent, '7 of 7 · Your turn');
+  assert.equal(h.$('#loomTutorialProgress').textContent, '7 of 7 · You are in control');
   assert.equal(h.environment.localStorage.getItem('td613.loom.first-crossing.v1'), 'complete');
   assert.equal(h.ui.inspect().session, null);
   assert.equal(h.requests.length, 0);
@@ -639,7 +641,7 @@ test('opening overture contains all eight relations without borrowing the à ill
 test('privacy tutorial retains two selections and optional answer details in document flow', () => {
   const doc = new JSDOM(loomWorkspaceTemplate).window.document;
   assert.equal(doc.querySelectorAll('[data-first-crossing-item]').length,2);
-  assert.match(doc.querySelector('[data-first-crossing-item=source]').textContent,/What the answer needs/);
+  assert.match(doc.querySelector('[data-first-crossing-item=source]').textContent,/The context worth sharing/);
   assert.doesNotMatch(doc.querySelector('[data-first-crossing-item=source]').textContent,/\/\//);
   assert.match(product,/\.loom-tutorial-proof\{order:6/);
   assert.match(product,/:not\(\[data-first-crossing-step="0"\]\)\s*\.loom-first-crossing-objects\{display:none\}/);
@@ -685,4 +687,13 @@ test('independent Lab links preserve unsent Loom work by opening another tab wit
     assert.ok(link.relList.contains('noreferrer'), 'new Lab tab must not receive referrer information');
     assert.match(link.title, /tab/);
   }
+});
+
+
+test('Loom versioned entry loads the actual rewritten template and nested instrument renderer',()=>{
+  assert.match(workspaceSource,/workspace-template\.js\?v=20261014-firewall-science-v1/);
+  assert.match(workspaceSource,/runtime-state-view\.js\?v=20261014-firewall-science-v1/);
+  assert.match(runtimeModuleSource,/instrument-state-view\.js\?v=20261014-firewall-science-v1/);
+  assert.match(templateSource,/Privacy mathematics|loomScienceIntro/);
+  assert.match(instrumentSource,/Keep all 39 illustrated carriers/);
 });

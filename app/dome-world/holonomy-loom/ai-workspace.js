@@ -4,7 +4,8 @@ import { FIRST_CROSSING_PRACTICE, bindFirstCrossingPractice, checkFirstCrossingP
 import { LOOM_TUTORIAL_OPERATORS, loomTutorialPresentation, loomOpeningPresentation } from './tutorial-membrane.js';
 import { nextFlowcoreChoreography } from './flowcore-choreography.js?v=20261013-phase09-v1';
 import { mountReturnedSessionReview } from './returned-session-review.js';
-import { loomWorkspaceTemplate } from './workspace-template.js';
+import { loomWorkspaceTemplate } from './workspace-template.js?v=20261014-firewall-science-v1';
+import { mountLoomPrivacyScienceView } from './privacy-science-view.js';
 import { createPortableLoomGateReport, describePortableLoomGateReport } from '../../engine/portable-loom-gate.js';
 import { createLoomGateDisclosure } from '../loom-gate-disclosure.js';
 import { portableLoomFooterText } from '../../engine/portable-loom-output.js';
@@ -12,7 +13,7 @@ import { STANDARD_PORTABLE_LOOM_RULES } from '../../engine/portable-loom-policy.
 import { readLoomDocument, buildLoomAiRequest, inspectLoomAiResponse } from './ai-intake.js';
 import { createLoomAiHandoff, createPortableLoomAiPacket, createCanonicalPortableLoomPacket, createPortableLoomAiPrompt, createLoomAiGovernance, createLoomAiTaskGovernor } from './ai-handoff.js';
 import { assessLoomProjectAnswer } from './ai-project-checks.js';
-import { mountLoomRuntimeStateView } from './runtime-state-view.js';
+import { mountLoomRuntimeStateView } from './runtime-state-view.js?v=20261014-firewall-science-v1';
 import { renderLoomAiResult } from './ai-result-view.js';
 import { readLoomAiFailure, describeLoomAiFailure } from './ai-failure.js';
 import { AnimationCoordinator } from './animation-coordinator.js';
@@ -62,6 +63,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   environment.document.querySelector('.loom-topbar nav')?.prepend(flowcoreHelp);
   const flowcoreMessage=flowcoreHelp.querySelector('#loomFlowcoreMessage');
   const $ = id => root.querySelector(`#${id}`);
+  const scienceViews=[];
   const lines = id => $(id).value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   let activeWorkspace = 'build', marrowlineChild = null;
   function openWorkspace(name, {focus=false}={}) {
@@ -80,6 +82,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     const dialog=$('loomTools');
     dialog.querySelectorAll('[data-tool-panel]').forEach(panel=>panel.hidden=panel.dataset.toolPanel!==name);
     dialog.querySelectorAll('[data-tool]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.tool===name)));
+    if(name==='science')scienceViews.forEach(view=>view.refresh());
     if(!dialog.open){if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');}
   }
   $('loomToolsOpen').addEventListener('click',()=>openTools());
@@ -98,6 +101,16 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   let challengeBundle = null, challengeVerification = null, challengeDollhouse = null, turnReceiptVerification = null, challengeVersion = 0;
   let challengeSession = null, challengeWorkUnit = null, locallyAdmitted = false;
   let gateReports = [];
+  const privacyLocalFacts=()=>({
+    selected_files:documents.filter(document=>document.share).length,
+    withheld_files:documents.filter(document=>!document.share).length,
+    session_prepared:Boolean(portableSession),
+    local_return_admitted:locallyAdmitted,
+    gate_report_count:gateReports.length
+  });
+  for(const id of ['loomScienceIntro','loomScienceTools'])
+    scienceViews.push(mountLoomPrivacyScienceView($(id),{environment,getLocalFacts:privacyLocalFacts}));
+  $('loomOpenPrivacyScience').addEventListener('click',()=>openTools('science'));
   const gateDisclosure=createLoomGateDisclosure(environment.document,{id:'loomGateHow',onGate:()=>openTools('challenge')});
   $('loomGateAlerts').after(gateDisclosure.section);
   $('aiCheckLoomGate').addEventListener('click',()=>openTools('challenge'));
@@ -154,7 +167,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     $('loomJourneyStep2').disabled=!acceptedTask&&!locallyAdmitted;
     openWorkspace(state==='loom'?'build':state==='return'?'return':'crossing');
   };
-  const coordinator = new AnimationCoordinator({ durationMs: 4000, maxFps: 60, onState: state => { root.dataset.pendingFrames = String(state.pendingFrames); } });
+  const coordinator = new AnimationCoordinator({ durationMs: 6000, maxFps: 60, onState: state => { root.dataset.pendingFrames = String(state.pendingFrames); } });
   coordinator.setContinuous(false);
   const invitation = $('aiDemoInvitation');
   const FIRST_CROSSING_KEY = 'td613.loom.first-crossing.v1';
@@ -189,17 +202,17 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     if((focused===check&&!action)||(focused===finish&&!stop))tutorial.focus?.({preventScroll:true});
     root.dataset.firstCrossingCue=cue;
     const progress={
-      choose:'1 of 7 · Choose',
-      'gathering-motion':'2 of 7 · Gather',
-      'gathering-named':'2 of 7 · Gather',
-      binding:'3 of 7 · Review',
-      'binding-held':'3 of 7 · Review',
-      'potential-motion':'3 of 7 · Review',
-      'potential-named':'3 of 7 · Review',
-      'send-motion':'4 of 7 · Carry', 'send-named':'4 of 7 · Carry',
-      'privacy-motion':'5 of 7 · Test', 'privacy-named':'5 of 7 · Test',
-      'proof-motion':'6 of 7 · Return', 'proof-named':'6 of 7 · Return',
-      'lesson-held':'Review tutorial check', complete:'7 of 7 · Your turn'
+      choose:'1 of 7 · Choose what travels',
+      'gathering-motion':'2 of 7 · Gather context',
+      'gathering-named':'2 of 7 · Gather context',
+      binding:'3 of 7 · Review before sending',
+      'binding-held':'3 of 7 · Review before sending',
+      'potential-motion':'3 of 7 · Review before sending',
+      'potential-named':'3 of 7 · Review before sending',
+      'send-motion':'4 of 7 · Preview the handoff', 'send-named':'4 of 7 · Preview the handoff',
+      'privacy-motion':'5 of 7 · Check privacy', 'privacy-named':'5 of 7 · Check privacy',
+      'proof-motion':'6 of 7 · Check the answer', 'proof-named':'6 of 7 · Check the answer',
+      'lesson-held':'Review tutorial check', complete:'7 of 7 · You are in control'
     };
     $('loomTutorialProgress').textContent=progress[cue]??'How Loom works';
     // The illustrated relation stays legible through readiness checks:
@@ -207,13 +220,13 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     const operator=LOOM_TUTORIAL_OPERATORS[firstCrossingStep];
     if(operator){
       const note=[
-        'Gather the question',
-        'Review what stays private',
-        'Prepare the request',
-        'Preview sending · nothing sent',
-        'Revisit the local privacy check',
-        'Review the fictional return',
-        'Rest · your turn'
+        'Gather the right context',
+        'Leave private details out',
+        'Check exactly what travels',
+        'Preview sending · demo only',
+        'Check what your firewall catches',
+        'Inspect the sample answer',
+        'Your review comes first'
       ][firstCrossingStep];
       $('loomTutorialOperatorGlyph').textContent=operator.glyph;
       $('loomTutorialOperatorLabel').textContent=note;
@@ -276,7 +289,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     const portable = mode === 'portable';
     $('aiPreparePortable').classList.add('ai-primary');
     $('aiRun').classList.remove('ai-primary');
-    $('aiPreparePortable').textContent = portable ? 'Review my request →' : 'Review Demo request →';
+    $('aiPreparePortable').textContent = portable ? 'Check AI Request →' : 'Check Demo AI Request →';
     $('aiRun').textContent = portable ? 'Run model test ↗' : 'Run demo model test ↗';
     $('aiTaskLabel').textContent = portable ? 'Task' : 'Demo task';
     $('aiTaskCue').textContent = portable
@@ -368,28 +381,28 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
         firstCrossingSourceUnlocked=true;
         root.dataset.firstCrossingGather='complete';
         renderFirstCrossingSelection();
-        $('loomFirstCrossingAnswer').textContent='Now see what this example needs to answer.';
+        $('loomFirstCrossingAnswer').textContent='Choose the context the AI needs, and leave the rest private.';
       }
       return;
     }
     const alreadyPublished=firstCrossingStep===1?firstCrossingGatheringPublished:firstCrossingReadinessPublished;
     // A presentation remix cannot withdraw a consequence already observed for
     // this same selection/binding. Restarting the tutorial resets these flags.
-    const consequenceVisible=alreadyPublished||(projectionCurrent && (snapshot.reducedMotion || snapshot.progress>=.82));
+    const consequenceVisible=alreadyPublished||(projectionCurrent && (snapshot.reducedMotion || snapshot.progress>=.9));
     if(firstCrossingStep===1){
       if(consequenceVisible){
         firstCrossingGatheringPublished=true;
         setFirstCrossingCue('gathering-named',{
-          title:'A good question is personal.',
-          prompt:'A little context might be enough for a helpful answer. What could someone infer from that little bit?',
-          answer:'This example is ready to inspect.',
+          title:'Give AI the context, not your entire history.',
+          prompt:'Start with the question and only the details that help answer it. Your private conversation stays out of this request.',
+          answer:'Your selected request is ready. Read it before continuing.',
           action:true
         });
       }else{
         setFirstCrossingCue('gathering-motion',{
-          title:'A good question is personal.',
-          prompt:'A little context might be enough for a helpful answer. What could someone infer from that little bit?',
-          answer:'Putting the example together…'
+          title:'Give AI the context, not your entire history.',
+          prompt:'Start with the question and only the details that help answer it. Your private conversation stays out of this request.',
+          answer:'Keeping the selected question and context together…'
         });
       }
       return;
@@ -398,22 +411,22 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
       if(consequenceVisible){
         firstCrossingReadinessPublished=true;
         setFirstCrossingCue('potential-named',{
-          title:'Follow the clues.',
-          prompt:'This is the example request. Notice how even a few ordinary details could say a lot about someone.',
+          title:'See exactly what would leave your browser.',
+          prompt:'See the exact question, selected references, and instructions before any material leaves your browser.',
           answer:'Tutorial · this request stays in your browser.',
           stop:true
         });
       }else{
         setFirstCrossingCue('potential-motion',{
-          title:'Follow the clues.',
-          prompt:'This is the example request. Notice how even a few ordinary details could say a lot about someone.',
-          answer:'Checking the example request…'
+          title:'See exactly what would leave your browser.',
+          prompt:'See the exact question, selected references, and instructions before any material leaves your browser.',
+          answer:'Checking the exact details selected for AI…'
         });
       }
     }
     if(firstCrossingStep>=3&&firstCrossingStep<=5){
       const current=$('aiRuntimeState').dataset.projectionState==='CURRENT';
-      if(firstCrossingLessonPublished||(current&&(snapshot.reducedMotion||snapshot.progress>=.82))){
+      if(firstCrossingLessonPublished||(current&&(snapshot.reducedMotion||snapshot.progress>=.9))){
         firstCrossingLessonPublished=true;
         renderFirstCrossingLesson(true);
       }
@@ -580,9 +593,9 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     firstCrossingWasAlreadyComplete=true;
     storageWrite(FIRST_CROSSING_KEY,'complete');
     setFirstCrossingCue('complete',{
-      title:'What could a stranger work out?',
-      prompt:'A good answer could still reveal details you meant to keep private. The real test examines the whole exchange and what an outsider could infer.',
-      answer:'This fictional example cannot establish what an outsider could reconstruct.'
+      title:'Stay in control of what AI sees.',
+      prompt:'Loom helps you inspect outgoing information and returned work. A real privacy test must also examine the full exchange and what an observer could infer.',
+      answer:'This walkthrough stays in your browser. It cannot prove what an outside observer or AI provider would learn.'
     });
     $('loomBegin').hidden=false;
     $('loomBegin').textContent='Try Loom →';
@@ -634,11 +647,11 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     firstCrossingChoreography=nextFlowcoreChoreography(firstCrossingChoreography?.id, environment.Math?.random?.() ?? Math.random());
     setFirstCrossingCue('choose',{
       title:'Firewall your online life from AI.',
-      prompt:'You can ask ChatGPT, Gemini, or another LLM for help without sending every private detail. Loom lets you choose what goes out, review what comes back, and examine what the exchange might reveal.',
-      answer:'See what one example can show—and what a single check could miss. Nothing is sent to an AI.'
+      prompt:'Use Gemini, ChatGPT, and other LLMs. Choose what you send, inspect what comes back, and test what the exchange may reveal.',
+      answer:'Try the seven-step demo: select the context, inspect the request, and see how the answer comes back. Nothing is sent to an AI.'
     });
     flowcoreMessage.textContent=firstCrossingChoreography.message;
-    $('loomFirstCrossingAction').textContent='Review the request →';
+    $('loomFirstCrossingAction').textContent='Check AI Request →';
     $('loomFirstCrossingPause').textContent='𝌋';
     $('loomFirstCrossingPause').setAttribute('aria-pressed','false');
     firstCrossingItems.forEach(button=>{button.disabled=button.dataset.firstCrossingItem==='source';button.setAttribute('aria-pressed','false');delete button.dataset.held;});
@@ -671,12 +684,12 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
       firstCrossingItems.forEach(button=>button.disabled=true);
       $('loomFirstCrossingBack').hidden=false;
       setFirstCrossingCue('gathering-motion',{
-        title:'A good question is personal.',
-        prompt:'A little context might be enough for a helpful answer. What could someone infer from that little bit?',
-        answer:'Putting the example together…'
+        title:'Give AI the context, not your entire history.',
+        prompt:'Start with the question and only the details that help answer it. Your private conversation stays out of this request.',
+        answer:'Keeping the selected question and context together…'
       });
       projectFirstCrossing(firstCrossingEvent('prepared'));
-      $('loomFirstCrossingAction').textContent='Review the request →';
+      $('loomFirstCrossingAction').textContent='Check AI Request →';
       return;
     }
     if(firstCrossingStep===1){
@@ -686,8 +699,8 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
       const token=++firstCrossingGeneration;
       firstCrossingBindingState='PENDING';
       setFirstCrossingCue('binding',{
-        title:'Follow the clues.',
-        prompt:'This is the example request. Notice how even a few ordinary details could say a lot about someone.',
+        title:'See exactly what would leave your browser.',
+        prompt:'See the exact question, selected references, and instructions before any material leaves your browser.',
         answer:'Checking your selected material…'
       });
       try{
@@ -698,12 +711,12 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
         firstCrossingStep=2;
         root.dataset.firstCrossingStep='2';
         setFirstCrossingCue('potential-motion',{
-          title:'Follow the clues.',
-          prompt:'This is the example request. Notice how even a few ordinary details could say a lot about someone.',
+          title:'See exactly what would leave your browser.',
+          prompt:'See the exact question, selected references, and instructions before any material leaves your browser.',
           answer:'Tutorial · this request stays in your browser.'
         });
         projectFirstCrossing(firstCrossingEvent('checking',binding.facts??binding));
-        $('loomFirstCrossingStop').textContent='See the handoff →';
+        $('loomFirstCrossingStop').textContent='出 Send request · demo →';
       }catch(error){
         if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
         firstCrossingBindingState='HELD';
@@ -714,9 +727,9 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
 
   function renderFirstCrossingLesson(published=false){
     const lessons={
-      3:{cue:'send',title:'A small piece can say a lot.',prompt:'The model would receive this question and these details. Someone watching a different part of the journey might have other clues. That is why the trail matters.',answer:'Example only. Nothing has been sent to an AI provider.',next:'See what a check catches →'},
-      4:{cue:'privacy',title:'The clues add up.',prompt:'The local check catches one excluded phrase. But timing, details, and fragments can tell a larger story when someone combines them. That is the harder privacy test.',answer:'One local hold was observed. What an outsider could reconstruct remains unmeasured.',next:'See the example answer →'},
-      5:{cue:'proof',title:'Did the answer help?',prompt:'The example reply offers a way forward without quoting the private exchange. But a useful answer alone cannot tell us what a stranger learned along the way.',answer:'Fictional reply. No AI provider or outside-observer test was involved.',next:'Finish tutorial →'}
+      3:{cue:'send',title:'Only what you choose crosses.',prompt:'This preview shows what your selected AI request contains. The private conversation stays here. This tutorial sends nothing to an AI provider.',answer:'Example only. Nothing has been sent to an AI provider.',next:'米 Revisit privacy →'},
+      4:{cue:'privacy',title:'A phrase check is only the beginning.',prompt:'Loom catches the phrase you chose to protect. But names, dates, and combined clues can reveal other things. A firewall should show you both the protection and its limits.',answer:'The private phrase stayed out of this example. Other possible leaks remain unmeasured.',next:'下 Return proof →'},
+      5:{cue:'proof',title:'Bring the answer back. Read it yourself.',prompt:'Compare the answer with your original request. Check what it used, what it missed, and whether private material appeared in the response.',answer:'Fictional reply. No AI provider or outside-observer test was involved.',next:'Finish tutorial →'}
     };
     const lesson=lessons[firstCrossingStep];
     if(!lesson)return;

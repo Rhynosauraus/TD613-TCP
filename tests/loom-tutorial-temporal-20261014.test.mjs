@@ -27,7 +27,7 @@ test('readable tutorial phase is stable when its exact animation clock publishes
   assert.equal(readyPotential.length,1);
   assert.equal(binding.length,1);
   for(const pending of [...potential,...binding]) assert.deepEqual(pending,readyPotential[0]);
-  assert.match(workspace,/snapshot\.progress>=\.82/,'same finite-time readiness gate survives');
+  assert.match(workspace,/snapshot\.progress>=\.9/,'same finite-time readiness gate survives');
   assert.match(workspace,/if\(!firstCrossingGatheringPublished\)return/,'binding remains consequence-gated');
   assert.match(workspace,/if\(\(firstCrossingStep===2&&!firstCrossingReadinessPublished\)/,'return step remains readiness-gated');
 });
@@ -37,14 +37,14 @@ test('all seven Flow-Core tutorial glyphs have a visibly named, fictional state'
   assert.ok(glyph&&label,'glyph and plain-language operation are separately addressable');
   assert.deepEqual(LOOM_TUTORIAL_OPERATORS.map(x=>x.glyph),['à','hõt','上','出','米','下','𝄐']);
   assert.match(workspace,/LOOM_TUTORIAL_OPERATORS\[firstCrossingStep\]/);
-  assert.match(workspace,/Preview sending · nothing sent/);
+  assert.match(workspace,/Preview sending · demo only/);
   for(let step=0;step<7;step++){
     const presentation=loomTutorialPresentation(step);
     assert.equal(presentation.tutorial_operator.glyph,LOOM_TUTORIAL_OPERATORS[step].glyph);
     assert.equal(presentation.tutorial_operator.evidence_class,'TUTORIAL_ILLUSTRATION_ONLY');
     assert.equal(presentation.flowcore_choreography.family,LOOM_TUTORIAL_OPERATORS[step].family);
   }
-  assert.match(workspace,/new AnimationCoordinator\(\{ durationMs: 4000/);
+  assert.match(workspace,/new AnimationCoordinator\(\{ durationMs: 6000/);
   assert.doesNotMatch(couture,/@keyframes[^{]*\{/);
 });
 test('mobile request reads vertically; raw machine output and research math are opt-in',()=>{
@@ -62,5 +62,30 @@ test('mobile request reads vertically; raw machine output and research math are 
   assert.ok(research.querySelector('.loom-research-technical'));
   assert.equal(research.querySelector('.loom-research-technical').open,false);
   assert.match(research.querySelector('.loom-research-technical').textContent,/L ≤ 0.5 bits.*R ≤ 0.2.*J ≤ 0.1/);
-  assert.match(html,/temporal-glyphs-v1/);
+  assert.match(html,/visible-cinema-and-copy-v1/);
+});
+
+
+test('the first screen explains the AI firewall and three actual evidence boundaries',()=>{
+  const title=doc.querySelector('#loomFirstCrossingTitle')?.textContent;
+  const pitch=doc.querySelector('#loomFirstCrossingPrompt')?.textContent;
+  const route=doc.querySelector('.loom-value-route')?.textContent;
+  assert.match(title,/Firewall your online life from AI/);
+  assert.match(pitch,/Use Gemini, ChatGPT, and other LLMs/);
+  assert.match(pitch,/test what the exchange may reveal/);
+  assert.match(route,/Inspect the request/);
+  assert.match(route,/Protect what stays private/);
+  assert.match(route,/Examine the return/);
+  assert.match(workspace,/Give AI the context, not your entire history/);
+  assert.match(workspace,/Check AI Request/);
+});
+test('the actual renderer retains tutorial glyphs after finite motion instead of fading away',()=>{
+  const renderer=fs.readFileSync(new URL('instrument-state-view.js',folder),'utf8');
+  assert.match(renderer,/if\(illustration && finiteTraversal\)/);
+  assert.match(renderer,/frame\.progress-\.76/);
+  assert.match(renderer,/opacity=Math\.max\(opacity,nearPlane/);
+  assert.match(renderer,/length:39/);
+  assert.match(workspace,/durationMs: 6000/);
+  assert.match(workspace,/snapshot\.progress>=\.9/);
+  assert.match(couture,/loom-value-route/);
 });
