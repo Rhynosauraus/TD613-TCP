@@ -416,15 +416,18 @@ try {
       const toolTargets=await tapTargets(page),smallTools=toolTargets.filter(target=>target.width<43.5||target.height<43.5);
       record(`${posture.name}: Tools targets at least 44px`,smallTools.length===0,{targets:toolTargets,too_small:smallTools});
       await page.keyboard.press('Escape');
+      await page.waitForFunction(id=>!document.querySelector('#loomTools').open&&document.activeElement?.id===id,'loomToolsOpen',{timeout:3000});
       record(`${posture.name}: keyboard Escape restores Tools opener`, !(await page.locator('#loomTools').evaluate(node => node.open)) && await page.evaluate(() => document.activeElement?.id) === 'loomToolsOpen', { active_element: await page.evaluate(() => document.activeElement?.id) });
       await page.locator('#loomBoundaryOpen').focus(); await page.keyboard.press('Enter');
       const boundary = await page.locator('[data-tool-panel="boundary"]').textContent();
       record(`${posture.name}: boundary accessible before crossing`, await page.locator('[data-tool-panel="boundary"]').isVisible() && /Unselected files stay in this browser/.test(boundary) && /You decide which question, sources, and instructions leave this browser/.test(boundary) && /external AI provider determines its own retention, memory, and processing/.test(boundary), { text: boundary });
       await page.keyboard.press('Escape');
+      await page.waitForFunction(id=>!document.querySelector('#loomTools').open&&document.activeElement?.id===id,'loomBoundaryOpen',{timeout:3000});
       await page.locator('#loomRulesOpen').focus(); await page.keyboard.press('Enter');
       const ruleFont = await page.locator('#aiRules').evaluate(node => Number.parseFloat(getComputedStyle(node).fontSize));
       record(`${posture.name}: rules accessible with protected input font`, await page.locator('#aiRules').isVisible() && ruleFont >= 16, { font_size: ruleFont });
       await page.keyboard.press('Escape');
+      await page.waitForFunction(id=>!document.querySelector('#loomTools').open&&document.activeElement?.id===id,'loomRulesOpen',{timeout:3000});
 
       // Deliberately use raw mouse events immediately after task entry. Locator
       // click's stability wait could mask a blur/pending-field layout defect.
