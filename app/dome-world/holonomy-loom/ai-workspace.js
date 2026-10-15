@@ -89,7 +89,13 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     if(name==='science')scienceViews.forEach(view=>view.refresh());
     if(!dialog.open){if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');}
   }
-  $('loomTools').addEventListener('close',()=>toolsReturnFocus?.focus?.({preventScroll:true}));
+  $('loomTools').addEventListener('close',()=>{
+    const dialog=$('loomTools'),active=environment.document.activeElement;
+    // Native close events are queued. Preserve a newer outside focus choice or
+    // a reopened dialog instead of letting an earlier close steal its gesture.
+    if(dialog.open)return;
+    if(!active||active===environment.document.body||dialog.contains(active))toolsReturnFocus?.focus?.({preventScroll:true});
+  });
   $('loomToolsOpen').addEventListener('click',()=>openTools());
   $('loomRulesOpen').addEventListener('click',()=>openTools('rules'));
   $('loomBoundaryOpen').addEventListener('click',()=>openTools('boundary'));

@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { chromium, webkit } from 'playwright';
 
@@ -35,6 +35,18 @@ const server = createServer(async (request, response) => {
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 const base = `http://127.0.0.1:${server.address().port}`;
 const records = [];
+const artifactDir=process.env.TD613_GLYPH_ARTIFACT_DIR || (process.env.CI?'artifacts/loom-mobile-composition/glyphs':null);
+if(artifactDir)await mkdir(artifactDir,{recursive:true});
+async function glyphCoverage(page,selector,glyph){
+  await page.evaluate(()=>document.fonts.ready);
+  return page.locator(selector).evaluate((node,glyph)=>{
+    const style=getComputedStyle(node),font=`${style.fontWeight} 40px ${style.fontFamily}`;
+    const raster=text=>{const canvas=document.createElement('canvas');canvas.width=100;canvas.height=80;const ctx=canvas.getContext('2d');ctx.font=font;ctx.fillText(text,5,55);return [...ctx.getImageData(0,0,100,80).data];};
+    const pixels=raster(glyph),missing=raster('\u{10FFFF}');
+    return {glyph,font_family:style.fontFamily,has_pixels:pixels.some(v=>v!==0),distinct_from_missing:pixels.some((v,i)=>v!==missing[i]),bundled_font_first:style.fontFamily.startsWith('"Loom Flow-Core"')};
+  },glyph);
+}
+
 let failed = false;
 try {
   for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
@@ -108,7 +120,9 @@ try {
             const guide=page.locator('.loom-topbar nav > .loom-flowcore-help');
             const glyphs=['à','米','出','hõt','cōl','上','下','𝄐'];
             await guide.locator('summary').click();
+            const glyphRendering=[];
             for(const glyph of glyphs){
+              if(['米','出','上','下','𝄐'].includes(glyph))glyphRendering.push(await glyphCoverage(page,'[data-flowcore-copy="'+glyph+'"]',glyph));
               await guide.locator('[data-flowcore-copy="'+glyph+'"]').click();
               await page.waitForFunction(value=>document.querySelector('#loomFlowcoreCopyNotice')?.textContent===value+' Copied!',glyph);
             }
@@ -126,6 +140,29 @@ try {
               pageErrors.length===0 && externalRequests.length===0;
             records.push({engine:name,mode:'PERSISTENT_FLOWCORE_GLYPH_COPY',status:copyPass?'PASS':'FAIL',evidence:copyEvidence});
             if(!copyPass)failed=true;
+            const fontPass=glyphRendering.every(x=>x.has_pixels&&x.distinct_from_missing&&x.bundled_font_first);
+            records.push({engine:name,mode:'FLOWCORE_GLYPH_COVERAGE',status:fontPass?'PASS':'FAIL',evidence:glyphRendering});
+            if(!fontPass)failed=true;
+            // Replay all seven scenes in both engines. This is a responsive
+            // WebKit witness, never a physical iPhone or Safari observation.
+            await page.locator('#loomReturnThreshold').click();
+            const scenes=[];
+            for(let step=0;step<7;step++){
+              await page.waitForFunction(n=>document.querySelector('#loomAiWorkspace').dataset.firstCrossingStep===String(n),step);
+              await page.waitForFunction(()=>document.querySelector('#aiRuntimeState').dataset.projectionState==='CURRENT',null,{timeout:3000});
+              const action=step===6?'#loomBegin':step<2?'#loomFirstCrossingAction':'#loomFirstCrossingStop';
+              const heading=await page.locator('#loomFirstCrossingTitle').innerText();
+              const width=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth}));
+              const glyph=[null,null,'出','米','下'][step];
+              const rendering=glyph?await glyphCoverage(page,action,glyph):null;
+              const pass=width.document<=width.viewport&&await page.locator(action).isEnabled()&&(!rendering||(rendering.has_pixels&&rendering.distinct_from_missing&&rendering.bundled_font_first));
+              scenes.push({scene:step+1,heading,width,rendering,status:pass?'PASS':'FAIL'});
+              if(!pass)failed=true;
+              if(artifactDir){await page.locator('#loomFirstCrossingTitle').scrollIntoViewIfNeeded();await page.screenshot({path:`${artifactDir}/${name}-390-scene-${step+1}.png`,fullPage:true});}
+              await page.locator(action).click();
+            }
+            await page.locator('.loom-builder-shell').waitFor({state:'visible'});
+            records.push({engine:name,mode:'SEVEN_SCENE_GLYPH_NAVIGATION',status:scenes.every(s=>s.status==='PASS')?'PASS':'FAIL',evidence:scenes});
           }
         } catch (error) {
           failed = true;
