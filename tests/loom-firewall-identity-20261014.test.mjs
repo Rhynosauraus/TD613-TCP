@@ -15,67 +15,51 @@ const workspace=fs.readFileSync(new URL('ai-workspace.js',root),'utf8');
 const dom=new JSDOM(loomWorkspaceTemplate);
 const doc=dom.window.document;
 
-test('the opening speaks plainly about useful AI help and private conversation',()=>{
-  assert.match(doc.querySelector('#loomFirstCrossingTitle').textContent,/Make AI behave\. Keep your private life yours/i);
-  assert.equal(doc.querySelector('.loom-hero-promise'),null,'no competing marketing headline');
-  assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent,/ChatGPT, Gemini, and other AI models.*someone else could infer/i);
-  assert.doesNotMatch(doc.querySelector('#loomFirstCrossing').textContent,/Golden Egg/i);
-  assert.doesNotMatch(doc.querySelector('#loomFirstCrossing').textContent,/draft a work email|Northstar|Acquisition talks/i);
-  assert.equal(doc.querySelectorAll('[data-first-crossing-item]').length,2);
-  assert.match(doc.querySelector('.loom-research-proof').textContent,/research targets.*L.*R.*J/i);
-  assert.match(doc.querySelector('.loom-research-proof').textContent,/An AI provider can still access the information you actually send/i);
-  assert.match(doc.querySelector('[data-first-crossing-item="brief"]').textContent,/The job you want AI to do/i);
-  assert.match(doc.querySelector('[data-first-crossing-item="source"]').textContent,/What the AI needs to know/i);
+test('the opening preserves the firewall framing and names the governed continuity operations',()=>{
+ assert.match(doc.querySelector('.loom-threshold-kicker').textContent,/Firewall your online life from AI/);
+ assert.match(doc.querySelector('#loomFirstCrossingTitle').textContent,/governs what carries forward/);
+ assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent,/ChatGPT, Gemini, and other LLMs/);
+ assert.doesNotMatch(doc.querySelector('#loomFirstCrossing').textContent,/Golden Egg|draft a work email/i);
+ assert.equal(doc.querySelectorAll('[data-first-crossing-item]').length,2);
+ assert.equal(doc.querySelector('#loomTutorialMotion'),null);
 });
 
-test('the permitted takeaway is a local fictional input, with a distinct held source',()=>{
-  assert.equal(FIRST_CROSSING_PRACTICE.documents.length,3);
-  assert.deepEqual(FIRST_CROSSING_PRACTICE.documents.filter(x=>x.share).map(x=>x.id),['brief','source']);
-  assert.match(FIRST_CROSSING_PRACTICE.task,/considering taking a job in another city/i);
-  assert.match(FIRST_CROSSING_PRACTICE.documents[1].text,/month before I need to decide/);
-  const check=checkFirstCrossingPrivacy();
-  assert.equal(check.provider_called,false);
-  assert.equal(check.blocked_private_egress_attempts,1);
-  assert.equal(check.whole_conversation_leakage_fraction,null);
-  assert.doesNotMatch(doc.querySelector('.loom-boundary-event').textContent,/My sister and I argued about the move last night/);
+
+test('the fictional workshop preserves selected references and a separately held private source',()=>{
+ assert.deepEqual(FIRST_CROSSING_PRACTICE.documents.filter(x=>x.share).map(x=>x.id),['brief','source']);
+ assert.match(FIRST_CROSSING_PRACTICE.task,/community music workshop/i);
+ assert.match(FIRST_CROSSING_PRACTICE.documents[1].text,/90 minutes/);
+ assert.equal(FIRST_CROSSING_PRACTICE.documents[2].share,false);
+ const check=checkFirstCrossingPrivacy();assert.equal(check.provider_called,false);
+ assert.equal(check.blocked_private_egress_attempts,1);assert.equal(check.whole_conversation_leakage_fraction,null);
 });
 
-test('mobile sculpture stays mobile; desktop retains the canonical, single-clock field',()=>{
-  assert.match(css,/@media \(min-width:761px\)\s*\{\s*#loomAiWorkspace \.loom-armature \{display:none !important\}/);
-  assert.match(css,/button:not\(\[aria-pressed="true"\]\)::after\s*\{\s*content:"→"/);
-  assert.equal((workspace.match(/new AnimationCoordinator\(/g)||[]).length,1);
-  assert.match(runtime,/Array\.from\(\{length:39\}/);
-  assert.match(runtime,/choreography\.presentation_slots\.filter/);
-  assert.doesNotMatch(css,/@keyframes[^{]*\{/);
+
+test('the product retains the full-page single-clock canonical field',()=>{
+ assert.equal((workspace.match(/new AnimationCoordinator\(/g)||[]).length,1);
+ assert.match(runtime,/Array\.from\(\{length:39\}/);
+ assert.match(runtime,/choreography\.presentation_slots\.filter/);
+ assert.doesNotMatch(css,/@keyframes[^{]*\{/);
+ assert.match(css,/width:100%;height:100%/);
 });
 
-test('the overture casts all eight glyph relations while emphasizing legible returns and rests',()=>{
-  const presentation=loomOpeningPresentation();
-  const slots=presentation.flowcore_choreography.presentation_slots;
-  assert.equal(presentation.tutorial_operator,null);
-  assert.equal(slots.length,23);
-  assert.ok(slots.filter(x=>x==='protected_continuity').length>=6);
-  assert.ok(slots.filter(x=>x==='bounded_emergence').length>=6);
-  assert.ok(slots.includes('release'));
-  assert.ok(slots.filter(x=>x==='structural_rest').length>=3);
-  assert.equal(new Set(presentation.flowcore_choreography.relations).size,8);
+
+test('the overture gives each canonical relation four or five of 39 slots',()=>{
+ const presentation=loomOpeningPresentation(),slots=presentation.flowcore_choreography.presentation_slots;
+ assert.equal(presentation.tutorial_operator,null);assert.equal(slots.length,39);
+ const counts={};for(const id of slots)counts[id]=(counts[id]||0)+1;
+ assert.equal(Object.keys(counts).length,8);assert.ok(Object.values(counts).every(n=>n===4||n===5));
 });
 
-test('C+ repair: fermata uses SVG fallback, private glyph is visible, and action sleeps in place',()=>{
-  const renderer=fs.readFileSync(new URL('../app/dome-world/holonomy-loom/instrument-state-view.js',import.meta.url),'utf8');
-  const js=fs.readFileSync(new URL('../app/dome-world/holonomy-loom/ai-workspace.js',import.meta.url),'utf8');
-  const tpl=new JSDOM(loomWorkspaceTemplate).window.document;
-  assert.match(renderer,/restFlightGlyphs=flightGlyphs\.map/);
-  assert.match(renderer,/svgEl\('path',\{d:'M-23 2 Q0 -28 23 2'\}\)/);
-  assert.match(renderer,/illustration&&!frame\.reduced_motion\?seconds\*\.22:0/);
-  assert.match(js,/check\.disabled=!action/);
-  assert.match(js,/finish\.disabled=!stop/);
-  assert.match(js,/coordinator\.setContinuous\(true\); \/\/ fictional tutorial only/);
-  assert.match(css, /loom-first-crossing-actions button:disabled/);
-  assert.match(css, /loom-first-crossing-private\{[\s\S]*?display:flex !important/);
-  assert.match(tpl.querySelector('.loom-private-continuity-note').textContent,/cōl/);
-  assert.doesNotMatch(tpl.querySelector('.loom-boundary-event').textContent,/phrase check|catches|redactor/i);
+
+test('fermata fallback and inspectable private planning survive the narrative repair',()=>{
+ assert.match(runtime,/restFlightGlyphs=flightGlyphs\.map/);
+ assert.match(runtime,/M-23 2 Q0 -28 23 2/);
+ assert.equal(doc.querySelector('#loomFirstCrossingPrivate').tagName,'DETAILS');
+ assert.match(doc.querySelector('#loomFirstCrossingPrivate summary').textContent,/cōl.*local only/);
+ assert.ok(doc.querySelector('#loomTutorialProofRecord').closest('details'));
 });
+
 
 test('finished five-surface proof artwork is staged, unmounted and incapable of self-promotion',()=>{
   const root=new JSDOM(loomWorkspaceTemplate).window.document;

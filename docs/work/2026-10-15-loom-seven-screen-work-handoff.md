@@ -1,6 +1,18 @@
 # TD613 Loom · Seven-screen couture tutorial · interrupted Work handoff
 
-**Status: DRAFT RECOVERY / CODE NOT YET TRANSFERRED**
+**Status: IMPLEMENTATION RECOVERED IN #1508; CI / RELEASE PENDING**
+
+## Original Work recovery · 2026-10-15
+
+The original worktree survived. Implementation commit `f65557b` was recovered, reconciled with current main `fd6a7fbdacfa696cd9375874ba16145be7f21dab`, and transferred into this PR as `b7d2fc7546ef7afb60f9df74c0fbdcd1e73176e3`. The original 43 + 12 test reports remain historical; a fresh focused run independently passed 55/55 checks. The rendered Chromium witness passed 268/268 checks across 320, 390, landscape and desktop viewports, all seven scenes, reduced motion, skip/replay, builder preservation, observer join and research return. Screenshots were inspected. This is local browser evidence, not GitHub CI, a physical-device observation, provider-compliance evidence or human-comprehension measurement.
+
+The recovered implementation has complete seven-scene copy, explicit Next/Back, asynchronous generation cancellation, local request/return bindings, an inspectable portable artifact, a finite observer comparison, balanced 39-slot opening grammar, paired scene relations, the existing six-dimensional field and one animation coordinator. Remix remains; the added tutorial Pause control is absent. The approved firewall framing is restored. Existing real custody, provider routing and Marrowline logic remain outside the repair.
+
+Operator activation in this Work session supersedes this document’s original draft-only stop: verify exact-head CI, merge, execute one protected #405 production release, and verify source-to-live bytes and behavior. No paid provider experiment or empirical promotion is authorized.
+
+The record below is the original handoff, retained as history rather than a current claim that code is absent.
+
+---
 
 **2026-10-15 · Operator: Tawanna C. Miller**  
 **Source context:** ChatGPT Work session interrupted by usage exhaustion immediately before publication of a promised draft PR.

@@ -16,7 +16,7 @@ export const loomWorkspaceTemplate = `${coutureArmature}<section class="loom-sta
   <section id="loomFirstCrossing" class="loom-first-crossing" aria-labelledby="loomFirstCrossingTitle" hidden tabindex="-1">
     <div class="loom-motion-view" aria-hidden="true"><span>FLOW-CORE / LIVING FIELD</span><span>𝌋</span></div>
     <div class="loom-first-crossing-copy">
-      <div class="loom-tutorial-meta"><span class="loom-threshold-kicker">SEE HOW GOVERNED AI CONTINUITY WORKS · INTERACTIVE DEMO</span><span id="loomTutorialProgress" class="loom-tutorial-progress">1 / 7 · The proposition</span></div>
+      <div class="loom-tutorial-meta"><span class="loom-threshold-kicker">Firewall your online life from AI.</span><span id="loomTutorialProgress" class="loom-tutorial-progress">1 / 7 · The proposition</span></div>
       <h2 id="loomFirstCrossingTitle">${LOOM_TUTORIAL_SCREENS[0].title}</h2>
       <p class="loom-demo-context">Interactive demo · fictional project · runs locally</p><p id="loomFirstCrossingPrompt">${LOOM_TUTORIAL_SCREENS[0].body}</p>
       <p class="loom-tutorial-operator-note" aria-label="Current Flow-Core illustration"><span id="loomTutorialOperatorGlyph" class="loom-tutorial-operator-glyph" aria-hidden="true">à</span><span id="loomTutorialOperatorLabel">The full Flow-Core ensemble</span></p>
