@@ -1,13 +1,13 @@
-import { LOOM_TUTORIAL_SCREENS } from './tutorial-copy.js?v=20261015-couture-v3';
-import { mountLoomObserverPreview } from './privacy-science-view.js?v=20261015-couture-v3';
+import { LOOM_TUTORIAL_SCREENS } from './tutorial-copy.js?v=20261015-restoration-v5';
+import { mountLoomObserverPreview } from './privacy-science-view.js?v=20261015-restoration-v5';
 import { PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT, derivePortableLoomSourceContext } from '../../engine/portable-loom-receiver-output-contract.js';
 import { inspectPortableLoomReceiverConformance } from '../../engine/portable-loom-receiver-conformance.js';
 import { FIRST_CROSSING_PRACTICE, bindFirstCrossingPractice, checkFirstCrossingPrivacy, createFirstCrossingReturnProof } from './first-crossing-practice.js?v=20261015-continuity-v1';
 import { LOOM_TUTORIAL_OPERATORS, loomTutorialPresentation, loomOpeningPresentation } from './tutorial-membrane.js?v=20261015-continuity-v1';
 import { nextFlowcoreChoreography } from './flowcore-choreography.js?v=20261013-phase09-v1';
 import { mountReturnedSessionReview } from './returned-session-review.js';
-import { loomWorkspaceTemplate } from './workspace-template.js?v=20261015-couture-v3';
-import { mountLoomPrivacyScienceView } from './privacy-science-view.js?v=20261015-couture-v3';
+import { loomWorkspaceTemplate } from './workspace-template.js?v=20261015-restoration-v5';
+import { mountLoomPrivacyScienceView } from './privacy-science-view.js?v=20261015-restoration-v5';
 import { createPortableLoomGateReport, describePortableLoomGateReport } from '../../engine/portable-loom-gate.js';
 import { createLoomGateDisclosure } from '../loom-gate-disclosure.js';
 import { portableLoomFooterText } from '../../engine/portable-loom-output.js';
@@ -15,7 +15,7 @@ import { STANDARD_PORTABLE_LOOM_RULES } from '../../engine/portable-loom-policy.
 import { readLoomDocument, buildLoomAiRequest, inspectLoomAiResponse } from './ai-intake.js';
 import { createLoomAiHandoff, createPortableLoomAiPacket, createCanonicalPortableLoomPacket, createPortableLoomAiPrompt, createLoomAiGovernance, createLoomAiTaskGovernor } from './ai-handoff.js';
 import { assessLoomProjectAnswer } from './ai-project-checks.js';
-import { mountLoomRuntimeStateView } from './runtime-state-view.js?v=20261015-continuity-v1';
+import { mountLoomRuntimeStateView } from './runtime-state-view.js?v=20261015-restoration-v5';
 import { renderLoomAiResult } from './ai-result-view.js';
 import { readLoomAiFailure, describeLoomAiFailure } from './ai-failure.js';
 import { AnimationCoordinator } from './animation-coordinator.js';
@@ -210,8 +210,16 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     root.dataset.firstCrossingCue=cue;
     root.dataset.firstCrossingStep=String(firstCrossingStep);
     root.dataset.loomIntro=String(firstCrossingStep===0);
-    $('loomTutorialProgress').textContent=`${firstCrossingStep+1} / 7 · ${screen.label}`;
-    $('loomFirstCrossingTitle').textContent=held?'This review needs attention.':screen.title;
+    $('loomTutorialProgress').textContent=`${firstCrossingStep+1} of 7 · ${screen.label}`;
+    const heading=$('loomFirstCrossingTitle');
+    heading.textContent=held?'This review needs attention.':screen.title;
+    if(!held && screen.emphasis && screen.title.endsWith(screen.emphasis)){
+      const line=environment.document.createElement('span'),last=environment.document.createElement('span'),em=environment.document.createElement('em');
+      line.className=last.className='loom-headline-line';
+      line.textContent=screen.title.slice(0,-screen.emphasis.length).trimEnd();
+      em.textContent=screen.emphasis;last.append(em);
+      heading.replaceChildren(line,environment.document.createTextNode(' '),last);
+    }
     $('loomFirstCrossingPrompt').textContent=held?prompt:screen.body;
     $('loomFirstCrossingAnswer').textContent=held?answer:pending?'Checking the exact selected material…':screen.consequence;
     $('loomTutorialOperatorGlyph').textContent=LOOM_TUTORIAL_OPERATORS[firstCrossingStep].glyph;
@@ -232,6 +240,17 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     finish.hidden=firstCrossingStep<2||firstCrossingStep===6;
     const active=firstCrossingStep<=1?check:finish;
     active.textContent=held?'Retry local check →':screen.action;
+    // The opening's first editorial row is the real next-scene action.
+    // Keep the same native button and listener when moving it between scenes.
+    const opening=firstCrossingStep===0&&!held;
+    firstCrossingItems[0].hidden=opening;
+    firstCrossingItems[1].disabled=opening;
+    if(opening){
+      $('loomFirstCrossingObjects').prepend(check);
+      const title=environment.document.createElement('strong'),description=environment.document.createElement('small');
+      title.textContent='Your request';description.textContent='Prepare a public brief for a community music workshop.';
+      check.replaceChildren(title,description);
+    }else $('loomFirstCrossingStop').before(check);
     active.disabled=pending;active.setAttribute('aria-disabled',String(pending));
     $('loomFirstCrossingBack').hidden=firstCrossingStep===0;
     $('loomFirstCrossingLeave').hidden=firstCrossingStep===6;
@@ -474,7 +493,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   }
   function renderFirstCrossingSelection(){
     for(const button of firstCrossingItems){
-      button.disabled=false;
+      button.disabled=firstCrossingStep===0;
       button.removeAttribute('aria-pressed');
       button.setAttribute('aria-expanded',String(button.dataset.inspectOpen==='true'));
     }

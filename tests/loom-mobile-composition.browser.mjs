@@ -255,6 +255,29 @@ try {
   }
 
 
+  // Short phone opening: same usable height as the operator's browser-chrome
+  // reference, without claiming a physical iPhone or Safari-chrome witness.
+  {
+    const context=await browser.newContext({viewport:{width:428,height:734},deviceScaleFactor:2});
+    const page=await bindPage(context,'opening-short-phone',served.base,{firstCrossingComplete:false});
+    try{
+      const frame=await page.evaluate(()=>{
+        const h=document.querySelector('#loomFirstCrossingTitle'),em=h.querySelector('em'),action=document.querySelector('#loomFirstCrossingAction'),footer=document.querySelector('#loomFirstCrossingLeave');
+        const r=n=>{const b=n.getBoundingClientRect();return {x:b.x,y:b.y,width:b.width,bottom:b.bottom};};
+        return {viewport:innerHeight,height:document.documentElement.scrollHeight,title:r(h),accent:r(em),action:r(action),footer:r(footer),row:r(action.parentElement)};
+      });
+      record('opening 428x734: original three-line headline, full-width primary row and footer in view',frame.height<=735&&Math.abs(frame.action.width-frame.row.width)<1&&frame.footer.bottom<=734&&frame.accent.y>frame.title.y,frame);
+      const optical=await page.locator('.loom-field-flight text[data-flight-relation]').evaluateAll(nodes=>nodes.filter(n=>['bounded_emergence','protected_continuity'].includes(n.dataset.flightRelation)).map(n=>({depth:n.getAttribute('class'),size:Number(n.getAttribute('font-size')),width:Number(n.getAttribute('textLength'))})));
+      record('opening multi-letter glyphs preserve optical depth',optical.length>0&&new Set(optical.map(n=>n.size)).size>1&&optical.every(n=>n.width===n.size),optical);
+      await screenshot(page,'opening-428x734');
+      await page.locator('#loomFirstCrossingAction').click();
+      const request=page.locator('[data-first-crossing-item="brief"]');await request.click();
+      const expanded=await request.boundingBox(),reference=await page.locator('[data-first-crossing-item="source"]').boundingBox();
+      record('428px expanded request preserves the original full-width row hierarchy',Math.abs(expanded.x-reference.x)<1&&Math.abs(expanded.width-reference.width)<1&&reference.y>=expanded.y+expanded.height-1,{expanded,reference});
+      if(artifactDir)await page.screenshot({path:join(artifactDir,'opening-428x734-expanded-request.png'),fullPage:true});
+    }finally{await context.close();}
+  }
+
   // Actual seven-screen route, explicit gestures, finite local evidence only.
   for(const viewport of [{width:390,height:700},{width:390,height:844},{width:320,height:700},{width:1280,height:800},{width:1440,height:900},{width:844,height:390}]){
     const name=`tutorial-${viewport.width}x${viewport.height}`;
@@ -271,10 +294,16 @@ try {
         const field=await page.locator('.loom-glyph-field').boundingBox();
         record(`${name} step ${step}: field fills viewport`,Math.abs(field.width-viewport.width)<=1&&Math.abs(field.height-viewport.height)<=1,field);
         if(step===0){
-          record(`${name}: immediate inspection and no pause control`,await page.locator('[data-first-crossing-item="source"]').isEnabled()&&await page.locator('#loomTutorialMotion').count()===0);
-          await page.locator('[data-first-crossing-item="brief"]').click();
-          record(`${name}: selection inspection does not advance`,await page.locator('#loomAiWorkspace').getAttribute('data-first-crossing-step')==='0');
-          await page.locator('[data-first-crossing-item="brief"]').click();
+          record(`${name}: opening editorial action and no pause control`,await page.locator('#loomFirstCrossingObjects > #loomFirstCrossingAction').isEnabled()&&await page.locator('#loomTutorialMotion').count()===0);
+          const emphasis=await page.locator('#loomFirstCrossingTitle em').evaluate(node=>{const s=getComputedStyle(node);return {text:node.textContent,font:s.fontFamily,style:s.fontStyle,color:s.color};});
+          record(`${name}: restored serif italic headline`,emphasis.text==='from AI.'&&emphasis.font.includes('Georgia')&&emphasis.style==='italic'&&emphasis.color==='rgb(217, 200, 235)',emphasis);
+        }
+        if(step===1){
+          const request=page.locator('[data-first-crossing-item="brief"]'),reference=page.locator('[data-first-crossing-item="source"]');
+          await request.click();
+          const r=await request.boundingBox(),s=await reference.boundingBox(),row=await page.locator('#loomFirstCrossingObjects').boundingBox();
+          record(`${name}: expanded request remains full width above References`,Math.abs(r.x-s.x)<1&&Math.abs(r.width-row.width)<1&&s.y>=r.y+r.height-1,{request:r,reference:s,row});
+          await screenshot(page,`${name}-expanded-request`);await request.click();
         }
         if(step===4){
           await page.locator('#loomTutorialObserver label:has(input[value="third"])').click();

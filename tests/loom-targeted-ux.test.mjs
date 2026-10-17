@@ -37,9 +37,9 @@ test('Loom boot binds fresh couture assets and contains a catchable module failu
   const doc = new JSDOM(html).window.document;
   const css = doc.querySelector('link[href*="loom-couture.css"]');
   const module = [...doc.querySelectorAll('script[type="module"]')].find(node => node.textContent.includes('ai-workspace.js'));
-  assert.match(css.href, /20261015-couture-v3/);
+  assert.match(css.href, /20261015-restoration-v5/);
   assert.ok(module, 'the entrypoint must be an observable dynamic module import');
-  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261015-couture-v3'\)/);
+  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261015-restoration-v5'\)/);
   assert.match(module.textContent, /\.catch\(\(\) => window\.td613LoomBootFailure/);
   assert.equal(doc.querySelectorAll('script[type="module"][src*="20261003"]').length, 0);
 });
@@ -150,7 +150,7 @@ test('Flow-Core remains a single accessible header guide with eight text-only gl
 test('the firewall framing introduces governed continuity and the reconstruction test',()=>{
  const doc=new JSDOM(loomWorkspaceTemplate).window.document;
  assert.match(doc.querySelector('#loomFirstCrossingTitle').textContent,/Firewall your online life from AI/);
- assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent,/Bind returned work.*observer can reconstruct/);
+ assert.match(doc.querySelector('#loomFirstCrossingPrompt').textContent,/binds each return.*exchange reveals/);
  assert.match(doc.querySelector('.loom-intro p').textContent,/Set the task, choose its references/);
  assert.match(doc.querySelector('[data-tool-panel="boundary"]').textContent,/external AI provider determines its own retention/i);
 });
@@ -474,7 +474,7 @@ test('completed handoff preview reopens from How it works in one deliberate gest
   assert.equal(h.$('#loomThresholdGate').hidden, true);
   for (const item of h.root.querySelectorAll('[data-first-crossing-item]')) {
     assert.equal(item.getAttribute('aria-expanded'), 'false', 'a fresh replay closes prior inspections');
-    assert.equal(item.disabled, false, 'both project inspections remain available on replay');
+    assert.equal(item.disabled, true, 'opening restores the editorial action before material inspection');
   }
   assert.equal(h.environment.localStorage.getItem('td613.loom.first-crossing.v1'), 'complete', 'actual prior completion remains recorded');
   assert.equal(h.ui.inspect().session, null, 'replay creates no real custody root');
@@ -576,9 +576,9 @@ test('independent Lab links preserve unsent Loom work by opening another tab wit
 
 
 test('Loom versioned entry loads the actual rewritten template and nested instrument renderer',()=>{
-  assert.match(workspaceSource,/workspace-template\.js\?v=20261015-couture-v3/);
-  assert.match(workspaceSource,/runtime-state-view\.js\?v=20261015-continuity-v1/);
-  assert.match(runtimeModuleSource,/instrument-state-view\.js\?v=20261015-continuity-v1/);
+  assert.match(workspaceSource,/workspace-template\.js\?v=20261015-restoration-v5/);
+  assert.match(workspaceSource,/runtime-state-view\.js\?v=20261015-restoration-v5/);
+  assert.match(runtimeModuleSource,/instrument-state-view\.js\?v=20261015-restoration-v5/);
   assert.match(templateSource,/loomScienceTools/);
   assert.match(instrumentSource,/Keep all 39 illustrated carriers/);
 });
