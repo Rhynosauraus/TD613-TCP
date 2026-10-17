@@ -191,7 +191,9 @@ try {
       await page.keyboard.press('Enter');
       await page.waitForFunction(() => document.querySelector('#aiStatus').textContent.includes('The session package could not be prepared.'));
       assert.match(await page.locator('#aiStatus').textContent(), /Retry Export session/);
-      assert.match(await page.locator('#aiStatus').textContent(), /PORTABLE_MATH_SOURCE_UNAVAILABLE/);
+      assert.match(await page.locator('#aiStatus').textContent(), /The mathematical companion could not be verified in this browser/);
+      assert.equal(await page.locator('#aiSessionPackageStatus').getAttribute('data-failure'), 'PORTABLE_MATH_SOURCE_UNAVAILABLE');
+      assert.doesNotMatch(await page.locator('#aiStatus').textContent(), /app\/|PORTABLE_MATH_|golden[ -]egg/i, 'public notice excludes internal paths and research filenames');
       assert.equal(await noticeVisible('The session package could not be prepared.'), true, 'failure notice is rendered in the active route');
       await page.screenshot({ path: path.join(dir, `${posture}-missing-source-notice.png`), fullPage: true });
       assert.equal(downloads.length, 0, 'missing source cannot yield a partial download');

@@ -876,10 +876,11 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     sessionBundleBusy=false;sessionBundleCache=null;
     sessionPackageNotice.textContent='';sessionPackageNotice.hidden=true;
   }
-  function sessionPackageStatus(message,error=false){
+  function sessionPackageStatus(message,error=false,failure=''){
     status(message,error);
     sessionPackageNotice.textContent=message;sessionPackageNotice.hidden=false;
     sessionPackageNotice.classList.toggle('ai-error',error);
+    sessionPackageNotice.dataset.failure=failure;
   }
   async function exportPreparedSession(action){
     if(disposed||busy||sessionBundleBusy||!portableSessionExport||locallyAdmitted)return;
@@ -931,7 +932,11 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
       // both without emitting an unhandled startup error or stale success.
       void bundlePromise.catch(()=>{});
       if(token===sessionBundleGeneration)sessionBundleController?.abort();
-      if(current()&&error.name!=='AbortError')sessionPackageStatus(`The session package could not be ${action==='copy'?'copied':'prepared'}. Your request remains here. Retry ${action==='copy'?'Copy':'Export'} session. ${error.message}`,true);
+      if(current()&&error.name!=='AbortError'){
+        const mathFailure=/^PORTABLE_MATH_[A-Z_]+/.exec(error.message)?.[0];
+        const reason=mathFailure?'The mathematical companion could not be verified in this browser.':error.message;
+        sessionPackageStatus(`The session package could not be ${action==='copy'?'copied':'prepared'}. Your request remains here. Retry ${action==='copy'?'Copy':'Export'} session. ${reason}`,true,mathFailure||'');
+      }
     }finally{
       if(token===sessionBundleGeneration){
         sessionBundleBusy=false;sessionBundleController=null;
