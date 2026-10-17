@@ -1,5 +1,5 @@
 import { buildLoomAiRequest, inspectLoomAiResponse } from './ai-intake.js';
-import { createLoomAiGovernance, createLoomAiTaskGovernor } from './ai-handoff.js';
+import { createLoomAiGovernance, createLoomAiTaskGovernor, createCanonicalPortableLoomPacket } from './ai-handoff.js';
 import { portableLoomDigest } from '../../engine/portable-loom-session.js';
 
 const freeze = value => {
@@ -34,7 +34,7 @@ function selectedPracticeIds(selectedIds) {
   return [...selectedIds].sort();
 }
 
-/** Return readiness facts only after a real, bounded local authorization. */
+/** Prepare a complete public artifact after a bounded local authorization. */
 export async function bindFirstCrossingPractice(selectedIds, environment = globalThis) {
   const selection = selectedPracticeIds(selectedIds);
   const fixture = FIRST_CROSSING_PRACTICE;
@@ -61,6 +61,15 @@ export async function bindFirstCrossingPractice(selectedIds, environment = globa
   } finally {
     governor.close();
   }
+  const portableArtifact = await createCanonicalPortableLoomPacket(shared, {
+    observationBasis: [{
+      phase: 'checking', request_id: requestId,
+      shared: shared.documents.length, local: prepared.localReceipt.withheld_document_ids.length,
+      rules_count: shared.rules.length, task_present: true,
+      selected_document_ids: shared.documents.map(document => document.id),
+      binding_verified: true, outbound_submitted: false, response_received: false
+    }]
+  }, environment);
   return freeze({
     schema: 'td613.loom.first-crossing-binding/v0.1',
     fixture_id: fixture.id,
@@ -76,6 +85,7 @@ export async function bindFirstCrossingPractice(selectedIds, environment = globa
     outbound_submitted: false,
     response_received: false,
     input_digest: shared.governance.input_digest,
+    portable_artifact: portableArtifact,
     aia: {
       input_digest: shared.governance.input_digest,
       projection_family_verified: shared.governance.verification,

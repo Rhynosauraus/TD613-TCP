@@ -54,7 +54,7 @@ test('fictional selected material earns local readiness through installed AIA/FA
   assert.equal(binding.authority_transferred, false);
   assert.ok(Object.isFrozen(binding.fadt.fibres[0]));
   assert.equal(JSON.stringify(binding).includes(FIRST_CROSSING_PRACTICE.protectedTerms[0]), false);
-  assert.equal(JSON.stringify(binding).includes(FIRST_CROSSING_PRACTICE.documents[0].text), false);
+  assert.equal(binding.portable_artifact.documents.find(document => document.id === 'brief').text, FIRST_CROSSING_PRACTICE.documents[0].text);
 });
 
 test('wrong or incomplete selection remains held before acquiring even a digest capability', async () => {

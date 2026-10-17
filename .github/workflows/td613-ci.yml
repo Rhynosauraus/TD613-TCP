@@ -140,7 +140,7 @@ jobs:
           node tests/ash-eviction-retirement.test.mjs
           node tests/tcp-smoke.test.mjs
           node --test tests/loom-observer-channel.test.mjs tests/loom-observer-chamber.test.mjs tests/loom-targeted-ux.test.mjs
-          node --test tests/loom-tutorial-temporal-20261014.test.mjs tests/loom-first-crossing-binding-race.test.mjs tests/loom-tutorial-gesture.test.mjs
+          node --test tests/loom-tutorial-temporal-20261014.test.mjs tests/loom-first-crossing-binding-race.test.mjs tests/loom-tutorial-gesture.test.mjs tests/loom-tutorial-artifact.test.mjs
           node scripts/sync-portable-loom-tomography-assets.mjs --check
           node --test tests/portable-loom-tomography-export.test.mjs tests/portable-loom-browser-package.test.mjs tests/loom-browser-export-race.test.mjs
           node --test tests/marrowline-fire-gate-pedagogue.test.mjs
@@ -1035,6 +1035,11 @@ jobs:
         env:
           TD613_ARTIFACT_DIR: artifacts/loom-tutorial-gesture
         run: node tests/loom-tutorial-gesture.browser.mjs
+      - name: Loom complete tutorial artifact desktop and 390px witness
+        if: steps.layout_scope.outputs.changed == 'true'
+        env:
+          TD613_ARTIFACT_DIR: artifacts/loom-tutorial-artifact
+        run: node tests/loom-tutorial-artifact.browser.mjs
       - name: Portable Loom complete browser package desktop and 390px witness
         if: steps.layout_scope.outputs.changed == 'true'
         env:
@@ -1105,6 +1110,7 @@ jobs:
             artifacts/loom-output-assembly
             artifacts/loom-browser-package
             artifacts/loom-tutorial-gesture
+            artifacts/loom-tutorial-artifact
             artifacts/loom-instrument-lab-browser
             artifacts/loom-instrument-route-browser
             artifacts/loom-native-cutover
