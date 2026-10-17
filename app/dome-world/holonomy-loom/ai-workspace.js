@@ -3,7 +3,7 @@ import { buildPortableLoomBrowserPackage } from '../../engine/portable-loom-brow
 import { mountLoomObserverPreview } from './privacy-science-view.js?v=20261015-restoration-v5';
 import { PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT, derivePortableLoomSourceContext } from '../../engine/portable-loom-receiver-output-contract.js';
 import { inspectPortableLoomReceiverConformance } from '../../engine/portable-loom-receiver-conformance.js';
-import { FIRST_CROSSING_PRACTICE, bindFirstCrossingPractice, checkFirstCrossingPrivacy, createFirstCrossingReturnProof } from './first-crossing-practice.js?v=20261015-continuity-v1';
+import { FIRST_CROSSING_PRACTICE, bindFirstCrossingPractice, checkFirstCrossingPrivacy, createFirstCrossingReturnProof } from './first-crossing-practice.js?v=20261017-artifact-v1';
 import { LOOM_TUTORIAL_OPERATORS, loomTutorialPresentation, loomOpeningPresentation } from './tutorial-membrane.js?v=20261015-continuity-v1';
 import { nextFlowcoreChoreography } from './flowcore-choreography.js?v=20261013-phase09-v1';
 import { mountReturnedSessionReview } from './returned-session-review.js';
@@ -212,6 +212,9 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   const thresholdStage = root.querySelector('.loom-stage');
   const builderShell = root.querySelector('.loom-builder-shell');
   const firstCrossingItems = [...root.querySelectorAll('[data-first-crossing-item]')];
+  $('loomTutorialArtifactRecord').tabIndex=0;
+  $('loomTutorialArtifactRecord').setAttribute('role','region');
+  $('loomTutorialArtifactRecord').setAttribute('aria-label','Complete fictional portable artifact');
   // A native multi-click sequence remains one tutorial gesture even when its
   // first click changes the scene or exposes another control under the pointer.
   // A new click series or fresh key press is admitted immediately; no reading
@@ -629,10 +632,11 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
       const binding=await bindFirstCrossingPractice([...firstCrossingSelected],environment);
       if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
       firstCrossingBinding=binding;firstCrossingBindingState='VERIFIED';firstCrossingStep=2;
-      const request={task:FIRST_CROSSING_PRACTICE.task,documents:FIRST_CROSSING_PRACTICE.documents.filter(item=>firstCrossingSelected.has(item.id)),rules:FIRST_CROSSING_PRACTICE.rules};
+      const {portable_artifact:artifact,...bindingFacts}=binding;
+      const request={task:artifact.task,documents:artifact.documents,rules:artifact.rules,governance:artifact.governance};
       $('loomTutorialRequestRecord').textContent=JSON.stringify(request,null,2);
-      $('loomTutorialArtifactRecord').textContent=JSON.stringify({input_class:binding.input_class,request_id:binding.request_id,input_digest:binding.input_digest,selected_document_ids:binding.selected_document_ids,publication_rules:FIRST_CROSSING_PRACTICE.rules,evidence_class:binding.evidence_class,provider_called:false,custody_mutated:false},null,2);
-      projectFirstCrossing(firstCrossingEvent('checking',binding.facts??binding));
+      $('loomTutorialArtifactRecord').textContent=JSON.stringify(artifact,null,2);
+      projectFirstCrossing(firstCrossingEvent('checking',binding.facts??bindingFacts));
       renderTutorialStep({focus:true});
     }catch(error){
       if(disposed||!firstCrossingActive||token!==firstCrossingGeneration)return;
