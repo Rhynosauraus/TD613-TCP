@@ -39,7 +39,7 @@ test('Loom boot binds fresh couture assets and contains a catchable module failu
   const module = [...doc.querySelectorAll('script[type="module"]')].find(node => node.textContent.includes('ai-workspace.js'));
   assert.match(css.href, /20261015-restoration-v5/);
   assert.ok(module, 'the entrypoint must be an observable dynamic module import');
-  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261017-browser-math-v1'\)/);
+  assert.match(module.textContent, /import\('\.\/holonomy-loom\/ai-workspace\.js\?v=20261017-tutorial-gesture-v1'\)/);
   assert.match(module.textContent, /\.catch\(\(\) => window\.td613LoomBootFailure/);
   assert.equal(doc.querySelectorAll('script[type="module"][src*="20261003"]').length, 0);
 });

@@ -212,6 +212,32 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   const thresholdStage = root.querySelector('.loom-stage');
   const builderShell = root.querySelector('.loom-builder-shell');
   const firstCrossingItems = [...root.querySelectorAll('[data-first-crossing-item]')];
+  // A native multi-click sequence remains one tutorial gesture even when its
+  // first click changes the scene or exposes another control under the pointer.
+  // A new click series or fresh key press is admitted immediately; no reading
+  // delay is inferred from animation duration or elapsed wall time.
+  let tutorialPointerSeries=false,heldTutorialKey=null;
+  const inTutorial=event=>firstCrossingActive&&Boolean(event.target?.closest?.('#loomFirstCrossing'));
+  const tutorialClick=event=>{
+    if(disposed)return;
+    const inside=inTutorial(event);
+    if(event.detail>1&&(inside||tutorialPointerSeries)){
+      event.preventDefault();event.stopImmediatePropagation();return;
+    }
+    tutorialPointerSeries=event.detail===1&&inside;
+  };
+  const tutorialKeydown=event=>{
+    if(disposed||!['Enter',' ','Spacebar'].includes(event.key))return;
+    const inside=inTutorial(event);
+    if(event.repeat&&(inside||heldTutorialKey===event.key)){
+      event.preventDefault();event.stopImmediatePropagation();return;
+    }
+    if(!event.repeat)heldTutorialKey=inside?event.key:null;
+  };
+  const tutorialKeyup=event=>{if(event.key===heldTutorialKey)heldTutorialKey=null;};
+  root.addEventListener('click',tutorialClick,true);
+  root.addEventListener('keydown',tutorialKeydown,true);
+  environment.document.addEventListener('keyup',tutorialKeyup,true);
   function setFirstCrossingCue(cue,{prompt,answer}={}){
     const screen=LOOM_TUTORIAL_SCREENS[firstCrossingStep];
     const pending=firstCrossingBindingState==='PENDING';
@@ -1204,7 +1230,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   if(environment.location?.hash==='#loomGate'){openLoomThreshold();openTools('challenge');}
   visibility();
   environment.document.documentElement.dataset.loomBoot='ready';
-  const dispose=()=>{disposed=true;cancelSessionBundle();if(flowcoreCopyTimer!==null)environment.clearTimeout(flowcoreCopyTimer);if(flowcoreClearTimer!==null)environment.clearTimeout(flowcoreClearTimer);clearThresholdTimers();stageObserver?.disconnect();returnedReview.dispose();marrowlineChild=null;reentry.dispose();if(pendingTimer!==null)environment.clearInterval(pendingTimer);version++;taskGovernor?.close();controller?.abort();runtime.dispose();coordinator.destroy();reduced.removeEventListener('change',motionChange);environment.document.removeEventListener('visibilitychange',visibility);delete environment.document.documentElement.dataset.loomJourney;delete environment.document.documentElement.dataset.loomFlowPhase;};
+  const dispose=()=>{disposed=true;root.removeEventListener('click',tutorialClick,true);root.removeEventListener('keydown',tutorialKeydown,true);environment.document.removeEventListener('keyup',tutorialKeyup,true);cancelSessionBundle();if(flowcoreCopyTimer!==null)environment.clearTimeout(flowcoreCopyTimer);if(flowcoreClearTimer!==null)environment.clearTimeout(flowcoreClearTimer);clearThresholdTimers();stageObserver?.disconnect();returnedReview.dispose();marrowlineChild=null;reentry.dispose();if(pendingTimer!==null)environment.clearInterval(pendingTimer);version++;taskGovernor?.close();controller?.abort();runtime.dispose();coordinator.destroy();reduced.removeEventListener('change',motionChange);environment.document.removeEventListener('visibilitychange',visibility);delete environment.document.documentElement.dataset.loomJourney;delete environment.document.documentElement.dataset.loomFlowPhase;};
   environment.addEventListener('pagehide',dispose,{once:true});return {dispose,inspect:()=>({mode:workspaceMode,session:portableSession?inspectPortableLoomSession(portableSession):null,turn_receipt:turnReceiptVerification?{status:turnReceiptVerification.status,ref:turnReceiptVerification.ref}:null,challenge:challengeVerification?{status:challengeVerification.status,ref:challengeVerification.ref}:null,events:[...events],clock:coordinator.inspect(),replay:{index:replayIndex,count:sceneHistory.length},runtime:runtime.inspect(),geometry:null})};
 }
 if(typeof document!=='undefined')mountLoomAiWorkspace(document.querySelector('#loomAiWorkspace'));
