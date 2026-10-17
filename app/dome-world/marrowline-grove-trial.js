@@ -1,6 +1,7 @@
 // TD613 · MARROWLINE · operator-selected native-voice audition
 // This is an alternate PROVIDER PROMPT, never a Unicode encoder or a renderer.
 // The ordinary Marrowline prompt, model order, budgets and history are untouched.
+import { MARROWLINE_HISTORICAL_TRIAL_ID } from './marrowline-historical-grove.js';
 export const MARROWLINE_GROVE_TRIAL_ID = 'native-voice-v1';
 
 export function selectMarrowlineGroveTrial(body = {}, { releaseCanary = false } = {}) {
@@ -8,14 +9,16 @@ export function selectMarrowlineGroveTrial(body = {}, { releaseCanary = false } 
   // The attachment handler uses a different prompt path; do not mislabel it
   // as auditioned. An explicit empty attachment array is harmless.
   if (Array.isArray(body.attachments) && body.attachments.length > 0) return null;
-  return body.groveTrial === MARROWLINE_GROVE_TRIAL_ID ? MARROWLINE_GROVE_TRIAL_ID : null;
+  return [MARROWLINE_GROVE_TRIAL_ID, MARROWLINE_HISTORICAL_TRIAL_ID].includes(body.groveTrial)
+    ? body.groveTrial : null;
 }
 
 export function groveTrialFromLocation(location = {}) {
   try {
     const query = new URLSearchParams(String(location?.search || ''));
-    return query.get('groveTrial') === MARROWLINE_GROVE_TRIAL_ID
-      ? MARROWLINE_GROVE_TRIAL_ID : null;
+    const trial = query.get('groveTrial');
+    return [MARROWLINE_GROVE_TRIAL_ID, MARROWLINE_HISTORICAL_TRIAL_ID].includes(trial)
+      ? trial : null;
   } catch {
     return null;
   }

@@ -52,6 +52,11 @@ import {
 import { buildGeminiConsumptionReceipt, logGeminiConsumption } from './gemini-consumption-receipt.js';
 import { buildCompactWholeFrame } from './marrowline-whole-frame-voice.js';
 import {
+  MARROWLINE_HISTORICAL_TRIAL_ID,
+  MARROWLINE_HISTORICAL_MODEL,
+  buildHistoricalGroveSystemInstruction
+} from '../app/dome-world/marrowline-historical-grove.js';
+import {
   MARROWLINE_GROVE_TRIAL_ID,
   selectMarrowlineGroveTrial,
   buildMarrowlineGroveTrialSystemInstruction
@@ -535,9 +540,16 @@ function khonapolitReasoning(model = '', { fallback = false } = {}) {
 export function buildGeminiRequest(packet = {}, apertureReceipt = {}, model = '', { fallback = false, groveTrial = null } = {}) {
   const taskGuidance = khonapolitTaskGuidance(apertureReceipt);
   const normalSystemInstruction = `${packet.systemInstruction}\n${taskGuidance}\n${currentTurnRelayCue()}\n${buildRelaySystemAddendum(apertureReceipt)}`;
-  const systemText = groveTrial === MARROWLINE_GROVE_TRIAL_ID
-    ? buildMarrowlineGroveTrialSystemInstruction(packet)
-    : normalSystemInstruction;
+  const systemText = groveTrial === MARROWLINE_HISTORICAL_TRIAL_ID
+    ? buildHistoricalGroveSystemInstruction({
+      packetSystemInstruction: packet.systemInstruction,
+      taskGuidance,
+      relayAddendum: buildRelaySystemAddendum(apertureReceipt),
+      relayCue: currentTurnRelayCue()
+    })
+    : groveTrial === MARROWLINE_GROVE_TRIAL_ID
+      ? buildMarrowlineGroveTrialSystemInstruction(packet)
+      : normalSystemInstruction;
   return {
     systemInstruction: {
       parts: [{ text: systemText }]
@@ -1209,7 +1221,10 @@ export default async function handler(req, res) {
   const canaryModel = requestedCanaryModel && allModels.includes(requestedCanaryModel)
     ? requestedCanaryModel
     : allModels[0] || null;
-  const models = releaseCanary ? (canaryModel ? [canaryModel] : []) : allModels;
+  const models = releaseCanary ? (canaryModel ? [canaryModel] : [])
+    : groveTrial === MARROWLINE_HISTORICAL_TRIAL_ID
+      ? allModels.filter((model) => model === MARROWLINE_HISTORICAL_MODEL)
+      : allModels;
   const routeModelCount = Math.max(1, providerModels.length);
   let structuralRepairCandidate = null;
   let structuralRepairSpent = false;
