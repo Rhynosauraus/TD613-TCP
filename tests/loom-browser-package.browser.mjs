@@ -210,7 +210,12 @@ try {
       await page.waitForFunction(() => document.querySelector('#aiStatus').textContent.includes('Session package ready:'));
       assert.equal(await noticeVisible('Session package ready:'), true, 'download success notice is rendered in the active route');
       assert.equal(downloads.length, 1);
-      const exportFocusRetained = await page.locator('#aiExportSession').evaluate(node => node === document.activeElement);
+      const exportFocus = await page.locator('#aiExportSession').evaluate(node => ({
+        retained: node === document.activeElement,
+        active_id: document.activeElement?.id || null,
+        active_tag: document.activeElement?.tagName || null,
+        active_outer_html: document.activeElement?.outerHTML?.slice(0, 800) || null
+      }));
       const packaged = await verifyPackage(zip, posture);
       assert.deepEqual(packaged.artifact.session, before.session, 'packaging preserves exact session');
       assert.deepEqual(packaged.artifact.portable_task, before.portable_task, 'packaging preserves exact root-bound task');
@@ -230,8 +235,14 @@ try {
       assert.match(copied, /Export session ZIP/);
       assert.match(copied, /--self-check/);
       for (const secret of [privateFact, privateKey, privateCanary]) assert.ok(!copied.includes(secret));
-      assert.equal(exportFocusRetained, true, 'keyboard focus remains on export action');
-      assert.equal(await page.locator('#aiCopySession').evaluate(node => node === document.activeElement), true, 'keyboard focus remains on copy action');
+      const copyFocus = await page.locator('#aiCopySession').evaluate(node => ({
+        retained: node === document.activeElement,
+        active_id: document.activeElement?.id || null,
+        active_tag: document.activeElement?.tagName || null,
+        active_outer_html: document.activeElement?.outerHTML?.slice(0, 800) || null
+      }));
+      assert.equal(exportFocus.retained, true, `keyboard focus remains on export action: ${JSON.stringify(exportFocus)}`);
+      assert.equal(copyFocus.retained, true, `keyboard focus remains on copy action: ${JSON.stringify(copyFocus)}`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'prepared export route has no horizontal overflow');
       await page.screenshot({ path: path.join(dir, `${posture}-after-export.png`), fullPage: true });
       assert.equal(report.blocked_post_requests.length, 0, 'export and copy never attempt provider egress');
@@ -241,7 +252,7 @@ try {
         missing_source: 'VISIBLE_FAILURE_NO_DOWNLOAD_RETRY_PRESERVES_ROOT',
         browser_math: 'BROWSER_LOCAL_PROCESS', extracted_node_recomputation: 'DEEP_EQUAL',
         synthetic_counts: [320, 24, 18], empirical_acquisition: 'NOT_RUN',
-        clipboard: 'EXACT_PACKAGED_ACTIVATION', keyboard_focus: 'PASS', horizontal_overflow: false,
+        clipboard: 'EXACT_PACKAGED_ACTIVATION', keyboard_focus: 'PASS', focus_observation: { export: exportFocus, copy: copyFocus }, horizontal_overflow: false,
         private_values_excluded: true, provider_calls: 0 });
     } catch (error) {
       await page.screenshot({ path: path.join(dir, `${posture}-failure.png`), fullPage: true }).catch(() => {});

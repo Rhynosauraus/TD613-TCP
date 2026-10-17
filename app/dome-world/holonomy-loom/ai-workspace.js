@@ -70,6 +70,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
   sessionPackageNotice.id='aiSessionPackageStatus';
   sessionPackageNotice.setAttribute('role','status');
   sessionPackageNotice.setAttribute('aria-live','polite');
+  sessionPackageNotice.tabIndex=-1;
   sessionPackageNotice.hidden=true;
   $('aiExportSession').parentElement.after(sessionPackageNotice);
   const scienceViews=[];
@@ -889,6 +890,10 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
       &&portableSessionExport===base&&!locallyAdmitted&&sameReplacementRecord(record,reentry.getRecord());
     sessionBundleController=new AbortController();sessionBundleBusy=true;refreshTransferActions();
     sessionPackageStatus('Preparing your session package and local mathematical report…');
+    // Disabling the gestured button blurs it to body. Keep this route's focus
+    // explicit during the wait so an older queued dialog-close event cannot
+    // mistake that browser blur for permission to restore its own opener.
+    if(returnFocus)sessionPackageNotice.focus?.({preventScroll:true});
     const bundlePromise=(async()=>{
       const cached=sessionBundleCache;
       const bundle=cached?.base===base&&sameReplacementRecord(cached.record,record)?cached.bundle
@@ -933,7 +938,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
         if(!disposed){
           refreshTransferActions();
           const active=environment.document.activeElement;
-          if(returnFocus&&current()&&(!active||active===environment.document.body))actionControl.focus?.({preventScroll:true});
+          if(returnFocus&&current()&&(!active||active===environment.document.body||active===sessionPackageNotice))actionControl.focus?.({preventScroll:true});
         }
       }
     }

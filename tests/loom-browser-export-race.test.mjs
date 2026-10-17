@@ -111,6 +111,52 @@ test('pending session export refuses duplicate dispatch and preserves the prepar
   assert.equal(h.requests.length, 0);
 });
 
+test('queued Tools close cannot steal pending export focus and completion restores Export', async t => {
+  const h = harness(t);
+  await h.prepare();
+  const opener = h.$('#loomPreparedInspect'), dialog = h.$('#loomTools');
+  opener.focus(); opener.click();
+  assert.equal(dialog.open, true);
+  // A native close event can be queued until after the next user gesture.
+  // Close the dialog now, and deliver that queued event during preparation.
+  dialog.close = () => dialog.removeAttribute('open');
+  h.$('#loomToolsClose').click();
+  const action = h.$('#aiExportSession');
+  action.focus(); action.click();
+  const notice = h.$('#aiSessionPackageStatus');
+  assert.equal(h.environment.document.activeElement, notice, 'pending action parks focus on its adjacent status');
+  assert.equal(notice.tabIndex, -1);
+  dialog.dispatchEvent(new h.environment.Event('close'));
+  assert.equal(h.environment.document.activeElement, notice, 'older dialog event preserves the newer export gesture');
+  h.calls[0].pending.resolve(syntheticPackage(h.calls[0].sessionExport));
+  await until(() => h.downloads.length === 1, 'keyboard export completion');
+  await drain();
+  assert.equal(action.disabled, false);
+  assert.equal(h.environment.document.activeElement, action, 'finished export restores its original control');
+});
+
+test('deliberate outside focus movement during export survives the queued Tools close and completion', async t => {
+  const h = harness(t);
+  await h.prepare();
+  const opener = h.$('#loomPreparedInspect'), dialog = h.$('#loomTools');
+  opener.focus(); opener.click();
+  dialog.close = () => dialog.removeAttribute('open');
+  h.$('#loomToolsClose').click();
+  const action = h.$('#aiExportSession');
+  action.focus(); action.click();
+  assert.equal(h.environment.document.activeElement, h.$('#aiSessionPackageStatus'));
+  const deliberate = h.$('#aiMarrowline');
+  deliberate.focus();
+  assert.equal(h.environment.document.activeElement, deliberate);
+  dialog.dispatchEvent(new h.environment.Event('close'));
+  assert.equal(h.environment.document.activeElement, deliberate, 'queued dialog event leaves the chosen outside control focused');
+  h.calls[0].pending.resolve(syntheticPackage(h.calls[0].sessionExport));
+  await until(() => h.downloads.length === 1, 'export after deliberate focus movement');
+  await drain();
+  assert.equal(h.environment.document.activeElement, deliberate, 'export completion respects a newer focus choice');
+  assert.equal(action.disabled, false);
+});
+
 test('session copy uses the same completed package prompt without rebuilding or copying a plain fallback', async t => {
   const h = harness(t), prepared = await h.prepare();
   h.$('#aiExportSession').click();
