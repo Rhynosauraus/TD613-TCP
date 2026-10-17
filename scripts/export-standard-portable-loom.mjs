@@ -3,7 +3,7 @@ import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createHash, webcrypto } from 'node:crypto';
-import { buildPortableLoomResearchMathContract } from '../app/engine/portable-loom-research-math.js';
+import { buildPortableLoomResearchMathContract, PORTABLE_LOOM_MATH_SOURCE_PATHS } from '../app/engine/portable-loom-tomography-fixtures.js';
 import { createLoomAiGovernance, createCanonicalPortableLoomPacket } from '../app/dome-world/holonomy-loom/ai-handoff.js';
 import { STANDARD_PORTABLE_LOOM_TASK, STANDARD_PORTABLE_LOOM_RULES } from '../app/engine/portable-loom-policy.js';
 import { verifyPortableLoomCore } from '../app/engine/portable-loom-core.js';
@@ -11,24 +11,15 @@ import { createPortableLoomSession, createPortableLoomSessionExport, createPorta
 
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const destination = resolve(process.argv[2] || '');
-const mathPaths = Object.freeze([
-  'app/dome-world/previews/a15-r0/discrete-transport-tomography-closed-loop.js',
-  'app/dome-world/previews/a15-r0/discrete-transport-tomography-closed-loop-hardened.js',
-  'app/dome-world/previews/a15-r0/noncommuting-two-face-holonomy-tomography.js',
-  'app/dome-world/previews/a15-r0/golden-egg-feasible-region.js',
-  'app/dome-world/previews/a15-r0/open-research-field.js',
-  'app/dome-world/previews/a15-r0/boolean-synergy-census.js',
-  'app/dome-world/previews/a15-r0/a15-r0-contracts.js',
-  'app/dome-world/previews/a15-r0/a15-r0-contracts-core.js',
-  'app/dome-world/ash-a15-empirical-profile-journeys.js',
-  'app/engine/dollhouse-claim-lift-runtime.js'
-]);
+const mathPaths = PORTABLE_LOOM_MATH_SOURCE_PATHS;
 const mathSources = await Promise.all(mathPaths.map(async path => {
   const content = await readFile(join(sourceRoot, path), 'utf8');
   return { path, content, sha256: createHash('sha256').update(content).digest('hex') };
 }));
 const mathContract = {
   schema: 'td613.loom.portable-tomography-contract/v0.1',
+  artifact_kind: 'STANDARD_NON_DEMO_PORTABLE_LOOM',
+  artifact_file: 'portable-loom-standard.json',
   source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
   executable: 'portable-loom-tomography-audit.mjs',
   selected_math: ['hardened discrete transport tomography in F_31',
@@ -52,7 +43,7 @@ const input = { task: STANDARD_PORTABLE_LOOM_TASK, rules: [...STANDARD_PORTABLE_
 input.governance = await createLoomAiGovernance(input, { withheldDocumentCount: 0 }, environment);
 const packet = await createCanonicalPortableLoomPacket(input, { sourceRevision: revision }, environment);
 const session = await createPortableLoomSession(packet, { session_id: webcrypto.randomUUID(), source_revision: revision }, environment);
-const artifact = { ...await createPortableLoomSessionExport(session, packet, environment), loom_gate_reports: [], research_math_contract: buildPortableLoomResearchMathContract(),
+const artifact = { ...await createPortableLoomSessionExport(session, packet, environment), artifact_kind: 'STANDARD_NON_DEMO_PORTABLE_LOOM', loom_gate_reports: [], research_math_contract: buildPortableLoomResearchMathContract(),
   portable_tomography: {
     schema: mathContract.schema,
     execution: 'LOCAL_COMPANION_REQUIRED',

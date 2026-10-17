@@ -1,4 +1,4 @@
-// This script is copied byte-for-byte beside the standard Portable Loom JSON.
+// This script is copied byte-for-byte beside a declared Portable Loom artifact.
 // It recomputes canonical, separately sourced mathematical fixtures; it does
 // not infer a protected conversation, run a provider, or manufacture evidence.
 import { readFile } from 'node:fs/promises';
@@ -7,18 +7,48 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const dir = dirname(fileURLToPath(import.meta.url));
-const artifact = JSON.parse(await readFile(join(dir, 'portable-loom-standard.json'), 'utf8'));
 const contract = JSON.parse(await readFile(join(dir, 'portable-loom-math-contract.json'), 'utf8'));
+// Historical exports omitted both kind/file fields; their sole supported shape
+// remains the original standard artifact. New packages declare an exact lane.
+const historicalStandard = contract.artifact_kind === undefined && contract.artifact_file === undefined;
+const artifactKind = historicalStandard ? 'STANDARD_NON_DEMO_PORTABLE_LOOM' : contract.artifact_kind;
+const lanes = {
+  STANDARD_NON_DEMO_PORTABLE_LOOM: { file: 'portable-loom-standard.json', origin: 'EXPORTER_LOCAL_NODE_PROCESS' },
+  BROWSER_PREPARED_SESSION: { file: 'loom-portable-session.json', origin: 'BROWSER_LOCAL_PROCESS' }
+};
+const lane = Object.hasOwn(lanes, artifactKind) ? lanes[artifactKind] : null;
+if (!lane || (!historicalStandard && contract.artifact_file !== lane.file)) {
+  throw new Error('PORTABLE_TOMOGRAPHY_ARTIFACT_KIND_INVALID');
+}
+const artifact = JSON.parse(await readFile(join(dir, lane.file), 'utf8'));
+if ((!historicalStandard || artifact.artifact_kind !== undefined) && artifact.artifact_kind !== artifactKind) {
+  throw new Error('PORTABLE_TOMOGRAPHY_ARTIFACT_KIND_MISMATCH');
+}
 if (artifact.schema !== 'td613.loom.portable-session-export/v0.1'
   || artifact.portable_tomography?.schema !== contract.schema
   || artifact.portable_tomography?.execution !== 'LOCAL_COMPANION_REQUIRED') {
   throw new Error('Portable Loom artifact and separately exported tomography contract do not match.');
 }
-if (artifact.portable_task?.documents?.length || artifact.session?.work_units?.length || artifact.loom_gate_reports?.length) {
+// These structural and receipt bindings identify the carried declaration only.
+// The companion does not authenticate the entire session or its custody state.
+if (typeof contract.source_revision !== 'string' || !contract.source_revision.trim() || contract.source_revision.length > 80
+  || artifact.session?.schema !== 'td613.loom.portable-session/v0.1'
+  || !/^[a-f0-9]{64}$/.test(artifact.session?.root?.ref || '')
+  || !/^[a-f0-9]{64}$/.test(artifact.session?.root?.packet_digest || '')
+  || artifact.session.source_revision !== contract.source_revision
+  || artifact.portable_task?.schema !== 'td613.loom.portable-task/v0.1'
+  || !Array.isArray(artifact.portable_task.documents)
+  || !Array.isArray(artifact.session.work_units)
+  || (artifact.loom_gate_reports !== undefined && !Array.isArray(artifact.loom_gate_reports))) {
+  throw new Error('PORTABLE_TOMOGRAPHY_SESSION_BINDING_INVALID');
+}
+if (artifactKind === 'STANDARD_NON_DEMO_PORTABLE_LOOM'
+  && (artifact.portable_task.documents.length || artifact.session.work_units.length || artifact.loom_gate_reports?.length)) {
   throw new Error('The standard, non-demo Portable Loom must start with no task sources or acquired results.');
 }
-if (contract.empirical_acquisition !== 'NOT_RUN' || contract.qualified_same_episode !== false) {
-  throw new Error('A standard export cannot pre-seed Golden Egg evidence.');
+if (contract.empirical_acquisition !== 'NOT_RUN' || contract.qualified_same_episode !== false
+  || contract.independently_authenticated !== false) {
+  throw new Error('An export cannot pre-seed empirical acquisition or source authentication.');
 }
 
 // Fail closed on missing, modified, substituted, or unexpected mathematical
@@ -34,7 +64,9 @@ const sourcePaths = Object.freeze([
   'app/dome-world/previews/a15-r0/a15-r0-contracts.js',
   'app/dome-world/previews/a15-r0/a15-r0-contracts-core.js',
   'app/dome-world/ash-a15-empirical-profile-journeys.js',
-  'app/engine/dollhouse-claim-lift-runtime.js'
+  'app/engine/dollhouse-claim-lift-runtime.js',
+  'app/engine/portable-loom-tomography-fixtures.js',
+  'app/engine/portable-loom-research-math.js'
 ]);
 const entries = contract.mathematical_source_files;
 if (!Array.isArray(entries) || entries.length !== sourcePaths.length) {
@@ -52,63 +84,11 @@ for (let i = 0; i < sourcePaths.length; i++) {
 }
 // Dynamic imports are intentional: running code before the digest check would
 // defeat the purpose of preserving a verified mathematical source set.
-const { runHardenedDiscreteTransportTomographyAssay } = await import(
-  './tomography/app/dome-world/previews/a15-r0/discrete-transport-tomography-closed-loop-hardened.js');
-const { runNoncommutingTwoFaceHolonomyTomographyHoldout } = await import(
-  './tomography/app/dome-world/previews/a15-r0/noncommuting-two-face-holonomy-tomography.js');
-const { buildGoldenEggFeasibleRegion } = await import(
-  './tomography/app/dome-world/previews/a15-r0/golden-egg-feasible-region.js');
+const { runPortableLoomTomographyFixtureAudit } = await import(
+  './tomography/app/engine/portable-loom-tomography-fixtures.js');
 const { evaluateGoldenEggEpisodeCandidate } = await import(
   './tomography/app/engine/dollhouse-claim-lift-runtime.js');
-
-const transport = runHardenedDiscreteTransportTomographyAssay();
-const surface = runNoncommutingTwoFaceHolonomyTomographyHoldout();
-const region = buildGoldenEggFeasibleRegion();
-if (transport.findings.hardened_assay_mechanism_validated !== true
-  || transport.claims.holonomy_loom_runtime !== false
-  || surface.findings.assay_mechanism_validated !== true
-  || surface.claim_ceiling.production_authority !== false
-  || region.joint_realizability !== 'UNMEASURED'
-  || region.golden_egg_earned !== false
-  || region.empirical_candidate_count !== 0) {
-  throw new Error('Canonical discrete-math fixture or claim ceiling failed.');
-}
-const report = {
-  schema: 'td613.loom.portable-tomography-audit/v0.1',
-  artifact_source_revision: contract.source_revision,
-  mathematical_modules_recomputed: true,
-  transport: {
-    schema: transport.schema,
-    arithmetic_domain: transport.arithmetic_domain,
-    hardened_nullspace_control_pass: transport.findings.primary_projection_nullspace_persists_through_common_heldout_probe,
-    valid_finite_fixture: transport.findings.hardened_assay_mechanism_validated
-  },
-  face_holonomy: {
-    schema: surface.schema,
-    arithmetic_domain: surface.arithmetic_domain,
-    distinct_noncommuting_loops_observed_in_authored_fixture: surface.findings.local_face_holonomies_noncommute,
-    wrong_basepoint_rejected: surface.findings.wrong_basepoint_control_rejected,
-    wrong_order_rejected: surface.findings.wrong_order_control_rejected,
-    valid_finite_fixture: surface.findings.assay_mechanism_validated
-  },
-  feasible_region: {
-    schema: region.schema,
-    source_status: region.source_status,
-    thresholds: region.thresholds,
-    formal_candidate_count: region.formal_candidate_count,
-    feasible_candidate_count: region.feasible_candidate_count,
-    pareto_candidate_count: region.pareto_candidate_count,
-    joint_realizability: region.joint_realizability
-  },
-  observed_real_routes: 'NOT_RUN',
-  observed_protected_conversation: 'NOT_RUN',
-  empirical_acquisition: 'NOT_RUN',
-  independent_origin_authentication: 'NOT_PERFORMED',
-  measured_g: null,
-  observed_matched_control_protected_returns: null,
-  empirical_golden_egg_earned: false,
-  claim_ceiling: 'EXACT_AUTHORED_FINITE_MATHEMATICS_ONLY'
-};
+const report = runPortableLoomTomographyFixtureAudit(contract.source_revision);
 // When an export-time result accompanies the portable packet, recomputation
 // must reproduce it exactly. A receipt is never proof of external origin.
 const exportedReceipt = artifact.portable_tomography?.calculated_fixture_receipt;
@@ -116,7 +96,7 @@ if (exportedReceipt !== undefined) {
   if (exportedReceipt?.schema !== 'td613.loom.portable-tomography-execution-receipt/v0.1'
     || exportedReceipt?.receipt_file !== 'portable-loom-tomography-receipt.json'
     || !/^[a-f0-9]{64}$/.test(exportedReceipt.receipt_sha256 || '')
-    || exportedReceipt.execution_origin !== 'EXPORTER_LOCAL_NODE_PROCESS'
+    || exportedReceipt.execution_origin !== lane.origin
     || exportedReceipt.evidence_class !== 'LOCALLY_EXECUTED_FINITE_SYNTHETIC_FIXTURE'
     || exportedReceipt.observer_measurement !== 'NOT_RUN'
     || exportedReceipt.empirical_promotion_authority !== false) {
