@@ -143,6 +143,8 @@ jobs:
           node --test tests/loom-tutorial-temporal-20261014.test.mjs tests/loom-first-crossing-binding-race.test.mjs tests/loom-tutorial-gesture.test.mjs tests/loom-tutorial-artifact.test.mjs
           node scripts/sync-portable-loom-tomography-assets.mjs --check
           node --test tests/portable-loom-tomography-export.test.mjs tests/portable-loom-browser-package.test.mjs tests/loom-browser-export-race.test.mjs
+          TD613_LOOM_PRESENTATION=classic79 node --test tests/loom-classic79-recovery.test.mjs tests/loom-classic79-integration.test.mjs tests/loom-tutorial-artifact.test.mjs tests/loom-browser-export-race.test.mjs
+          node scripts/run-pedagogue-design-gate.mjs tests/fixtures/pedagogue/loom-classic79-recovery-design.json
           node --test tests/marrowline-fire-gate-pedagogue.test.mjs
           node scripts/run-pedagogue-design-gate.mjs tests/fixtures/pedagogue/loom-observer-chamber-design.json
           node tests/release-manifest.test.mjs
@@ -1045,6 +1047,12 @@ jobs:
         env:
           TD613_ARTIFACT_DIR: artifacts/loom-browser-package
         run: node tests/loom-browser-package.browser.mjs
+      - name: Recovered Classic 79 complete browser tomography package
+        if: steps.layout_scope.outputs.changed == 'true'
+        env:
+          TD613_LOOM_PRESENTATION: classic79
+          TD613_ARTIFACT_DIR: artifacts/loom-classic79-package
+        run: node tests/loom-browser-package.browser.mjs
       - name: Portable Loom output assembly desktop and 390px witness
         if: steps.layout_scope.outputs.changed == 'true'
         env:
@@ -1095,7 +1103,7 @@ jobs:
         env:
           TD613_LOOM_MOBILE_ARTIFACT_DIR: artifacts/loom-mobile-composition
         run: node tests/loom-mobile-composition.browser.mjs
-      - name: Classic 79 exact-source mobile and desktop browser witness
+      - name: Classic 79 historical composition and protected-interaction witness
         if: steps.layout_scope.outputs.changed == 'true'
         env:
           TD613_CLASSIC79_ARTIFACT_DIR: artifacts/loom-classic79-browser
@@ -1121,6 +1129,7 @@ jobs:
             artifacts/loom-native-cutover
             artifacts/loom-mobile-composition
             artifacts/loom-classic79-browser
+            artifacts/loom-classic79-package
 
 
   gemini_observation:
