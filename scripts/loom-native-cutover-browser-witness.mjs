@@ -10,6 +10,7 @@ import path from 'node:path';
 import { createHash, webcrypto } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { chromium } from 'playwright';
+import { parseLoomDownloadedArtifact, loomDownloadedArtifactName } from './read-loom-downloaded-artifact.mjs';
 import {
   bindLoomDemoRequest, loomDemoDigest, loomDemoReceiptDigest, loomDemoResult,
   LOOM_DEMO_STAGE_RECEIPT_SCHEMA
@@ -135,7 +136,7 @@ context.on('response',async response=>{
 async function shot(page,name){await page.screenshot({path:path.join(dir,name+'.png'),fullPage:true});}
 async function download(page,selector,name){
   const wait=page.waitForEvent('download');await page.locator(selector).click();const d=await wait;
-  const destination=path.join(dir,name);await d.saveAs(destination);return JSON.parse(await fs.readFile(destination,'utf8'));
+  const destination=path.join(dir,loomDownloadedArtifactName(name,d.suggestedFilename()));await d.saveAs(destination);return parseLoomDownloadedArtifact(await fs.readFile(destination));
 }
 async function leaveTutorial(page){
   await page.locator('#loomFirstCrossing').waitFor({state:'visible'});

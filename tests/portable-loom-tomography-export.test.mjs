@@ -4,8 +4,11 @@ import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomUUID, webcrypto } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { createLoomAiGovernance, createCanonicalPortableLoomPacket } from '../app/dome-world/holonomy-loom/ai-handoff.js';
+import { createPortableLoomSession, createPortableLoomSessionExport } from '../app/engine/portable-loom-session.js';
+import { runPortableLoomTomographyFixtureAudit, PORTABLE_LOOM_MATH_SOURCE_PATHS } from '../app/engine/portable-loom-tomography-fixtures.js';
 
 const repoRoot=fileURLToPath(new URL('../',import.meta.url));
 const sha256=s=>createHash('sha256').update(s).digest('hex');
@@ -29,7 +32,11 @@ test('standard portable artifact runs exact canonical mathematical companion wit
   assert.equal(artifact.portable_task.documents.length,0);
   assert.equal(artifact.loom_gate_reports.length,0);
   assert.equal(artifact.session.work_units.length,0);
-  assert.equal(contract.mathematical_source_files.length,10);
+  assert.equal(artifact.artifact_kind,'STANDARD_NON_DEMO_PORTABLE_LOOM');
+  assert.equal(contract.artifact_kind,artifact.artifact_kind);
+  assert.equal(contract.artifact_file,'portable-loom-standard.json');
+  assert.equal(contract.mathematical_source_files.length,12);
+  assert.deepEqual(contract.mathematical_source_files.map(item=>item.path),PORTABLE_LOOM_MATH_SOURCE_PATHS);
   for(const entry of manifest.files){
     const bytes=await readFile(join(destination,entry.name));
     assert.equal(bytes.byteLength,entry.bytes,entry.name);
@@ -49,6 +56,8 @@ test('standard portable artifact runs exact canonical mathematical companion wit
   assert.equal(math.feasible_region.source_status,'SIMULATED_FACTORIZED_PRODUCT_SPACE');
   assert.equal(math.empirical_golden_egg_earned,false);
   assert.equal(math.observed_real_routes,'NOT_RUN');
+  assert.deepEqual(math,runPortableLoomTomographyFixtureAudit(contract.source_revision),
+    'the exported verified source closure and installed helper recompute the same bounded report');
   const receiptBytes = await readFile(join(destination,'portable-loom-tomography-receipt.json'));
   const executionReceipt = JSON.parse(receiptBytes.toString('utf8'));
   assert.equal(executionReceipt.execution_origin,'EXPORTER_LOCAL_NODE_PROCESS');
@@ -116,4 +125,89 @@ test('standard portable artifact runs exact canonical mathematical companion wit
   assert.match(markdown,/Executable mathematics \(local companion\)/);
   assert.match(markdown,/NOT_RUN/);
   assert.doesNotMatch(JSON.stringify(artifact.portable_task.documents),/Fictional|candidate|tomography/i);
+  await t.test('standard lane keeps task sources and acquired results excluded',async()=>{
+    const artifactPath=join(destination,'portable-loom-standard.json');
+    const pristine=await readFile(artifactPath);
+    try{
+      for(const field of ['documents','work_units','loom_gate_reports']){
+        const changed=JSON.parse(pristine.toString('utf8'));
+        if(field==='documents')changed.portable_task.documents.push({id:'unexpected',name:'Unexpected source',text:'Must stay outside the standard kit.'});
+        else if(field==='work_units')changed.session.work_units.push({schema:'unexpected-result'});
+        else changed.loom_gate_reports.push({schema:'unexpected-capture'});
+        await writeFile(artifactPath,JSON.stringify(changed));
+        assert.throws(
+          ()=>execFileSync(process.execPath,[script,'--self-check'],{encoding:'utf8',stdio:['ignore','pipe','pipe']}),
+          error=>String(error.stderr).includes('The standard, non-demo Portable Loom must start with no task sources or acquired results.'),
+          field+' must not silently widen the standard lane'
+        );
+      }
+    }finally{await writeFile(artifactPath,pristine);}
+  });
+
+  await t.test('shared fixture helper is hash checked before import',async()=>{
+    const helperPath=join(destination,'tomography','app/engine/portable-loom-tomography-fixtures.js');
+    const original=await readFile(helperPath);
+    try{
+      await writeFile(helperPath,Buffer.concat([original,Buffer.from('\nthrow new Error("UNVERIFIED_HELPER_EXECUTED");\n')]));
+      assert.throws(
+        ()=>execFileSync(process.execPath,[script,'--self-check'],{encoding:'utf8',stdio:['ignore','pipe','pipe']}),
+        error=>String(error.stderr).includes('PORTABLE_TOMOGRAPHY_SOURCE_HASH_MISMATCH')
+          && !String(error.stderr).includes('Error: UNVERIFIED_HELPER_EXECUTED'),
+        'the new executable shared helper must stay behind the entire source hash gate'
+      );
+    }finally{await writeFile(helperPath,original);}
+  });
+
+  await t.test('browser lane accepts an actual selected-source session with honest process provenance',async()=>{
+    const environment={crypto:webcrypto,TextEncoder};
+    const input={task:'Prepare a public workshop brief.',rules:['Use only the selected public facts.'],
+      documents:[{id:'public-facts',name:'Selected public facts',text:'The free community music workshop takes place on Saturday.'}]};
+    input.governance=await createLoomAiGovernance(input,{withheldDocumentCount:0},environment);
+    const packet=await createCanonicalPortableLoomPacket(input,{sourceRevision:'browser-unpinned'},environment);
+    const session=await createPortableLoomSession(packet,{session_id:randomUUID(),source_revision:'browser-unpinned'},environment);
+    const browserContract={...contract,artifact_kind:'BROWSER_PREPARED_SESSION',artifact_file:'loom-portable-session.json',source_revision:'browser-unpinned'};
+    const contractBody=JSON.stringify(browserContract,null,2)+'\n';
+    const browserReport=runPortableLoomTomographyFixtureAudit('browser-unpinned');
+    const browserReceipt={...executionReceipt,execution_origin:'BROWSER_LOCAL_PROCESS',source_revision:'browser-unpinned',
+      session_root_ref:session.root.ref,math_contract_sha256:sha256(contractBody),self_check_audit:browserReport};
+    const receiptBody=JSON.stringify(browserReceipt,null,2)+'\n';
+    const browserArtifact={...await createPortableLoomSessionExport(session,packet,environment),artifact_kind:'BROWSER_PREPARED_SESSION',
+      loom_gate_reports:[],portable_tomography:{...artifact.portable_tomography,
+        calculated_fixture_receipt:{...artifact.portable_tomography.calculated_fixture_receipt,
+          execution_origin:'BROWSER_LOCAL_PROCESS',receipt_sha256:sha256(receiptBody),mathematical_result:browserReport}}};
+    const artifactPath=join(destination,'loom-portable-session.json');
+    const contractPath=join(destination,'portable-loom-math-contract.json');
+    const receiptPath=join(destination,'portable-loom-tomography-receipt.json');
+    await writeFile(artifactPath,JSON.stringify(browserArtifact,null,2)+'\n');
+    await writeFile(contractPath,contractBody);
+    await writeFile(receiptPath,receiptBody);
+    const recomputed=JSON.parse(execFileSync(process.execPath,[script,'--self-check'],{encoding:'utf8'}));
+    assert.deepEqual(recomputed,browserReport);
+    assert.equal(browserArtifact.portable_task.documents[0].text,input.documents[0].text);
+    assert.equal(recomputed.independent_origin_authentication,'NOT_PERFORMED');
+    assert.equal(recomputed.empirical_acquisition,'NOT_RUN');
+    const reject=(expected)=>assert.throws(
+      ()=>execFileSync(process.execPath,[script,'--self-check'],{encoding:'utf8',stdio:['ignore','pipe','pipe']}),
+      error=>String(error.stderr).includes(expected));
+    const writeArtifact=()=>writeFile(artifactPath,JSON.stringify(browserArtifact,null,2)+'\n');
+    try{
+      browserArtifact.portable_tomography.calculated_fixture_receipt.execution_origin='EXPORTER_LOCAL_NODE_PROCESS';
+      await writeArtifact();
+      reject('PORTABLE_TOMOGRAPHY_EXECUTION_RECEIPT_INVALID');
+      browserArtifact.portable_tomography.calculated_fixture_receipt.execution_origin='BROWSER_LOCAL_PROCESS';
+      browserArtifact.artifact_kind='STANDARD_NON_DEMO_PORTABLE_LOOM';
+      await writeArtifact();
+      reject('PORTABLE_TOMOGRAPHY_ARTIFACT_KIND_MISMATCH');
+      browserArtifact.artifact_kind='BROWSER_PREPARED_SESSION';
+      browserArtifact.session={...browserArtifact.session,root:{...browserArtifact.session.root,ref:'unbound'}};
+      await writeArtifact();
+      reject('PORTABLE_TOMOGRAPHY_SESSION_BINDING_INVALID');
+      await writeFile(contractPath,JSON.stringify({...browserContract,artifact_file:'../unexpected.json'}));
+      reject('PORTABLE_TOMOGRAPHY_ARTIFACT_KIND_INVALID');
+    }finally{
+      await writeFile(contractPath,JSON.stringify(contract,null,2)+'\n');
+      await writeFile(receiptPath,receiptBytes);
+    }
+  });
+
 });

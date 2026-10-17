@@ -9,6 +9,7 @@ import http from 'node:http';
 import { execFileSync } from 'node:child_process';
 import { chromium, firefox, webkit } from 'playwright';
 import { LOOM_AI_PROJECTS } from '../app/dome-world/holonomy-loom/ai-projects.js';
+import { parseLoomDownloadedArtifact } from '../scripts/read-loom-downloaded-artifact.mjs';
 
 const engine = process.env.TD613_BROWSER || 'chromium';
 const browserType = { chromium, firefox, webkit }[engine];
@@ -170,7 +171,11 @@ try {
       const sessionDownload = await sessionDownloadPromise;
       const sessionStream = await sessionDownload.createReadStream();
       const sessionChunks = []; for await (const chunk of sessionStream) sessionChunks.push(chunk);
-      const sessionExported = Buffer.concat(sessionChunks).toString('utf8');
+      const sessionArtifact = parseLoomDownloadedArtifact(Buffer.concat(sessionChunks));
+      const sessionExported = JSON.stringify(sessionArtifact);
+      assert.equal(sessionArtifact.schema,'td613.loom.portable-session-export/v0.1');
+      assert.equal(sessionArtifact.session.root.ref,JSON.parse(sessionContract).session.root.ref,'archive carries the inspected custody root');
+      assert.equal(sessionArtifact.portable_tomography.calculated_fixture_receipt.execution_origin,'BROWSER_LOCAL_PROCESS');
       assert.match(sessionExported,/td613\.loom\.portable-session-export\/v0\.1/,'primary export emits a Portable Loom Session');
       assert.match(sessionExported,/INHERIT_BY_DEFAULT/,'session export carries persistent policy inheritance');
       assert.match(sessionExported,/receiver_turn_contract/,'session export carries proceeding-task receipt contract');
