@@ -57,11 +57,14 @@ async function checked(h){
 test('historical context unlock waits for the original four-second owner score and keeps one pending frame',async t=>{
   const h=setup(t,{reduced:false});
   assert.equal(h.root.dataset.firstCrossingScreen,'0');
+  h.$('[data-first-crossing-item="brief"]').focus();
   h.$('[data-first-crossing-item="brief"]').click();
   assert.equal(h.root.dataset.firstCrossingScreen,'1');
-  assert.equal(h.environment.document.activeElement,h.$('#loomFirstCrossing'));
-  assert.equal(h.root.dataset.loomIntro,'false');
-  assert.equal(h.$('#loomFirstCrossingTitle').textContent,'A good question is personal.');
+  assert.equal(h.environment.document.activeElement,h.$('[data-first-crossing-item="brief"]'));
+  assert.equal(h.root.dataset.loomIntro,'true');
+  assert.equal(h.$('#loomFirstCrossingTitle').textContent,'Firewall your online life from AI.');
+  assert.equal(h.$('#loomFirstCrossingTitle em').textContent,'from AI.');
+  assert.equal(h.$('#loomTutorialProgress').textContent,'1 of 7 · Choose');
   await until(()=>h.$('#aiRuntimeState').dataset.illustratedRelation==='gathering','current gathering projection');
   h.tick(0);h.tick(2000);
   assert.equal(h.$('[data-first-crossing-item="source"]').disabled,true);

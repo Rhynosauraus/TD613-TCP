@@ -246,13 +246,11 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     // region; opening help or choosing another control keeps its own focus.
     if((focused===check&&!action)||(focused===finish&&!stop))tutorial.focus?.({preventScroll:true});
     root.dataset.firstCrossingCue=cue;
-    // The opening overture precedes seven operator screens. Logical step 0
-    // retains the historical source-gather gate; its first gesture now enters
-    // the authored gather panel rather than leaving motion under the headline.
-    root.dataset.firstCrossingScreen=String(root.dataset.loomIntro==='true'?0:firstCrossingStep+1);
+    // Opening and à share the original open headline composition. Screen
+    // identity follows the operator gesture, independently of the CSS layout.
+    root.dataset.firstCrossingScreen=String(firstCrossingStep===0?(firstCrossingSelected.has('brief')?1:0):firstCrossingStep+1);
     const progress={
-      choose:'Opening',
-      'gathering-start':'1 of 7 · Gather',
+      choose:'1 of 7 · Choose',
       'gathering-motion':'2 of 7 · Share',
       'gathering-named':'2 of 7 · Share',
       binding:'3 of 7 · Review',
@@ -1295,15 +1293,9 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     if(firstCrossingSelected.has(id))firstCrossingSelected.delete(id);else firstCrossingSelected.add(id);
     if(id==='brief'){
       root.dataset.firstCrossingGather='motion';
-      root.dataset.loomIntro='false';
-      $('loomFirstCrossing').focus?.({preventScroll:true});
-      button.disabled=true;
-      $('loomFirstCrossingBack').hidden=false;
-      setFirstCrossingCue('gathering-start',{
-        title:'A good question is personal.',
-        prompt:'You want help thinking through a move. The example starts with the details an answer would need.',
-        answer:'Putting the example together…'
-      });
+      root.dataset.firstCrossingScreen='1';
+      // Historical screenshot-backed transition: the open headline and rows
+      // stay in place while à gathers. The selected row keeps native focus.
     }
     renderFirstCrossingSelection();
     const correct=firstCrossingSelected.has('brief')&&firstCrossingSelected.has('source')&&!firstCrossingSelected.has('private')&&firstCrossingSelected.size===2;
@@ -1325,7 +1317,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     flowcoreMessage.textContent=firstCrossingChoreography.message;
     root.dataset.flowcoreChoreography=firstCrossingChoreography.id;
     if(firstCrossingPacket){
-      firstCrossingPacket={...firstCrossingPacket,presentation:{...firstCrossingPacket.presentation,...(root.dataset.loomIntro==='true'?loomOpeningPresentation(firstCrossingChoreography):loomTutorialPresentation(firstCrossingStep,firstCrossingChoreography))}};
+      firstCrossingPacket={...firstCrossingPacket,presentation:{...firstCrossingPacket.presentation,...(firstCrossingStep===0&&!firstCrossingSelected.has('brief')?loomOpeningPresentation(firstCrossingChoreography):loomTutorialPresentation(firstCrossingStep,firstCrossingChoreography))}};
       coordinator.setContinuous(firstCrossingStep!==6);
       coordinator.setPacket(firstCrossingPacket);
       coordinator.play();
