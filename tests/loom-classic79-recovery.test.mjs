@@ -50,3 +50,9 @@ test('historical CSS and template survive the declared functional adapters', () 
     .replace(/<section data-tool-panel="science"[^\n]+<\/section>\n/, '');
   assert.equal(digest(historicalTemplate), '361bf2bef237f71c9324cbca4c57cf268a8724c0fb69b2516d64638d1215933b');
 });
+
+test('original renderer trajectories and motion families survive without later parking',()=>{
+  const source=read('holonomy-loom/instrument-state-view-classic79.js').replace("from './tutorial-membrane-classic79.js'","from './tutorial-membrane.js'");
+  assert.equal(createHash('sha256').update(source).digest('hex'),'e39deb8da3ec3c509bdca1843a71b75751b997f90a4e2ed4f785a57f76148fb4');
+  assert.match(js,/durationMs: 4000/);assert.doesNotMatch(source,/parkedX|parkedY/);
+});

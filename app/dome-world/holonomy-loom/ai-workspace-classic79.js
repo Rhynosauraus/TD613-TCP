@@ -5,7 +5,7 @@ import { FIRST_CROSSING_PRACTICE, bindFirstCrossingPractice, checkFirstCrossingP
 import { loomTutorialPresentation, loomOpeningPresentation } from './tutorial-membrane-classic79.js';
 import { nextFlowcoreChoreography } from './flowcore-choreography.js?v=20261013-phase09-v1';
 import { mountReturnedSessionReview } from './returned-session-review.js';
-import { loomWorkspaceTemplate } from './workspace-template-classic79.js?v=20261018-confirmed-mobile-v1';
+import { loomWorkspaceTemplate } from './workspace-template-classic79.js?v=20261018-original-procession-v1';
 import { mountLoomPrivacyScienceView } from './privacy-science-view-classic79.js';
 import { mountLoomObserverPreview } from './privacy-science-view.js?v=20261015-restoration-v5';
 import { createPortableLoomGateReport, describePortableLoomGateReport } from '../../engine/portable-loom-gate.js';
@@ -15,7 +15,7 @@ import { STANDARD_PORTABLE_LOOM_RULES } from '../../engine/portable-loom-policy.
 import { readLoomDocument, buildLoomAiRequest, inspectLoomAiResponse } from './ai-intake.js';
 import { createLoomAiHandoff, createPortableLoomAiPacket, createCanonicalPortableLoomPacket, createPortableLoomAiPrompt, createLoomAiGovernance, createLoomAiTaskGovernor } from './ai-handoff.js';
 import { assessLoomProjectAnswer } from './ai-project-checks.js';
-import { mountLoomRuntimeStateView } from './runtime-state-view-classic79.js?v=20261014-firewall-science-v1';
+import { mountLoomRuntimeStateView } from './runtime-state-view-classic79.js?v=20261018-original-procession-v1';
 import { renderLoomAiResult } from './ai-result-view.js';
 import { readLoomAiFailure, describeLoomAiFailure } from './ai-failure.js';
 import { AnimationCoordinator } from './animation-coordinator.js';
@@ -186,7 +186,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     $('loomJourneyStep2').disabled=!acceptedTask&&!locallyAdmitted;
     openWorkspace(state==='loom'?'build':state==='return'?'return':'crossing');
   };
-  const coordinator = new AnimationCoordinator({ durationMs: 6000, maxFps: 60, onState: state => { root.dataset.pendingFrames = String(state.pendingFrames); } });
+  const coordinator = new AnimationCoordinator({ durationMs: 4000, maxFps: 60, onState: state => { root.dataset.pendingFrames = String(state.pendingFrames); } });
   coordinator.setContinuous(false);
   const invitation = $('aiDemoInvitation');
   const FIRST_CROSSING_KEY = 'td613.loom.first-crossing.v1';
@@ -246,10 +246,15 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     // region; opening help or choosing another control keeps its own focus.
     if((focused===check&&!action)||(focused===finish&&!stop))tutorial.focus?.({preventScroll:true});
     root.dataset.firstCrossingCue=cue;
+    // The opening overture precedes seven operator screens. Logical step 0
+    // retains the historical source-gather gate; its first gesture now enters
+    // the authored gather panel rather than leaving motion under the headline.
+    root.dataset.firstCrossingScreen=String(root.dataset.loomIntro==='true'?0:firstCrossingStep+1);
     const progress={
-      choose:'1 of 7 · Choose',
-      'gathering-motion':'2 of 7 · Gather',
-      'gathering-named':'2 of 7 · Gather',
+      choose:'Opening',
+      'gathering-start':'1 of 7 · Gather',
+      'gathering-motion':'2 of 7 · Share',
+      'gathering-named':'2 of 7 · Share',
       binding:'3 of 7 · Review',
       'binding-held':'3 of 7 · Review',
       'potential-motion':'3 of 7 · Review',
@@ -416,7 +421,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     const alreadyPublished=firstCrossingStep===1?firstCrossingGatheringPublished:firstCrossingReadinessPublished;
     // A presentation remix cannot withdraw a consequence already observed for
     // this same selection/binding. Restarting the tutorial resets these flags.
-    const consequenceVisible=alreadyPublished||(projectionCurrent && (snapshot.reducedMotion || snapshot.progress>=.9));
+    const consequenceVisible=alreadyPublished||(projectionCurrent && (snapshot.reducedMotion || snapshot.progress>=.82));
     if(firstCrossingStep===1){
       if(consequenceVisible){
         firstCrossingGatheringPublished=true;
@@ -454,7 +459,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     }
     if(firstCrossingStep>=3&&firstCrossingStep<=5){
       const current=$('aiRuntimeState').dataset.projectionState==='CURRENT';
-      if(firstCrossingLessonPublished||(current&&(snapshot.reducedMotion||snapshot.progress>=.9))){
+      if(firstCrossingLessonPublished||(current&&(snapshot.reducedMotion||snapshot.progress>=.82))){
         firstCrossingLessonPublished=true;
         renderFirstCrossingLesson(true);
       }
@@ -600,6 +605,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     root.dataset.loomIntro='false';
     root.dataset.firstCrossing='idle';
     root.dataset.firstCrossingStep='idle';
+    root.dataset.firstCrossingScreen='idle';
     delete root.dataset.firstCrossingCue;
     $('loomFirstCrossing').hidden=true;
     $('loomThresholdGate').hidden=false;
@@ -661,6 +667,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     $('loomTutorialReference').textContent=FIRST_CROSSING_PRACTICE.documents.find(item=>item.id==='source').text.replace(/^Fictional approved context: /,'');
     $('loomTutorialInstructions').textContent=FIRST_CROSSING_PRACTICE.rules.join('\n');
     root.dataset.firstCrossingStep='0';
+    root.dataset.firstCrossingScreen='0';
     $('loomTutorialArtifact').open=false;
     $('loomTutorialArtifactRecord').textContent='';
     $('loomTutorialProof').hidden=true;
@@ -1286,7 +1293,18 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     if(id==='source'&&!firstCrossingSourceUnlocked)return;
     if(id==='brief'&&firstCrossingSelected.has('brief'))return;
     if(firstCrossingSelected.has(id))firstCrossingSelected.delete(id);else firstCrossingSelected.add(id);
-    if(id==='brief')root.dataset.firstCrossingGather='motion';
+    if(id==='brief'){
+      root.dataset.firstCrossingGather='motion';
+      root.dataset.loomIntro='false';
+      $('loomFirstCrossing').focus?.({preventScroll:true});
+      button.disabled=true;
+      $('loomFirstCrossingBack').hidden=false;
+      setFirstCrossingCue('gathering-start',{
+        title:'A good question is personal.',
+        prompt:'You want help thinking through a move. The example starts with the details an answer would need.',
+        answer:'Putting the example together…'
+      });
+    }
     renderFirstCrossingSelection();
     const correct=firstCrossingSelected.has('brief')&&firstCrossingSelected.has('source')&&!firstCrossingSelected.has('private')&&firstCrossingSelected.size===2;
     if(correct){
@@ -1307,7 +1325,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     flowcoreMessage.textContent=firstCrossingChoreography.message;
     root.dataset.flowcoreChoreography=firstCrossingChoreography.id;
     if(firstCrossingPacket){
-      firstCrossingPacket={...firstCrossingPacket,presentation:{...firstCrossingPacket.presentation,...(firstCrossingStep===0?loomOpeningPresentation(firstCrossingChoreography):loomTutorialPresentation(firstCrossingStep,firstCrossingChoreography))}};
+      firstCrossingPacket={...firstCrossingPacket,presentation:{...firstCrossingPacket.presentation,...(root.dataset.loomIntro==='true'?loomOpeningPresentation(firstCrossingChoreography):loomTutorialPresentation(firstCrossingStep,firstCrossingChoreography))}};
       coordinator.setContinuous(firstCrossingStep!==6);
       coordinator.setPacket(firstCrossingPacket);
       coordinator.play();

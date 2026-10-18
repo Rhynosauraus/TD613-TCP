@@ -54,15 +54,20 @@ async function checked(h){
   await until(()=>h.root.dataset.firstCrossingStep==='2'&&!h.$('#loomFirstCrossingStop').hidden,'checked artifact');
 }
 
-test('historical context unlock waits for the six-second owner score and keeps one pending frame',async t=>{
+test('historical context unlock waits for the original four-second owner score and keeps one pending frame',async t=>{
   const h=setup(t,{reduced:false});
+  assert.equal(h.root.dataset.firstCrossingScreen,'0');
   h.$('[data-first-crossing-item="brief"]').click();
-  await until(()=>h.$('#aiRuntimeState').dataset.projectionState==='CURRENT','current gathering projection');
-  h.tick(0);h.tick(3000);
+  assert.equal(h.root.dataset.firstCrossingScreen,'1');
+  assert.equal(h.environment.document.activeElement,h.$('#loomFirstCrossing'));
+  assert.equal(h.root.dataset.loomIntro,'false');
+  assert.equal(h.$('#loomFirstCrossingTitle').textContent,'A good question is personal.');
+  await until(()=>h.$('#aiRuntimeState').dataset.illustratedRelation==='gathering','current gathering projection');
+  h.tick(0);h.tick(2000);
   assert.equal(h.$('[data-first-crossing-item="source"]').disabled,true);
-  assert.equal(h.ui.inspect().clock.durationMs,6000);
-  h.tick(3001);
-  await until(()=>!h.$('[data-first-crossing-item="source"]').disabled,'completed six-second score');
+  assert.equal(h.ui.inspect().clock.durationMs,4000);
+  h.tick(2001);
+  await until(()=>!h.$('[data-first-crossing-item="source"]').disabled,'completed four-second score');
   assert.ok(h.frames.size<=1);
   assert.equal(h.requests.length,0);
 });
@@ -143,4 +148,27 @@ test('current finite observer preview stays in opt-in tools without changing his
   assert.equal(observer.dataset.selectedChannels,'second,third');
   assert.equal(h.root.dataset.firstCrossingStep,'0');
   assert.equal(h.requests.length,0);assert.equal(h.ui.inspect().session,null);
+});
+
+// Screen order is an operator-visible contract, including the formerly folded
+// first gathering phase. Inspect actual mounted glyphs, not navigation labels.
+test('opening and seven operator screens retain distinct canonical glyph projections',async t=>{
+  const h=setup(t);
+  const check=async(screen,relations,glyphs)=>{
+    await until(()=>h.root.dataset.firstCrossingScreen===String(screen)
+      &&h.$('#aiRuntimeState').dataset.illustratedRelation===relations,'screen '+screen);
+    assert.deepEqual([...new Set([...h.root.querySelectorAll('.loom-field-flight text')].map(n=>n.textContent))].sort(),glyphs.slice().sort());
+    assert.equal(h.root.querySelectorAll('.loom-field-flight text').length,39);
+  };
+  assert.equal(h.root.dataset.firstCrossingScreen,'0');
+  h.$('[data-first-crossing-item="brief"]').click();await check(1,'gathering',['à']);
+  h.$('#loomFirstCrossingPause').click();await check(1,'gathering',['à']);
+  await until(()=>!h.$('[data-first-crossing-item="source"]').disabled,'source unlock');
+  h.$('[data-first-crossing-item="source"]').click();await check(2,'bounded_emergence//protected_continuity',['hõt','cōl']);
+  await until(()=>!h.$('#loomFirstCrossingAction').hidden,'review available');h.$('#loomFirstCrossingAction').click();
+  await check(3,'created_potential',['上']);
+  for(const [screen,relation,glyph]of [[4,'release','出'],[5,'recurrence','米'],[6,'released_tendency','下'],[7,'structural_rest','𝄐']]){
+    await until(()=>!h.$('#loomFirstCrossingStop').hidden,'next available');h.$('#loomFirstCrossingStop').click();await check(screen,relation,[glyph]);
+  }
+  assert.equal(h.ui.inspect().clock.durationMs,4000);assert.equal(h.requests.length,0);
 });
