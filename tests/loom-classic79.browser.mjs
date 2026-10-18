@@ -23,7 +23,7 @@ const origin='http://127.0.0.1:'+server.address().port;
 const report={schema:'td613.loom.classic79-browser/v0.2',status:'HELD',
  source_head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
  working_tree_dirty:Boolean(execFileSync('git',['status','--porcelain','--untracked-files=no'],{encoding:'utf8'}).trim()),
- historical_reference:'93d4cb4ed57070e6f748ecd05ae345dbab236a5b',observation:'LOCAL_REAL_BROWSER_CANDIDATE',
+ historical_reference:'8096f05dbf19a7bda25948e9aa988645a690388c',observation:'LOCAL_REAL_BROWSER_CANDIDATE',
  physical_device_observed:false,operator_visual_acceptance:false,provider_calls:0,empirical_qualification:0,served,checks,errors};
 const engines=process.env.TD613_CLASSIC79_BROWSER==='chromium'?[['chromium',chromium]]:[['chromium',chromium],['webkit',webkit]];
 const record=(name,data)=>checks.push({name,pass:true,...data});
@@ -52,7 +52,7 @@ try{
  for(const [engine,type]of engines){
   const browser=await type.launch({headless:true,...(engine==='chromium'&&process.env.TD613_BROWSER_EXECUTABLE_PATH?{executablePath:process.env.TD613_BROWSER_EXECUTABLE_PATH}:{})});
   try{
-   for(const [posture,width,height]of [['desktop',1280,800],['mobile',390,844]]){
+   for(const [posture,width,height]of [['desktop',1280,800],['mobile',390,844],['reference-mobile',428,735]]){
     const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'});
     await context.addInitScript(()=>{Math.random=()=>0.19;});await bounded(context,engine,posture);
     const page=await context.newPage();page.setDefaultTimeout(15000);
@@ -66,6 +66,7 @@ try{
        heading:document.querySelector('#loomFirstCrossingTitle').textContent,scroll:[document.documentElement.scrollWidth,document.documentElement.scrollHeight],
        panel:[r.x,r.y,r.width,r.height],carriers:document.querySelectorAll('.loom-field-flight text').length,overflow:document.documentElement.scrollWidth>innerWidth+1};
      });
+     assert.equal(state.heading,['Firewall your online life from AI.','What does the answer need?','Follow the clues.','A small piece can say a lot.','The clues add up.','Did the answer help?','What could a stranger work out?'][n]);
      assert.equal(state.boot,'ready');assert.equal(state.overflow,false);assert.equal(state.carriers,39);
      await page.screenshot({path:join(dir,`${engine}-${posture}-scene-${n}.png`),fullPage:true});record('historical-scene',{engine,posture,scene:n,state});
      if(n===6)break;

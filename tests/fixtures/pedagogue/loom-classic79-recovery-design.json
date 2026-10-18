@@ -1,12 +1,12 @@
 {
   "schema": "td613.pedagogue-design-fixture/v0.1",
   "design_id": "loom-classic79-functional-recovery-v01",
-  "surface_reference": "Classic 79 historical recovery",
+  "surface_reference": "Operator-confirmed original mobile recovery",
   "governance_context": "TD613",
   "determinism": {
     "frozenClock": "2026-10-08T19:48:00Z",
     "idSeed": "loom-classic79-functional-recovery-v01",
-    "idScope": "Classic 79 historical recovery"
+    "idScope": "Operator-confirmed original mobile recovery"
   },
   "scene_input": {
     "scene_kind": "GENERIC",
@@ -28,8 +28,8 @@
         "illustration is separately labelled from actual unsent event evidence"
       ],
       "transformations": [
-        "Restore source-authored selection and consequence sequence from 93d4cb4ed57070e6f748ecd05ae345dbab236a5b.",
-        "One six-second owner clock; 39 carriers and historical weighted opening slots.",
+        "Restore source-authored selection and consequence sequence from 8096f05dbf19a7bda25948e9aa988645a690388c.",
+        "Retained six-second timing repair (the original score used four seconds); 39 carriers and historical weighted opening slots.",
         "Complete canonical artifact is an optional disclosure in request review, without advancing the tutorial.",
         "One native pointer or key series admits at most one tutorial action; Skip and replay remain separate explicit gestures.",
         "Current mathematical ZIP exporter and privacy/custody engines remain authoritative."
@@ -40,7 +40,7 @@
     },
     "visible_condition": {
       "plain_language": "Choose what AI receives, revisit privacy in an explicit scope, and inspect the returned answer and its receipt before human custody admission.",
-      "surface_reference": "Classic 79 historical recovery"
+      "surface_reference": "Operator-confirmed original mobile recovery"
     },
     "available_affordances": [
       {

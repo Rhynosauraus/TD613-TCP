@@ -34,16 +34,19 @@ test('Classic 79 does not mutate the canonical Loom UI or its current science mo
   assert.doesNotMatch(js, /downloadJson\('loom-portable-session\.json',portableSessionExport\)/);
 });
 
-// Exact baseline digests allow the declared font and inspection adapters only;
+// Source: #1493 (97d6dbd), unchanged through #1497 (8096f05).
+// Exact baseline digests allow the declared font, inspection and Tools adapters;
 // unrelated aesthetic drift must receive a new operator decision.
 test('historical CSS and template survive the declared functional adapters', () => {
   const digest = value => createHash('sha256').update(value).digest('hex');
   const historicalCss = css
     .replace(/@font-face\{font-family:"Loom Flow-Core";src:url\("\.\/fonts\/flowcore-music\.woff"\)[^\n]*\n/, '')
-    .replaceAll('--sans:"Loom Flow-Core",', '--sans:');
-  assert.equal(digest(historicalCss), '430220a226e24a7760efd1a5ea752bdff122c9eac86bb7fb72ed5aff5219c0e0');
+    .replaceAll('--sans:"Loom Flow-Core",', '--sans:')
+    .replace(/\n\/\* BEGIN CURRENT FUNCTIONAL ADAPTERS:[\s\S]*?\/\* END CURRENT FUNCTIONAL ADAPTERS \*\/\n/, '');
+  assert.equal(digest(historicalCss), '15c6b2aa7ab2118a7700fe1de495ed9efa74fd1e183e58eec19014d2dce885da');
   const historicalTemplate = template
     .replace(/\n      <details id="loomTutorialArtifact"[^\n]+<\/details>/, '')
-    .replace('<div id="loomObserverTools" class="loom-observer-preview"></div>', '');
-  assert.equal(digest(historicalTemplate), '62fd3ebda60a72a119145c7d245652ed768a556e2e9c4617a251835c082dea79');
+    .replace('<button type="button" data-tool="science">Privacy science</button>', '')
+    .replace(/<section data-tool-panel="science"[^\n]+<\/section>\n/, '');
+  assert.equal(digest(historicalTemplate), '361bf2bef237f71c9324cbca4c57cf268a8724c0fb69b2516d64638d1215933b');
 });
