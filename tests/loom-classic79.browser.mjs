@@ -20,17 +20,26 @@ const server=createServer(async(req,res)=>{
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin='http://127.0.0.1:'+server.address().port;
-const report={schema:'td613.loom.classic79-browser/v0.2',status:'HELD',
+const report={schema:'td613.loom.original-procession-browser/v0.3',status:'HELD',
  source_head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
  working_tree_dirty:Boolean(execFileSync('git',['status','--porcelain','--untracked-files=no'],{encoding:'utf8'}).trim()),
  historical_reference:'8096f05dbf19a7bda25948e9aa988645a690388c',observation:'LOCAL_REAL_BROWSER_CANDIDATE',
  physical_device_observed:false,operator_visual_acceptance:false,provider_calls:0,empirical_qualification:0,served,checks,errors};
 const engines=process.env.TD613_CLASSIC79_BROWSER==='chromium'?[['chromium',chromium]]:[['chromium',chromium],['webkit',webkit]];
 const record=(name,data)=>checks.push({name,pass:true,...data});
+const operators=[['gathering',['à']],['bounded_emergence//protected_continuity',['hõt','cōl']],['created_potential',['上']],['release',['出']],['recurrence',['米']],['released_tendency',['下']],['structural_rest',['𝄐']]];
+async function operatorScreen(page,screen){
+ const [relation,glyphs]=operators[screen-1];
+ await page.waitForFunction(({screen,relation})=>document.querySelector('#loomAiWorkspace').dataset.firstCrossingScreen===String(screen)&&document.querySelector('#aiRuntimeState').dataset.illustratedRelation===relation,{screen,relation});
+ const observed=await page.locator('.loom-field-flight text').evaluateAll(nodes=>[...new Set(nodes.map(n=>n.textContent))].sort());
+ assert.deepEqual(observed,glyphs.slice().sort());
+ return {screen,relation,glyphs:observed};
+}
 async function scene(page,n){
  await page.waitForFunction(n=>document.querySelector('#loomAiWorkspace').dataset.firstCrossingStep===String(n),n);
  if(n===1)await page.locator('#loomFirstCrossingAction').waitFor({state:'visible'});
  if(n>=2&&n<=5)await page.locator('#loomFirstCrossingStop').waitFor({state:'visible'});
+ if(n>0)await operatorScreen(page,n+1);
 }
 async function glyphCoverage(page,selector,glyph){
  await page.evaluate(()=>document.fonts.ready);
@@ -62,7 +71,7 @@ try{
      await scene(page,n);
      const state=await page.evaluate(()=>{
       const p=document.querySelector('#loomFirstCrossing'),r=p.getBoundingClientRect();
-      return {boot:document.documentElement.dataset.loomBoot,step:document.querySelector('#loomAiWorkspace').dataset.firstCrossingStep,
+      return {boot:document.documentElement.dataset.loomBoot,step:document.querySelector('#loomAiWorkspace').dataset.firstCrossingStep,screen:document.querySelector('#loomAiWorkspace').dataset.firstCrossingScreen,
        heading:document.querySelector('#loomFirstCrossingTitle').textContent,scroll:[document.documentElement.scrollWidth,document.documentElement.scrollHeight],
        panel:[r.x,r.y,r.width,r.height],carriers:document.querySelectorAll('.loom-field-flight text').length,overflow:document.documentElement.scrollWidth>innerWidth+1};
      });
@@ -70,7 +79,13 @@ try{
      assert.equal(state.boot,'ready');assert.equal(state.overflow,false);assert.equal(state.carriers,39);
      await page.screenshot({path:join(dir,`${engine}-${posture}-scene-${n}.png`),fullPage:true});record('historical-scene',{engine,posture,scene:n,state});
      if(n===6)break;
-     if(n===0){await page.locator('[data-first-crossing-item="brief"]').click();await page.locator('[data-first-crossing-item="source"]').click();}
+     if(n===0){
+      await page.locator('[data-first-crossing-item="brief"]').click();const gather=await operatorScreen(page,1);
+      assert.equal(await page.locator('#loomAiWorkspace').getAttribute('data-loom-intro'),'false');
+      assert.equal(await page.locator('#loomFirstCrossingTitle').textContent(),'A good question is personal.');
+      await page.screenshot({path:join(dir,`${engine}-${posture}-gather-screen.png`),fullPage:true});record('distinct-gather-screen',{engine,posture,...gather});
+      await page.locator('[data-first-crossing-item="source"]').click();
+     }
      else if(n===1)await page.locator('#loomFirstCrossingAction').click();
      else if(n===2){
       await page.locator('#loomTutorialArtifact > summary').click();
@@ -98,14 +113,34 @@ try{
     await page.locator('#loomFirstCrossingLeave').click();await page.locator('#aiTask').waitFor({state:'visible'});
     await page.reload();await page.waitForSelector('html[data-loom-boot="ready"]');await scene(page,0);record('finish-focus-replay-skip-reload',{engine,posture});await context.close();
    }
-   // Native-motion source unlock, without claiming FPS or phase-synchronized parity.
-   const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'no-preference'});await bounded(context,engine,'motion');
-   const page=await context.newPage();page.on('pageerror',e=>errors.push({engine,posture:'motion',message:e.message}));
-   await page.goto(origin+'/dome-world/holonomy-loom-classic79.html');await page.waitForSelector('html[data-loom-boot="ready"]');
-   await page.locator('[data-first-crossing-item="brief"]').click();await page.waitForTimeout(2000);
-   assert.equal(await page.locator('[data-first-crossing-item="source"]').isDisabled(),true);
-   await page.waitForFunction(()=>!document.querySelector('[data-first-crossing-item="source"]').disabled,null,{timeout:10000});
-   await page.screenshot({path:join(dir,`${engine}-mobile-normal-motion.png`),fullPage:true});record('historical-timed-unlock',{engine,early_context_disabled:true,completed_context_enabled:true});await context.close();
+   // Observe the whole normal-motion procession, not just a final resting frame.
+   // Screenshots and samples use the product's existing single clock.
+   for(const [posture,width,height]of [['mobile-motion',390,844],['desktop-motion',1280,800]]){
+    const context=await browser.newContext({viewport:{width,height},reducedMotion:'no-preference'});await bounded(context,engine,posture);
+    await context.addInitScript(()=>{Math.random=()=>0.19;});
+    const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push({engine,posture,message:e.message}));
+    await page.goto(origin+'/dome-world/holonomy-loom-classic79.html');await page.waitForSelector('html[data-loom-boot="ready"]');
+    await page.screenshot({path:join(dir,`${engine}-${posture}-screen-0.png`),fullPage:true});
+    await page.locator('[data-first-crossing-item="brief"]').click();
+    for(let screen=1;screen<=7;screen++){
+     const identity=await operatorScreen(page,screen);
+     const samples=[];
+     for(let sample=0;sample<3;sample++){
+      await page.waitForTimeout(sample===0?350:1100);
+      if(screen===1&&sample===0)assert.equal(await page.locator('[data-first-crossing-item="source"]').isDisabled(),true);
+      samples.push(await page.locator('.loom-field-flight text').evaluateAll(nodes=>nodes.map(n=>({glyph:n.textContent,relation:n.dataset.flightRelation,x:n.getAttribute('x'),y:n.getAttribute('y'),transform:n.getAttribute('transform')}))));
+      await page.screenshot({path:join(dir,`${engine}-${posture}-screen-${screen}-frame-${sample}.png`),fullPage:true});
+     }
+     assert.equal(await page.locator('#loomAiWorkspace').getAttribute('data-first-crossing-screen'),String(screen));
+     assert.notEqual(JSON.stringify(samples[0]),JSON.stringify(samples[1]),'The original score must move before resting');
+     record('normal-motion-operator-screen',{engine,posture,...identity,samples});
+     if(screen===7)break;
+     if(screen===1)await page.locator('[data-first-crossing-item="source"]').click();
+     else if(screen===2)await page.locator('#loomFirstCrossingAction').click();
+     else await page.locator('#loomFirstCrossingStop').click();
+    }
+    await context.close();
+   }
   }finally{await browser.close();}
  }
  assert.equal(errors.length,0,JSON.stringify(errors));report.status='PASS';
