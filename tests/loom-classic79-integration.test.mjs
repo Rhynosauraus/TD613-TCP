@@ -59,6 +59,7 @@ test('historical context unlock waits for the original four-second owner score a
   assert.equal(h.root.dataset.firstCrossingScreen,'0');
   h.$('[data-first-crossing-item="brief"]').click();
   assert.equal(h.root.dataset.firstCrossingScreen,'1');
+  assert.equal(h.environment.document.activeElement,h.$('#loomFirstCrossing'));
   assert.equal(h.root.dataset.loomIntro,'false');
   assert.equal(h.$('#loomFirstCrossingTitle').textContent,'A good question is personal.');
   await until(()=>h.$('#aiRuntimeState').dataset.illustratedRelation==='gathering','current gathering projection');

@@ -1296,6 +1296,7 @@ export function mountLoomAiWorkspace(root, environment = window, { demoProjects 
     if(id==='brief'){
       root.dataset.firstCrossingGather='motion';
       root.dataset.loomIntro='false';
+      $('loomFirstCrossing').focus?.({preventScroll:true});
       button.disabled=true;
       $('loomFirstCrossingBack').hidden=false;
       setFirstCrossingCue('gathering-start',{

@@ -82,6 +82,7 @@ try{
      if(n===0){
       await page.locator('[data-first-crossing-item="brief"]').click();const gather=await operatorScreen(page,1);
       assert.equal(await page.locator('#loomAiWorkspace').getAttribute('data-loom-intro'),'false');
+      assert.equal(await page.locator('#loomFirstCrossing').evaluate(n=>n===document.activeElement),true);
       assert.equal(await page.locator('#loomFirstCrossingTitle').textContent(),'A good question is personal.');
       await page.screenshot({path:join(dir,`${engine}-${posture}-gather-screen.png`),fullPage:true});record('distinct-gather-screen',{engine,posture,...gather});
       await page.locator('[data-first-crossing-item="source"]').click();
