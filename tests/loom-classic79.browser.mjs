@@ -81,10 +81,16 @@ try{
      if(n===6)break;
      if(n===0){
       await page.locator('[data-first-crossing-item="brief"]').click();const gather=await operatorScreen(page,1);
-      assert.equal(await page.locator('#loomAiWorkspace').getAttribute('data-loom-intro'),'false');
-      assert.equal(await page.locator('#loomFirstCrossing').evaluate(n=>n===document.activeElement),true);
-      assert.equal(await page.locator('#loomFirstCrossingTitle').textContent(),'A good question is personal.');
-      await page.screenshot({path:join(dir,`${engine}-${posture}-gather-screen.png`),fullPage:true});record('distinct-gather-screen',{engine,posture,...gather});
+      assert.equal(await page.locator('#loomAiWorkspace').getAttribute('data-loom-intro'),'true');
+      assert.equal(await page.locator('[data-first-crossing-item="brief"]').evaluate(n=>n===document.activeElement),true);
+      assert.equal(await page.locator('#loomFirstCrossingTitle em').textContent(),'from AI.');
+      const composition=await page.locator('#loomFirstCrossing').evaluate(node=>{
+       const s=getComputedStyle(node),before=getComputedStyle(node,'::before');
+       return {border:s.borderTopWidth,backdrop:s.backdropFilter||s.webkitBackdropFilter,background:s.backgroundColor,before:before.display};
+      });
+      assert.equal(composition.border,'0px');assert.equal(composition.backdrop,'none');assert.equal(composition.before,'none');
+      record('screenshot-backed-open-gather',{engine,posture,composition});
+      await page.screenshot({path:join(dir,`${engine}-${posture}-gather-screen.png`),fullPage:true});record('open-gather-phase',{engine,posture,...gather});
       await page.locator('[data-first-crossing-item="source"]').click();
      }
      else if(n===1)await page.locator('#loomFirstCrossingAction').click();

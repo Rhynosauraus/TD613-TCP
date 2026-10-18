@@ -37,12 +37,16 @@ that this commit was the exact physical-device trial associated with that grade.
 | 6 | 下 | 5 |
 | 7 | 𝄐 | 6 |
 
-The original controller began à beneath the opening headline. The operator now
-explicitly requests a separate screen at each glyph change, so that existing
-gather phase enters the historical glass panel on the first question gesture.
-This is a declared navigation adaptation, not a claim that an eight-screen
-controller existed byte-for-byte in the archive. Original gather copy is reused.
-Remix on that screen preserves à instead of restoring the full opening overture.
+The original controller began à beneath the opening headline. #1535 instead
+introduced the glass gather panel after the first question gesture. The operator
+subsequently rejected that adaptation using paired historical/current iPhone
+screenshots (IMG_1441, IMG_1443(3), IMG_1613, IMG_1615). The historical sources
+8096f05 and 93d4cb4 both retain the open headline during à, with the question
+row selected and the context row waking after its complete score. The bounded
+follow-up removes the added panel/title change. Screen identity follows the
+selection rather than the layout flag; remix still preserves à. The second
+source gesture and later historical composition remain unchanged. Further
+changes to panels or action counts need their own visual evidence/decision.
 
 ## Bounded implementation
 
@@ -84,6 +88,17 @@ Reproduction uses the existing `tests/loom-classic79.browser.mjs` and
 `tests/loom-classic79-integration.test.mjs`. Local browser records name the dirty
 checkout and include served hashes; exact-commit CI supplies separate authority.
 
-DRAFT candidate. No new release gesture accompanies this recovery.
+## Screenshot-backed open-gather follow-up
+
+- Production baseline: #1535 / 8875405e59bc56c5612818907bc610a7d74a1f6f.
+- Only the first question transition, progress label and remix choice change.
+- CSS, template, renderer, four-second timing, 39 carriers, shared scientific
+  modules, gesture guards and mathematical export remain byte-identical.
+- Mounted checks cover retained headline/emphasis, native selected-row focus,
+  separate context unlock and all seven operator projections.
+- Browser checks inspect computed border/backdrop/pseudo-element values after
+  the first gesture, in addition to the complete flow and artifact/focus guards.
+- These checks establish the declared candidate behavior; operator acceptance
+  of this follow-up remains pending. No release gesture accompanies it.
 
 Sealed ⟐
