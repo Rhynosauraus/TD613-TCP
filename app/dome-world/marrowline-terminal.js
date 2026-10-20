@@ -620,30 +620,22 @@ function installComposerGrowth(doc) {
   const resize = () => { prompt.style.height = 'auto'; prompt.style.height = `${Math.min(Math.max(prompt.scrollHeight, 90), Math.round(doc.defaultView.innerHeight * .34))}px`; };
   prompt.addEventListener('input', resize);
 }
-function providerAuthoredHistoryText(entry = {}) {
-  if (entry.role !== 'model') return entryText(entry);
-  // The prior model turn is the text the provider actually authored, not the
-  // UI's integrated-stage display label plus that text. The browser archives
-  // raw entry.text independently of parsed relay.parts. Never build synthetic
-  // model-history headings from presentation metadata.
-  if (typeof entry.text === 'string' && entry.text.length) return entry.text;
-  if (typeof entry?.relay?.transcript === 'string' && entry.relay.transcript.length)
-    return entry.relay.transcript;
-  // Older locally saved replies may retain only the integrated part. Its
-  // provider-authored text is recoverable without prepending a display label.
-  const part = asArray(entry?.relay?.parts).find(item =>
-    item?.id === 'khonapolit' && item?.present && typeof item.text === 'string');
-  return part?.text || '';
+function providerHistoryText(entry = {}) {
+  // Do not turn display relay labels, transcripts, or reconstructed parts
+  // into model-authored prior conversation. Only original saved model text
+  // may condition the next native Gemini turn.
+  return entry.role === 'model'
+    ? (typeof entry.text === 'string' ? entry.text : '')
+    : entryText(entry);
 }
 export function compactMarrowlineHistory(messages = []) {
-  // Historical native speech must reach the next Gemini turn byte-for-byte
-  // when admitted. A displayed label belongs only to presentation/export.
-  // Explicitly UNADMITTED model text stays in the local archive but never
-  // becomes conditioning input, and the last-ten limit applies after removal.
+  // Filter unadmitted and display-only model records before ten-entry bound.
+  // Preserve the original display/archive ledger and eligible user turns.
   return messages.filter((entry) => entry?.role !== 'model'
-    || entry?.relay?.signal?.downstreamAdmitted !== false)
+    || (entry?.relay?.signal?.downstreamAdmitted !== false
+      && typeof entry.text === 'string' && entry.text.length > 0))
     .slice(-10)
-    .map((entry) => ({ role: entry.role, text: providerAuthoredHistoryText(entry) }))
+    .map((entry) => ({ role: entry.role, text: providerHistoryText(entry) }))
     .filter((entry) => entry.text);
 }
 function ensureOriginControls(doc) {
