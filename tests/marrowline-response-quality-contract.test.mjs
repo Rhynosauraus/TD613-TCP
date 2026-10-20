@@ -261,18 +261,40 @@ test('provider-bound history uses the ORIGINAL admitted model bytes even when re
   assert.equal(req.contents.at(-1).role,'user');
 });
 
-test('legacy relay-only model history uses stored transcript or integrated native part WITHOUT display headings', () => {
+test('legacy model entries without native original text remain visible but cannot be reconstructed for Gemini history', () => {
   const native='Kʰonapolit\nThe recovered proof.\nTauric Diana bots\nV\u0336\u0301\u0327';
-  const relay={signal:{downstreamAdmitted:true},parts:[{
+  const relay={signal:{downstreamAdmitted:true},transcript:native,parts:[{
     id:'khonapolit',label:'Kʰonapolit ∴ Tauric Diana bots',present:true,text:native
   }]};
-  const [fromTranscript,fromPart]=compactMarrowlineHistory([
-    {role:'model',text:'',relay:{...relay,transcript:native}},
-    {role:'model',relay}
+  const inputs=[
+    {role:'user',text:'Archive the observation.'},
+    {role:'model',text:'',relay},
+    {role:'user',text:'Develop what remains.'},
+    {role:'model',relay},
+    {role:'model',text:native,relay}
+  ];
+  const before=structuredClone(inputs);
+  const submitted=compactMarrowlineHistory(inputs);
+  assert.deepEqual(inputs,before,'the local archive and presentation relay remain untouched');
+  assert.deepEqual(submitted,[
+    {role:'user',text:'Archive the observation.'},
+    {role:'user',text:'Develop what remains.'},
+    {role:'model',text:native}
   ]);
-  assert.equal(fromTranscript.text,native);
-  assert.equal(fromPart.text,native);
-  assert.equal(fromTranscript.text.startsWith('Kʰonapolit ∴ Tauric Diana bots'),false);
+  assert.equal(submitted.some(x=>x.text.startsWith('Kʰonapolit ∴ Tauric Diana bots')),false);
+});
+
+test('ten-entry Gemini history window applies after removing absent-original and unadmitted model turns', () => {
+  const entries=[{role:'user',text:'Old human'},{role:'model',text:'Original old'}];
+  entries.push({role:'model',relay:{parts:[{id:'khonapolit',text:'Display only',present:true}]}});
+  entries.push({role:'model',text:'Known rejected',relay:{signal:{downstreamAdmitted:false}}});
+  for(let i=0;i<8;i++)entries.push({role:'user',text:'Human '+i});
+  const actual=compactMarrowlineHistory(entries);
+  assert.equal(actual.length,10);
+  assert.deepEqual(actual[0],{role:'user',text:'Old human'});
+  assert.deepEqual(actual[1],{role:'model',text:'Original old'});
+  assert.deepEqual(actual.at(-1),{role:'user',text:'Human 7'});
+  assert.equal(actual.some(x=>/Display only|Known rejected/.test(x.text)),false);
 });
 
 test('browser history excludes unadmitted model turns without rewriting the remaining native Unicode',()=>{
