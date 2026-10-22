@@ -34,9 +34,10 @@ It operationalizes all five distinct Dollhouse roles (**Pedagogue**, **Aperture*
    - Injected the 6-vector Sedgwickian Knowledge-Survival model into `dollhouse-case-dossier.js`;
    - Reconciled Marrowline test waiver expectation at line 787.
 2. **Aperture v3.2 Numerical Stability & Deficit Bridge (`REST-02`):**
-   - Implemented pure JS Jacobi SVD `computeMatrixSvd` in `app/engine/aperture-v32-typed-epistemic-deficit.js`;
+   - Implemented Hestenes one-sided Jacobi SVD `computeMatrixSvd` in `app/engine/aperture-v32-typed-epistemic-deficit.js` avoiding condition-number squaring $\kappa(A)^2$;
+   - Implemented strict noise covariance validator `validateCovarianceMatrix` verifying dimension, finiteness, symmetry ($\forall i, j: |\Sigma_{ij} - \Sigma_{ji}| \le 10^{-10}$), and positive-definiteness;
    - Implemented candidate probe stability evaluator `evaluateCandidateProbeStability` with rank lift, $\sigma_{\min} \ge 10^{-3}$, and $\kappa \le 10^3$;
-   - Resolved **Counterexample 1** (Rank-Lift Stability Cliff: $\kappa = 200,000 \implies \text{REJECT}$) and **Counterexample 3** (Non-Positive-Definite Covariance $\implies \text{INVALID\_NOISE\_GEOMETRY}$);
+   - Resolved **Counterexample 1** (Rank-Lift Stability Cliff: $\kappa = 200,000 \implies \text{REJECT}$), **Counterexample 3** (Non-Positive-Definite Covariance $\implies \text{INVALID\_NOISE\_GEOMETRY}$), and **Counterexample 3b** (Adversarial Nonsymmetric Covariance $[[1, 0], [9, 1]] \implies \text{INVALID\_NOISE\_GEOMETRY}$);
    - Mapped 5 epistemic harms bijectively to 6 positive knowledge-survival capacities;
    - Integrated numerical stability auditing into `dollhouse-witness-plan.js`.
 3. **Atlas PR #984 Relational Custody & FNV Migration (`REST-03`):**
@@ -51,38 +52,41 @@ It operationalizes all five distinct Dollhouse roles (**Pedagogue**, **Aperture*
    - Implemented `evaluateFadtCoordinateRecovery` resolving **Counterexample 2** (XOR non-submodular coordinate interaction where only joint $\{c_1, c_2\}$ resolves the gap);
    - Implemented `evaluateFadtDiscrepancyIdentity` proving $|A_y \setminus I_y| + |U_y \setminus A_y| \equiv |\Gamma_y| + |A_y \setminus U_y| + |I_y \setminus A_y|$ and strictly rejecting unlawful widening ($A_y \setminus U_y \neq \emptyset$);
    - Compiled child-legible operator guidance in `compileFadtReparativePacket`.
-5. **Orchestrator Hardening & 13-Condition Blind Ablation (`REST-05`):**
-   - Created `app/engine/dollhouse-ablation-harness.js` running all 13 canonical conditions;
-   - Proved empirical non-redundancy: every minus-one role condition exposes an exclusive characteristic blind spot;
+5. **Orchestrator Hardening & Empirical 13-Condition Blind Ablation (`REST-05`):**
+   - Created `app/engine/dollhouse-ablation-harness.js` running all 13 canonical conditions with genuine specialist execution;
+   - Eliminated circular predetermined dictionary assignments: executes actual specialist domain functions on blinded scenario packets and derives failure modes by comparing Orchestrator decisions against independent ground truth;
+   - Permitted four-doll success: on benign inputs, 4 dolls succeed without the 5th (`decision: 'SUPPORTED'`, `failure_mode: null`);
+   - Proved empirical non-redundancy: every minus-one role condition exposes an exclusive characteristic blind spot under specialist jurisdiction;
    - Enforced false consensus defense: 5/5 role agreement on 1 receipt yields $\text{empirical\_replication\_count} = 1$ (`SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION`).
 6. **Pedagogue Dromological Restoration:**
    - Created `app/engine/dollhouse-pedagogue-dromological.js` wrapping `pedagogue-institutional-time.js` and `pedagogue-lineage-second-pass.js`;
    - Audited dromological partial order ($\text{NOTICE} < \text{ACT} < \text{WORLD\_ANSWERS} < \text{NAME}$);
    - Audited Institutional Time preemption gap ($\Pi(s) = t_{\text{inst}}(s) - t_{\text{op}}(s)$);
    - Audited cadence compression, rest/exit availability, and second-pass lineage routing without user profiling.
-7. **Demonstrated Synthetic Operator Workflow:**
-   - Authored `tests/dollhouse-synthetic-operator-workflow.test.mjs` verifying scientific fidelity, error recovery, and orchestrator necessity across all five dolls.
+7. **Demonstrated Synthetic Operator Workflow & Measured Knowledge-Survival:**
+   - Authored `tests/dollhouse-synthetic-operator-workflow.test.mjs` verifying scientific fidelity, error recovery, and orchestrator necessity across all five dolls;
+   - Upgraded `dollhouse-case-dossier.js` to measure actual evidence properties: checks file accessibility on disk (`retrievability`), verifies exact SHA-256 byte hashes vs declared placeholders (`attributable_provenance`), measures structured bounds (`interpretability`), checks serialization invariance (`transmissibility`), calibrates consensus vs hold states (`contestability`), and awards `repairability` only when explicit recovery alternatives are demonstrated.
 
 ---
 
-## 2. Test Verification Matrix (237 Tests GREEN)
+## 2. Test Verification Matrix (240 Tests GREEN)
 
-All 237 tests pass locally on `node v22.14.0`:
+All 240 tests pass locally on `node v22.14.0`:
 
 ```text
 =============================================================================
-REPARATIVE UNIT TEST SUITES (55 tests)
+REPARATIVE UNIT TEST SUITES (58 tests)
 =============================================================================
 tests/dollhouse-pedagogue-dromological.test.mjs      ......    7/7  PASS
 tests/dollhouse-synthetic-operator-workflow.test.mjs ......    4/4  PASS
-tests/dollhouse-aperture-numerical-deficit.test.mjs  ......    6/6  PASS
+tests/dollhouse-aperture-numerical-deficit.test.mjs  ......    7/7  PASS
 tests/dollhouse-atlas-relational-custody.test.mjs    ......    6/6  PASS
 tests/dollhouse-fadt-reparative-assistance.test.mjs  ......    5/5  PASS
 tests/dollhouse-temporal-custodian.test.mjs          ......   15/15 PASS
 tests/dollhouse-witness-plan.test.mjs                ......    7/7  PASS
-tests/dollhouse-multi-role-ablation.test.mjs         ......    5/5  PASS
+tests/dollhouse-multi-role-ablation.test.mjs         ......    7/7  PASS
 -----------------------------------------------------------------------------
-Subtotal:                                                     55/55 PASS
+Subtotal:                                                     58/58 PASS
 =============================================================================
 
 =============================================================================
@@ -97,7 +101,7 @@ tests/dollhouse-atlas-fadt.test.mjs                  ......    1/1  PASS
 Subtotal:                                                    182/182 PASS
 =============================================================================
 
-COMBINED TOTAL: 237 PASSING · ZERO FAILURES · ZERO RETROACTIVE MUTATIONS
+COMBINED TOTAL: 240 PASSING · ZERO FAILURES · ZERO RETROACTIVE MUTATIONS
 ```
 
 ---

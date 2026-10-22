@@ -101,6 +101,99 @@ function jacobiEigenvalues(M, maxIter = 100) {
   return A.map((row, i) => Math.max(0, row[i]));
 }
 
+export function validateCovarianceMatrix(cov, expectedDim) {
+  if (!Array.isArray(cov) || cov.length !== expectedDim) {
+    return { valid: false, reason: 'noise covariance matrix must be a 2D array matching the latent dimension' };
+  }
+  for (let i = 0; i < expectedDim; i++) {
+    if (!Array.isArray(cov[i]) || cov[i].length !== expectedDim) {
+      return { valid: false, reason: 'noise covariance matrix rows must be square matching latent dimension' };
+    }
+    for (let j = 0; j < expectedDim; j++) {
+      if (!Number.isFinite(cov[i][j])) {
+        return { valid: false, reason: 'noise covariance matrix entries must be finite numbers' };
+      }
+      if (Math.abs(cov[i][j] - cov[j][i]) > 1e-10) {
+        return { valid: false, reason: 'noise covariance matrix is not symmetric' };
+      }
+    }
+  }
+  const eigenvalues = jacobiEigenvalues(cov);
+  if (eigenvalues.some(val => val <= 1e-12)) {
+    return { valid: false, reason: 'noise covariance matrix is not positive-definite' };
+  }
+  return { valid: true };
+}
+
+function hestenesSvd(matrix, maxSweeps = 50, tol = 1e-15) {
+  const m = matrix.length;
+  const n = matrix[0].length;
+  if (m < n) {
+    const transposed = Array.from({ length: n }, (_, i) =>
+      Array.from({ length: m }, (_, j) => matrix[j][i])
+    );
+    const sub = hestenesSvd(transposed, maxSweeps, tol);
+    const singularValues = [...sub.singular_values];
+    while (singularValues.length < n) singularValues.push(0);
+    const sigmaMax = singularValues[0] || 0;
+    const rankTol = Math.max(m, n) * sigmaMax * 1e-14;
+    const rank = singularValues.filter(s => s > rankTol).length;
+    const sigmaMin = singularValues[n - 1] || 0;
+    const conditionNumber = sigmaMin > 1e-15 ? sigmaMax / sigmaMin : Infinity;
+    return { m, n, rank, singular_values: singularValues, sigma_max: sigmaMax, sigma_min: sigmaMin, condition_number: conditionNumber };
+  }
+  const cols = Array.from({ length: n }, (_, j) =>
+    Array.from({ length: m }, (_, i) => matrix[i][j])
+  );
+  for (let sweep = 0; sweep < maxSweeps; sweep++) {
+    let maxOrthogError = 0;
+    for (let i = 0; i < n - 1; i++) {
+      for (let j = i + 1; j < n; j++) {
+        let alpha = 0, beta = 0, gamma = 0;
+        for (let k = 0; k < m; k++) {
+          const cik = cols[i][k];
+          const cjk = cols[j][k];
+          alpha += cik * cik;
+          beta += cjk * cjk;
+          gamma += cik * cjk;
+        }
+        const normProd = Math.sqrt(alpha * beta);
+        if (normProd < 1e-30) continue;
+        const orthogError = Math.abs(gamma) / normProd;
+        if (orthogError > maxOrthogError) maxOrthogError = orthogError;
+        if (orthogError < tol) continue;
+        const zeta = (beta - alpha) / (2 * gamma);
+        let t;
+        if (Math.abs(zeta) < 1e-15) {
+          t = 1;
+        } else {
+          t = (Math.sign(zeta) || 1) / (Math.abs(zeta) + Math.sqrt(1 + zeta * zeta));
+        }
+        const c = 1 / Math.sqrt(1 + t * t);
+        const s = t * c;
+        for (let k = 0; k < m; k++) {
+          const cik = cols[i][k];
+          const cjk = cols[j][k];
+          cols[i][k] = c * cik - s * cjk;
+          cols[j][k] = s * cik + c * cjk;
+        }
+      }
+    }
+    if (maxOrthogError < tol) break;
+  }
+  const singularValues = cols.map(col => {
+    let sum = 0;
+    for (let k = 0; k < m; k++) sum += col[k] * col[k];
+    return Math.sqrt(sum);
+  }).sort((a, b) => b - a);
+  const sigmaMax = singularValues[0] || 0;
+  const rankTol = Math.max(m, n) * sigmaMax * 1e-14;
+  const rank = singularValues.filter(s => s > rankTol).length;
+  const sigmaMin = singularValues[n - 1] || 0;
+  const conditionNumber = sigmaMin > 1e-15 ? sigmaMax / sigmaMin : Infinity;
+  return { m, n, rank, singular_values: singularValues, sigma_max: sigmaMax, sigma_min: sigmaMin, condition_number: conditionNumber };
+}
+
 export function computeMatrixSvd(matrix) {
   if (!Array.isArray(matrix) || matrix.length === 0 || !Array.isArray(matrix[0])) {
     throw new TypeError('matrix must be a non-empty 2D array');
@@ -115,27 +208,15 @@ export function computeMatrixSvd(matrix) {
       if (!Number.isFinite(matrix[i][j])) throw new TypeError('matrix entries must be finite numbers');
     }
   }
-  const AtA = Array.from({ length: n }, (_, i) =>
-    Array.from({ length: n }, (_, j) => {
-      let sum = 0;
-      for (let k = 0; k < m; k++) sum += matrix[k][i] * matrix[k][j];
-      return sum;
-    })
-  );
-  const eigenvalues = jacobiEigenvalues(AtA);
-  const singularValues = eigenvalues.map(x => Math.sqrt(x)).sort((a, b) => b - a);
-  const tol = Math.max(m, n) * singularValues[0] * 1e-14;
-  const rank = singularValues.filter(s => s > tol).length;
-  const sigmaMin = singularValues[n - 1];
-  const conditionNumber = sigmaMin > 1e-15 ? singularValues[0] / sigmaMin : Infinity;
+  const svd = hestenesSvd(matrix);
   return deepFreeze({
     m,
     n,
-    rank,
-    singular_values: singularValues,
-    sigma_max: singularValues[0],
-    sigma_min: sigmaMin,
-    condition_number: conditionNumber
+    rank: svd.rank,
+    singular_values: svd.singular_values,
+    sigma_max: svd.sigma_max,
+    sigma_min: svd.sigma_min,
+    condition_number: svd.condition_number
   });
 }
 
@@ -161,26 +242,17 @@ export function evaluateCandidateProbeStability(options = {}) {
     ? baseSvd.condition_number
     : (condition_number_ceiling * 10);
 
-  let covarianceValid = true;
   if (noise_covariance !== null) {
-    if (!Array.isArray(noise_covariance)) {
-      covarianceValid = false;
-    } else {
-      const covEig = jacobiEigenvalues(noise_covariance);
-      if (covEig.some(val => val <= 1e-12)) {
-        covarianceValid = false;
-      }
+    const covCheck = validateCovarianceMatrix(noise_covariance, n);
+    if (!covCheck.valid) {
+      return deepFreeze({
+        schema: 'td613.aperture.candidate-probe-evaluation/v0.1',
+        deficit_class: 'INVALID_NOISE_GEOMETRY',
+        disposition: 'REJECT',
+        reason: `declared noise covariance matrix is not symmetric positive-definite: ${covCheck.reason}`,
+        evaluated_candidates: []
+      });
     }
-  }
-
-  if (noise_covariance !== null && !covarianceValid) {
-    return deepFreeze({
-      schema: 'td613.aperture.candidate-probe-evaluation/v0.1',
-      deficit_class: 'INVALID_NOISE_GEOMETRY',
-      disposition: 'REJECT',
-      reason: 'declared noise covariance matrix is not symmetric positive-definite',
-      evaluated_candidates: []
-    });
   }
 
   const evaluated = candidate_probes.map((probeVector, index) => {

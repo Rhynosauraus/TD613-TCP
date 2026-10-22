@@ -61,22 +61,72 @@ export function createDollhouseCaseDossier(input) {
     resolution: 'HUMAN_REVIEW_REQUIRED'
   }));
   const represented = new Set(findings.map(item => item.agent));
+
+  let allArtifactsExist = findings.length > 0;
+  let allBytesMatch = findings.length > 0;
+  let hasReparativePath = false;
+
+  const fs = globalThis.process?.getBuiltinModule?.('node:fs');
+  const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
+
+  for (const finding of findings) {
+    const art = finding.reference?.artifact;
+    const sha = finding.reference?.sha256;
+
+    if (!art || !fs || !crypto) {
+      allArtifactsExist = false;
+      allBytesMatch = false;
+    } else {
+      try {
+        if (!fs.existsSync(art)) {
+          allArtifactsExist = false;
+          allBytesMatch = false;
+        } else {
+          const content = fs.readFileSync(art);
+          const actualSha = crypto.createHash('sha256').update(content).digest('hex');
+          if (actualSha !== sha) {
+            allBytesMatch = false;
+          }
+        }
+      } catch {
+        allArtifactsExist = false;
+        allBytesMatch = false;
+      }
+    }
+
+    const findingStr = JSON.stringify(finding);
+    if (/reparative|recovery|sound-support|stabiliz|probe\.stability|alternative/i.test(findingStr)) {
+      hasReparativePath = true;
+    }
+  }
+
+  const retrievability = findings.length === 0 ? 0.0 : (allArtifactsExist ? 1.0 : 0.5);
+  const attributable_provenance = findings.length === 0 ? 0.0 : (allBytesMatch ? 1.0 : 0.5);
+  const interpretability = findings.length > 0 ? 1.0 : 0.0;
+  const transmissibility = findings.length > 0 ? 1.0 : 0.0;
+  const contestability = (disagreements.length > 0 || findings.some(item => item.verdict !== 'SUPPORTED')) ? 1.0 : 0.5;
+  const repairability = hasReparativePath ? 1.0 : 0.0;
+
   return freeze({
     schema: DOLLHOUSE_CASE_DOSSIER_SCHEMA, case_id: input.case_id, source_revision: input.source_revision,
     findings, disagreements,
     agent_coverage: listDollhouseAgents().map(agent => ({ agent: agent.id, present: represented.has(agent.id) })),
     unresolved_finding_ids: findings.filter(item => item.verdict !== 'SUPPORTED').map(item => item.id),
     evidence_posture: {
-      evidence_class_is_caller_declared: true, artifact_bytes_checked: false,
-      reference_authentication: 'UNVERIFIED', findings_independently_scoped: true,
-      evidence_classes_aggregated: false, majority_vote: false, global_score: null,
+      evidence_class_is_caller_declared: true,
+      artifact_bytes_checked: allBytesMatch,
+      reference_authentication: allBytesMatch ? 'BYTE_AUTHENTICATED' : 'UNVERIFIED',
+      findings_independently_scoped: true,
+      evidence_classes_aggregated: false,
+      majority_vote: false,
+      global_score: null,
       knowledge_survival: {
-        retrievability: findings.length > 0 ? 1.0 : 0.0,
-        attributable_provenance: findings.length > 0 ? 1.0 : 0.0,
-        interpretability: findings.length > 0 ? 1.0 : 0.0,
-        transmissibility: findings.length > 0 ? 1.0 : 0.0,
-        contestability: disagreements.length > 0 || findings.some(item => item.verdict !== 'SUPPORTED') ? 1.0 : 0.5,
-        repairability: 1.0
+        retrievability,
+        attributable_provenance,
+        interpretability,
+        transmissibility,
+        contestability,
+        repairability
       }
     },
     decision: 'HUMAN_REVIEW_REQUIRED',

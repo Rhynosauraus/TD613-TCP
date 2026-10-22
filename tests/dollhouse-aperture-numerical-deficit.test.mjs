@@ -104,6 +104,28 @@ test('Counterexample 3: non-positive-definite noise covariance is rejected under
   assert.match(evaluation.reason, /not symmetric positive-definite/);
 });
 
+test('Counterexample 3b: nonsymmetric covariance matrix [[1, 0], [9, 1]] is rejected under INVALID_NOISE_GEOMETRY', () => {
+  const current_operator = [[1, 0]];
+  const candidate_probes = [[0, 1]];
+
+  // Adversarial nonsymmetric matrix: upper triangle off-diagonal is 0, but lower triangle off-diagonal is 9!
+  // Naive Jacobi looking only at i < j falsely sees zero off-diagonals and claims eigenvalues {1, 1}.
+  const nonsymmetric_covariance = [
+    [1, 0],
+    [9, 1]
+  ];
+
+  const evaluation = evaluateCandidateProbeStability({
+    current_operator,
+    candidate_probes,
+    noise_covariance: nonsymmetric_covariance
+  });
+
+  assert.equal(evaluation.deficit_class, 'INVALID_NOISE_GEOMETRY');
+  assert.equal(evaluation.disposition, 'REJECT');
+  assert.match(evaluation.reason, /not symmetric/);
+});
+
 test('redundant candidate probe adding zero rank and zero stability improvement is marked ASK_NOTHING', () => {
   const current_operator = [[1, 0], [0, 1]]; // already full rank 2
   const redundant_probe = [2, 0];            // scalar multiple of first row

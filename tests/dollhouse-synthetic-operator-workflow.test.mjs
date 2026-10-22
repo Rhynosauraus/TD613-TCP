@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+
+const fileSha256 = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 // 1. Pedagogue Dromological Adapter
 import {
@@ -204,7 +207,7 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
           verdict: 'SUPPORTED',
           evidence_class: 'OFFLINE_TEST',
           observation_scope: { source: 'local', instrument: 'dromological-audit', condition: 'canonical-cadence', temporal_window: 't10-t60' },
-          reference: { artifact: 'app/engine/dollhouse-pedagogue-dromological.js', sha256: 'a'.repeat(64) },
+          reference: { artifact: 'app/engine/dollhouse-pedagogue-dromological.js', sha256: fileSha256('app/engine/dollhouse-pedagogue-dromological.js') },
           limitations: ['declared-integer-ticks-only']
         },
         {
@@ -214,7 +217,7 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
           verdict: 'SUPPORTED',
           evidence_class: 'OFFLINE_TEST',
           observation_scope: { source: 'local', instrument: 'jacobi-svd', condition: 'well-conditioned-probe', temporal_window: 't10-t60' },
-          reference: { artifact: 'app/engine/aperture-v32-typed-epistemic-deficit.js', sha256: 'b'.repeat(64) },
+          reference: { artifact: 'app/engine/aperture-v32-typed-epistemic-deficit.js', sha256: fileSha256('app/engine/aperture-v32-typed-epistemic-deficit.js') },
           limitations: ['linear-latent-model-only']
         },
         {
@@ -224,7 +227,7 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
           verdict: 'SUPPORTED',
           evidence_class: 'OFFLINE_TEST',
           observation_scope: { source: 'local', instrument: 'history-parity-auditor', condition: 'zero-winding-delta', temporal_window: 't10-t60' },
-          reference: { artifact: 'app/engine/dollhouse-atlas-relational-custody.js', sha256: 'c'.repeat(64) },
+          reference: { artifact: 'app/engine/dollhouse-atlas-relational-custody.js', sha256: fileSha256('app/engine/dollhouse-atlas-relational-custody.js') },
           limitations: ['receiver-turn-projection-only']
         },
         {
@@ -234,7 +237,7 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
           verdict: 'SUPPORTED',
           evidence_class: 'OFFLINE_TEST',
           observation_scope: { source: 'local', instrument: 'fadt-reparative-assistance', condition: 'universally-sound-rule', temporal_window: 't10-t60' },
-          reference: { artifact: 'app/engine/dollhouse-fadt-reparative-assistance.js', sha256: 'd'.repeat(64) },
+          reference: { artifact: 'app/engine/dollhouse-fadt-reparative-assistance.js', sha256: fileSha256('app/engine/dollhouse-fadt-reparative-assistance.js') },
           limitations: ['finite-quotient-support-only']
         },
         {
@@ -244,7 +247,7 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
           verdict: 'SUPPORTED',
           evidence_class: 'OFFLINE_TEST',
           observation_scope: { source: 'local', instrument: 'temporal-custodian', condition: 'monotonic-causal-phases', temporal_window: 't10-t60' },
-          reference: { artifact: 'app/engine/dollhouse-temporal-custodian.js', sha256: 'e'.repeat(64) },
+          reference: { artifact: 'app/engine/dollhouse-temporal-custodian.js', sha256: fileSha256('app/engine/dollhouse-temporal-custodian.js') },
           limitations: ['local-monotonic-timestamps-only']
         }
       ]

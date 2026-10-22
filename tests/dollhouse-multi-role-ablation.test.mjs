@@ -7,7 +7,8 @@ import {
   FIVE_ROLES,
   ROLE_INFRACTIONS,
   FAILURE_MODES,
-  DOLLHOUSE_ABLATION_EXPERIMENT_SCHEMA
+  DOLLHOUSE_ABLATION_EXPERIMENT_SCHEMA,
+  CANONICAL_EMPIRICAL_SCENARIOS
 } from '../app/engine/dollhouse-ablation-harness.js';
 
 const mockAudits = {
@@ -105,4 +106,92 @@ test('runCompleteDollhouseAblation runs all 13 conditions and proves non-redunda
   assert.equal(report.diff_metrics.MINUS_ATLAS.decision_matches_baseline, false);
   assert.equal(report.diff_metrics.MINUS_FADT.decision_matches_baseline, false);
   assert.equal(report.diff_metrics.MINUS_TEMPORAL_CUSTODIAN.decision_matches_baseline, false);
+});
+
+test('Empirical non-redundancy: four dolls succeed on benign inputs without fifth', () => {
+  const benign = CANONICAL_EMPIRICAL_SCENARIOS.BENIGN_ALL_PASS;
+
+  // Four dolls without Aperture:
+  const withoutAperture = runOrchestrationDecision(
+    ['PEDAGOGUE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'],
+    benign
+  );
+  assert.equal(withoutAperture.decision, 'SUPPORTED');
+  assert.equal(withoutAperture.failure_mode, null);
+  assert.equal(withoutAperture.findings_count, 4);
+
+  // Four dolls without Pedagogue:
+  const withoutPedagogue = runOrchestrationDecision(
+    ['APERTURE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'],
+    benign
+  );
+  assert.equal(withoutPedagogue.decision, 'SUPPORTED');
+  assert.equal(withoutPedagogue.failure_mode, null);
+
+  // Four dolls without Atlas:
+  const withoutAtlas = runOrchestrationDecision(
+    ['PEDAGOGUE', 'APERTURE', 'FADT', 'TEMPORAL_CUSTODIAN'],
+    benign
+  );
+  assert.equal(withoutAtlas.decision, 'SUPPORTED');
+  assert.equal(withoutAtlas.failure_mode, null);
+
+  // Four dolls without FADT:
+  const withoutFadt = runOrchestrationDecision(
+    ['PEDAGOGUE', 'APERTURE', 'ATLAS', 'TEMPORAL_CUSTODIAN'],
+    benign
+  );
+  assert.equal(withoutFadt.decision, 'SUPPORTED');
+  assert.equal(withoutFadt.failure_mode, null);
+
+  // Four dolls without Temporal Custodian:
+  const withoutTemporal = runOrchestrationDecision(
+    ['PEDAGOGUE', 'APERTURE', 'ATLAS', 'FADT'],
+    benign
+  );
+  assert.equal(withoutTemporal.decision, 'SUPPORTED');
+  assert.equal(withoutTemporal.failure_mode, null);
+});
+
+test('Empirical specialist trials: ablating specialized doll allows domain defect to escape to its characteristic failure mode', () => {
+  // 1. Aperture defect (nonsymmetric covariance)
+  const apTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_APERTURE_OBSERVABILITY);
+  assert.equal(apTrial5.decision, 'HELD');
+  assert.ok(apTrial5.detected_infractions.includes(ROLE_INFRACTIONS.APERTURE));
+
+  const apTrial4 = runOrchestrationDecision(['PEDAGOGUE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_APERTURE_OBSERVABILITY);
+  assert.equal(apTrial4.decision, 'FALSE_COMPLETION_ADMITTED');
+  assert.equal(apTrial4.failure_mode, FAILURE_MODES.MISSING_APERTURE.failure_mode);
+
+  // 2. Atlas defect (winding mismatch)
+  const atlasTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_ATLAS_RELATIONAL);
+  assert.equal(atlasTrial5.decision, 'HELD');
+
+  const atlasTrial4 = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE', 'FADT', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_ATLAS_RELATIONAL);
+  assert.equal(atlasTrial4.decision, 'CUSTODY_FORK_RISK_ACCEPTED');
+  assert.equal(atlasTrial4.failure_mode, FAILURE_MODES.MISSING_ATLAS.failure_mode);
+
+  // 3. FADT defect (unconditioned action grant)
+  const fadtTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_FADT_STAGE_ERASURE);
+  assert.equal(fadtTrial5.decision, 'HELD');
+
+  const fadtTrial4 = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE', 'ATLAS', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_FADT_STAGE_ERASURE);
+  assert.equal(fadtTrial4.decision, 'ILLEGAL_ACTION_ESCALATION_ACCEPTED');
+  assert.equal(fadtTrial4.failure_mode, FAILURE_MODES.MISSING_FADT.failure_mode);
+
+  // 4. Temporal Custodian defect (missing required phase)
+  const tempTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_TEMPORAL_CHRONOLOGY);
+  assert.equal(tempTrial5.decision, 'HELD');
+
+  const tempTrial4 = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE', 'ATLAS', 'FADT'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_TEMPORAL_CHRONOLOGY);
+  assert.equal(tempTrial4.decision, 'CHRONOLOGICAL_OBLIVION_ADMITTED');
+  assert.equal(tempTrial4.failure_mode, FAILURE_MODES.MISSING_TEMPORAL_CUSTODIAN.failure_mode);
+
+  // 5. Pedagogue defect (cadence inversion: ACT before NOTICE)
+  const pedTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_PEDAGOGUE_CADENCE);
+  assert.equal(pedTrial5.decision, 'HELD');
+
+  const pedTrial4 = runOrchestrationDecision(['APERTURE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_PEDAGOGUE_CADENCE);
+  assert.equal(pedTrial4.decision, 'HUMAN_COST_IGNORED');
+  assert.equal(pedTrial4.failure_mode, FAILURE_MODES.MISSING_PEDAGOGUE.failure_mode);
 });
