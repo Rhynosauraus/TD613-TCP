@@ -1,0 +1,104 @@
+{
+  "0": [
+    "G-008",
+    "G-010",
+    "G-015",
+    "G-020",
+    "G-070",
+    "G-081",
+    "G-190",
+    "G-191",
+    "G-194",
+    "G-205",
+    "G-207",
+    "G-208",
+    "G-209",
+    "G-215",
+    "G-245",
+    "G-291",
+    "G-340",
+    "G-450",
+    "M-15",
+    "M-17",
+    "M-18",
+    "M-19",
+    "M-20",
+    "M-26",
+    "F-33",
+    "LAB-18"
+  ],
+  "0-bounce": [
+    "G-001",
+    "G-003",
+    "G-006",
+    "G-008",
+    "LAB-01"
+  ],
+  "00": [
+    "G-238",
+    "LAB-23",
+    "SRC-BASELINE"
+  ],
+  "05-operations": [
+    "SRC-NOVEL"
+  ],
+  "03-golden-egg-empirical-contract": [
+    "SRC-GE"
+  ],
+  "083405": [
+    "SRC-EX_COLD"
+  ],
+  "08": [
+    "SRC-ER2013",
+    "SRC-ER_REPEC"
+  ],
+  "012": [
+    "SRC-ER2013",
+    "SRC-ER_REPEC"
+  ],
+  "0-alpha": [
+    "SRC-AP32_EPI",
+    "APT-03",
+    "APT-10",
+    "APT-11",
+    "APT-12",
+    "APT-13",
+    "APT-14",
+    "APT-15",
+    "APT-16",
+    "APT-17",
+    "APT-18",
+    "APT-19",
+    "APT-20",
+    "APT-21",
+    "APT-22",
+    "APT-23",
+    "APT-34",
+    "APT-35",
+    "APT-36"
+  ],
+  "03-derivatives": [
+    "SRC-SR_SRC_FRAME",
+    "SRC-SR_SRC_P1",
+    "SRC-SR_SRC_P2",
+    "SRC-SR_SRC_P3"
+  ],
+  "08a9bbea248a08a5d645db37": [
+    "SRC-SR_SRC_P2"
+  ],
+  "07998fd19953a17b033c87fe291f51a6499f1e4a": [
+    "SRC-SR_SRC_P2"
+  ],
+  "04-receipts": [
+    "SRC-SR_SRC_SEAL"
+  ],
+  "01-manifests": [
+    "SRC-SR_SRC_RESOLVER"
+  ],
+  "0f200d64b40acb2c5d0418abb7af442f9996224ed0a20cd44d9a21a55f89902c": [
+    "APT-25"
+  ],
+  "0896c15f04df6ae9b50c1361b207d280ee7e6238b0622de1c532e5b7025d4d81": [
+    "APT-28"
+  ]
+}

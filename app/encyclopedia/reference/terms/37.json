@@ -1,0 +1,101 @@
+{
+  "7": [
+    "G-292",
+    "LAB-40",
+    "SRC-SR_P3_TEXT",
+    "SRC-SR_UF_PDF",
+    "APT-20",
+    "APT-22",
+    "APT-23",
+    "APT-35",
+    "APT-38",
+    "APT-39",
+    "PDF-SR_UF_PDF",
+    "EDITION"
+  ],
+  "76": [
+    "G-234",
+    "G-304",
+    "LAB-21",
+    "H-18"
+  ],
+  "77": [
+    "SRC-ER2013"
+  ],
+  "737": [
+    "G-239",
+    "SRC-ISS737"
+  ],
+  "752": [
+    "SRC-FADT",
+    "SRC-PR752"
+  ],
+  "764": [
+    "APT-01"
+  ],
+  "765": [
+    "APT-19"
+  ],
+  "798": [
+    "APT-14"
+  ],
+  "78c7ea6b": [
+    "G-309"
+  ],
+  "78c7ea6b974e176611fb2ed4d0c59649ebf05f62": [
+    "SRC-FADT",
+    "SRC-ATLAS",
+    "SRC-APERTURE",
+    "SRC-PEDAGOGUE",
+    "SRC-ASH_TOMO",
+    "SRC-WEDDING",
+    "SRC-VECTOR",
+    "SRC-PHASON",
+    "SRC-FLOW",
+    "SRC-DROMO",
+    "SRC-PED_SPINE",
+    "SRC-ROUND",
+    "SRC-ROUND_CODE",
+    "SRC-SAFE",
+    "SRC-NOVEL",
+    "SRC-NEON",
+    "SRC-GE",
+    "SRC-LIVE",
+    "SRC-PORT_CORE",
+    "SRC-PORT_STD",
+    "SRC-PORT_EXP",
+    "SRC-PORT_JOURNEY",
+    "SRC-PORT_GOV",
+    "SRC-PORT_MECH",
+    "SRC-OBSERV",
+    "SRC-ATLAS_BROWSER",
+    "SRC-FADT_REVIEW",
+    "SRC-DOLLHOUSE",
+    "SRC-LINEAGE",
+    "SRC-DOME",
+    "SRC-CLASSIC",
+    "SRC-PROCESS",
+    "SRC-HUSH",
+    "SRC-CUSTODY",
+    "SRC-PHY",
+    "SRC-WRC",
+    "SRC-SR_SRC_FRAME",
+    "SRC-SR_SRC_P1",
+    "SRC-SR_SRC_P2",
+    "SRC-SR_SRC_P3",
+    "SRC-SR_SRC_SEAL",
+    "SRC-SR_SRC_ENTRY",
+    "SRC-SR_SRC_RESOLVER",
+    "SRC-SR_SRC_README",
+    "EDITION"
+  ],
+  "7ebc711fb1fa85e15806d4e28f792e42126c60d6cb4a29663022227a219b191f": [
+    "APT-01"
+  ],
+  "7ca1d09c223aacfa703edabf40b410e1b7cb242c94e438cfa7c13ea44b34e5ae": [
+    "APT-06"
+  ],
+  "74da8ccbf9c9ca74bd60158fc06c7f2babab448916be438a9569addf2a3c06ef": [
+    "APT-23"
+  ]
+}

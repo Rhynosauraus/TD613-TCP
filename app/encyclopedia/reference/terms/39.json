@@ -1,0 +1,65 @@
+{
+  "9": [
+    "G-081",
+    "G-223",
+    "G-360",
+    "G-369",
+    "G-437",
+    "G-438",
+    "G-440",
+    "G-450",
+    "G-455",
+    "LAB-40",
+    "H-26",
+    "SRC-PORT_STD",
+    "SRC-HUSH",
+    "SRC-AP32_DROMO",
+    "SRC-AP32_ER",
+    "SRC-AP32_DOCTRINE",
+    "SRC-SR_P1_PDF",
+    "APT-01",
+    "APT-02",
+    "APT-08",
+    "APT-09",
+    "APT-21",
+    "APT-22",
+    "APT-24",
+    "APT-25",
+    "APT-26",
+    "APT-27",
+    "APT-29",
+    "APT-30",
+    "APT-31",
+    "APT-32",
+    "APT-33",
+    "APT-34",
+    "APT-37",
+    "APT-38",
+    "APT-39",
+    "PDF-SR_P1_PDF"
+  ],
+  "91": [
+    "G-223",
+    "G-359",
+    "SRC-AP32_USER"
+  ],
+  "97": [
+    "EDITION"
+  ],
+  "984": [
+    "SRC-ATLAS",
+    "SRC-PR984"
+  ],
+  "990": [
+    "SRC-EX_TTP"
+  ],
+  "992": [
+    "G-213"
+  ],
+  "9780745636139": [
+    "SRC-VIRILIO"
+  ],
+  "9c4176976d128ecd8e8980d2ed979ff639cd48be6eb3758ace57cb6a36d496bc": [
+    "APT-29"
+  ]
+}
