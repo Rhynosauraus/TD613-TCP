@@ -5,6 +5,47 @@ import {
 import {
   HOLONOMY_LOOM_MOTION_DESCRIPTORS
 } from '../dome-world/holonomy-loom/flowcore-aia-motion.js';
+import {
+  classifyAtlasRelationIdentity,
+  auditAtlasHolonomyHistoryParity,
+  classifyTypedDigest,
+  computeTypedFnv1a32,
+  auditPhasonCustodyDiff,
+  DOLLHOUSE_ATLAS_RELATION_IDENTITY_SCHEMA,
+  DOLLHOUSE_ATLAS_HISTORY_PARITY_SCHEMA,
+  DOLLHOUSE_TYPED_DIGEST_SCHEMA,
+  DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+  ATLAS_RELATION_CUSTODY_LAWS
+} from './dollhouse-atlas-relational-custody.js';
+import {
+  computeFadtFiberBounds,
+  evaluateFadtCoordinateRecovery,
+  evaluateFadtDiscrepancyIdentity,
+  compileFadtReparativePacket,
+  DOLLHOUSE_FADT_REPARATIVE_ASSISTANCE_SCHEMA,
+  DOLLHOUSE_FADT_DISCREPANCY_IDENTITY_SCHEMA,
+  FADT_REPARATIVE_LAWS
+} from './dollhouse-fadt-reparative-assistance.js';
+
+export {
+  classifyAtlasRelationIdentity,
+  auditAtlasHolonomyHistoryParity,
+  classifyTypedDigest,
+  computeTypedFnv1a32,
+  auditPhasonCustodyDiff,
+  DOLLHOUSE_ATLAS_RELATION_IDENTITY_SCHEMA,
+  DOLLHOUSE_ATLAS_HISTORY_PARITY_SCHEMA,
+  DOLLHOUSE_TYPED_DIGEST_SCHEMA,
+  DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+  ATLAS_RELATION_CUSTODY_LAWS,
+  computeFadtFiberBounds,
+  evaluateFadtCoordinateRecovery,
+  evaluateFadtDiscrepancyIdentity,
+  compileFadtReparativePacket,
+  DOLLHOUSE_FADT_REPARATIVE_ASSISTANCE_SCHEMA,
+  DOLLHOUSE_FADT_DISCREPANCY_IDENTITY_SCHEMA,
+  FADT_REPARATIVE_LAWS
+};
 
 export const DOLLHOUSE_ATLAS_AGENT_SCHEMA = 'td613.dollhouse.atlas-agent/v0.1';
 export const DOLLHOUSE_FADT_AGENT_SCHEMA = 'td613.dollhouse.fadt-agent/v0.1';
@@ -140,7 +181,12 @@ function atlasProjection(packet, control, receiver) {
  * Atlas audits one admitted relation under intentionally non-equivalent receiver projections.
  * Equality is required only on the machine control plane, never on presentation bytes.
  */
-export function runAtlasAgent(packet, { receivers = ['child', 'auditor'] } = {}) {
+export function runAtlasAgent(packet, {
+  receivers = ['child', 'auditor'],
+  atlas_relation = null,
+  history_parity = null,
+  phason_diff = null
+} = {}) {
   const field = requireLoomSemanticField(packet);
   const declared = [...new Set(receivers.map(value => String(value).toLowerCase()))];
   if (declared.length < 2) throw new TypeError('Atlas requires at least two declared receiver projections.');
@@ -150,6 +196,16 @@ export function runAtlasAgent(packet, { receivers = ['child', 'auditor'] } = {})
   const presentationKeys = projections.map(item => canonical(item.presentation));
   const controlPlaneEqual = controlKeys.every(value => value === controlKeys[0]);
   const presentationsDistinct = new Set(presentationKeys).size === presentationKeys.length;
+
+  const relationAudit = atlas_relation
+    ? classifyAtlasRelationIdentity(atlas_relation.left, atlas_relation.right)
+    : null;
+  const historyAudit = history_parity
+    ? auditAtlasHolonomyHistoryParity(history_parity.trajectory_a, history_parity.trajectory_b)
+    : null;
+  const phasonAudit = phason_diff
+    ? auditPhasonCustodyDiff(phason_diff.previous, phason_diff.current, phason_diff.options)
+    : null;
 
   return freeze({
     schema: DOLLHOUSE_ATLAS_AGENT_SCHEMA,
@@ -161,6 +217,9 @@ export function runAtlasAgent(packet, { receivers = ['child', 'auditor'] } = {})
       presentations_intentionally_non_equivalent: presentationsDistinct,
       verdict: controlPlaneEqual && presentationsDistinct ? 'PASS' : 'HOLD'
     },
+    relation_identity_custody: relationAudit,
+    history_parity_audit: historyAudit,
+    phason_custody_diff: phasonAudit,
     portable_return_contract: {
       required_control_schema: PORTABLE_FLOWCORE_CONTROL_SCHEMA,
       preserve: ['source_revision', 'scene_id', 'flow_core', 'governance', 'evidentiary_coordinates', 'evidence_context', 'route_state', 'claim_ceiling'],
@@ -258,12 +317,57 @@ export function runFadtAgent(input = {}) {
     });
   });
 
+  const hasGaps = results.some(item => !item.exact_descended_admissibility);
+
+  let coordinate_recovery = null;
+  if (Array.isArray(input.candidate_coordinates) && input.candidate_coordinates.length > 0) {
+    const collidingFibers = input.fibres.filter((f, idx) => !results[idx].exact_descended_admissibility);
+    if (collidingFibers.length > 0) {
+      coordinate_recovery = freeze(collidingFibers.reduce((acc, f) => {
+        acc[f.id] = evaluateFadtCoordinateRecovery(f.antecedents, input.candidate_coordinates);
+        return acc;
+      }, {}));
+    }
+  }
+
+  let discrepancy_audit = null;
+  if (input.candidate_rule) {
+    discrepancy_audit = freeze(results.reduce((acc, res, idx) => {
+      const fiberInput = input.fibres[idx];
+      const ruleForFiber = input.candidate_rule[res.fibre_id] || input.candidate_rule.support || input.candidate_rule;
+      if (Array.isArray(ruleForFiber)) {
+        acc[res.fibre_id] = evaluateFadtDiscrepancyIdentity(ruleForFiber, fiberInput.antecedents);
+      }
+      return acc;
+    }, {}));
+  }
+
+  const reparative_assistance = freeze({
+    reparative_action_available: results.some(item => item.intersection.length > 0),
+    actionable_sound_support: freeze(results.reduce((acc, item) => {
+      acc[item.fibre_id] = freeze([...item.intersection]);
+      return acc;
+    }, {})),
+    irreducible_gaps: freeze(results.reduce((acc, item) => {
+      if (item.irreducible_gap.length > 0) {
+        acc[item.fibre_id] = freeze([...item.irreducible_gap]);
+      }
+      return acc;
+    }, {})),
+    coordinate_recovery,
+    discrepancy_audit,
+    guidance: hasGaps
+      ? 'FADT stage erasure caused support gap; operator may safely select any action in actionable_sound_support without widening lawful support'
+      : 'All occupied quotient fibres descend exactly; no reparative assistance required'
+  });
+
   return freeze({
     schema: DOLLHOUSE_FADT_AGENT_SCHEMA,
     agent: 'FADT',
     occupied_fibre_count: results.length,
     all_fibres_exact: results.every(item => item.exact_descended_admissibility),
     fibres: results,
+    reparative_assistance,
     theorem_surface: 'finite exact admissibility descends iff lawful support is constant on every occupied quotient fibre; union/intersection preserve the complete/sound extremals and their difference remains visible',
     claim_ceiling: [
       'finite support audit only',

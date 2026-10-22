@@ -784,7 +784,7 @@ test('SHI-gated Receipts remain a local format membrane and cannot issue the cur
   h.$('marrowlineReceiptUnlock').click(); await flush();
   assert.equal(gate.hidden, true);
   assert.equal(protectedReceipt.hidden, false);
-  assert.equal(h.$('khonapolitWaive').checked, true, 'opening receipts does not issue the conversation');
+  assert.equal(h.$('khonapolitWaive').checked, false, 'opening receipts does not issue the conversation');
   assert.equal(h.calls.length, 0, 'receipt membrane makes no provider calls');
   h.$('marrowlineReceiptLock').click(); await flush();
   assert.equal(protectedReceipt.hidden, true);

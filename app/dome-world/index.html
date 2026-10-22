@@ -978,7 +978,7 @@ function applyFlowEvent(world, event={}){
   else if(type === 'hydrate') { a.humidity = clamp(a.humidity + .14); a.visibility = clamp(a.visibility + .05); }
   else if(type === 'vent') { a.pressure = clamp(a.pressure - .06); a.torsion = clamp(a.torsion - .03); a.visibility = clamp(a.visibility + .06); }
   else if(type === 'compost') { a.pattern_flow = clamp(a.pattern_flow + .10); a.humidity = clamp(a.humidity + .04); }
-  else if(type === 'transmission') { a.pattern_flow = clamp(a.pattern_flow + .12); a.humidity = clamp(a.humidity + .06); a.torsion = clamp(a.torsion + .04); w.loom.seeds.push({ raw_hash:'sha256:'+hash(payload.text || payload), room, age:0, resonance:.22, privacy_class:'room-scoped' }); }
+  else if(type === 'transmission') { a.pattern_flow = clamp(a.pattern_flow + .12); a.humidity = clamp(a.humidity + .06); a.torsion = clamp(a.torsion + .04); const h = hash(payload.text || payload); w.loom.seeds.push({ raw_hash:'fnv1a32:'+h, legacy_sha256_alias:'sha256:'+h, room, age:0, resonance:.22, privacy_class:'room-scoped' }); }
   else if(type === 'stewardship-check') { const gate = stewardshipGate(payload); w.stewardship.gates.push(gate); if(gate.stewardship_status === 'quarantined'){ w.stewardship.quarantined_count += 1; a.torsion = clamp(a.torsion + .16); a.visibility = clamp(a.visibility - .12); a.pressure = clamp(a.pressure + .07); } else if(gate.stewardship_status === 'verified' || gate.stewardship_status === 'community-guided'){ w.stewardship.verified_count += 1; a.visibility = clamp(a.visibility + .10); a.torsion = clamp(a.torsion - .05); } event.gate = gate; }
   else if(type === 'ash-document') { const receipt = generateAshReceipt(w, payload); w.ash = w.ash || {items:[], latest:null, local_salt:'salt_'+hash(w.world_id+':ash')}; w.ash.items.push(receipt); w.ash.latest = receipt; a.torsion = clamp(a.torsion + receipt.ash.ambiance_signature.fold_density*.18); a.pressure = clamp(a.pressure + receipt.ash.ambiance_signature.fold_density*.12); a.visibility = clamp(a.visibility - (receipt.ash.public_export ? .01 : .06)); event.ash = receipt; }
   else { a.pressure = clamp(a.pressure + .01); }
@@ -999,7 +999,8 @@ function applyFlowEvent(world, event={}){
     day: w.day,
     room,
     operator: type,
-    payload_hash: 'sha256:' + hash(payload),
+    payload_hash: 'fnv1a32:' + hash(payload),
+    legacy_payload_hash: 'sha256:' + hash(payload),
     anti_equivalence: anti.triggered,
     holonomy_delta: holonomy.curvature_delta,
     gate: event.gate || null,

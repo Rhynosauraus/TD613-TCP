@@ -69,7 +69,15 @@ export function createDollhouseCaseDossier(input) {
     evidence_posture: {
       evidence_class_is_caller_declared: true, artifact_bytes_checked: false,
       reference_authentication: 'UNVERIFIED', findings_independently_scoped: true,
-      evidence_classes_aggregated: false, majority_vote: false, global_score: null
+      evidence_classes_aggregated: false, majority_vote: false, global_score: null,
+      knowledge_survival: {
+        retrievability: findings.length > 0 ? 1.0 : 0.0,
+        attributable_provenance: findings.length > 0 ? 1.0 : 0.0,
+        interpretability: findings.length > 0 ? 1.0 : 0.0,
+        transmissibility: findings.length > 0 ? 1.0 : 0.0,
+        contestability: disagreements.length > 0 || findings.some(item => item.verdict !== 'SUPPORTED') ? 1.0 : 0.5,
+        repairability: 1.0
+      }
     },
     decision: 'HUMAN_REVIEW_REQUIRED',
     authority: { execute: false, automatic_redesign: false, release: false, merge: false, deployment: false, provider: false, human_closure_required: true }

@@ -1,94 +1,611 @@
 {
-  "$schema": "td613.dollhouse.ablation-experiment/v1.1",
-  "experiment": "Empirical Multi-Agent Ablation on Coordinate: return_state_divergence_and_held_c2",
-  "status": "DEMONSTRATED_EMPIRICAL_ASSAY",
-  "frozen_packet_source": "tests/fixtures/dollhouse/blind-divergence/",
-  "evaluated_at": "2026-10-04T06:28:20.680Z",
-  "baseline_full": {
-    "roles": [
-      "PEDAGOGUE",
-      "APERTURE",
-      "ATLAS",
-      "FADT"
-    ],
-    "total_findings": 4,
-    "decision": "HELD",
-    "detected_infractions": [
-      "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
-      "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
-      "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
-      "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING"
-    ]
+  "schema": "td613.dollhouse.ablation-experiment/v1.2",
+  "experiment": "Full 5-Role Multi-Agent Blind Ablation on Coordinate: return_state_divergence_and_held_c2",
+  "evaluated_roles": [
+    "PEDAGOGUE",
+    "APERTURE",
+    "ATLAS",
+    "FADT",
+    "TEMPORAL_CUSTODIAN"
+  ],
+  "total_conditions": 13,
+  "full_five_role_verdict": "HELD",
+  "replication_audit": {
+    "status": "SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION",
+    "empirical_replication_count": 1,
+    "rule": "SHARED_ACQUISITION != INDEPENDENT_REPLICATION: 5 subagents inspecting 1 receipt yield 1 empirical replication"
   },
-  "conditions": [
-    {
-      "condition": "FULL_DOLLHOUSE",
+  "conditions": {
+    "FULL_FIVE_ROLE": {
       "active_roles": [
         "PEDAGOGUE",
         "APERTURE",
         "ATLAS",
-        "FADT"
+        "FADT",
+        "TEMPORAL_CUSTODIAN"
       ],
-      "findings_emitted": 4,
-      "incorrect_promotions": 0,
-      "decision": "HELD"
+      "findings_count": 5,
+      "findings": [
+        {
+          "role": "PEDAGOGUE",
+          "id": "PED-001",
+          "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
+          "jurisdiction": "consequence_order_route_burden_practice"
+        },
+        {
+          "role": "APERTURE",
+          "id": "APE-001",
+          "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
+          "jurisdiction": "observability_identifiability_uncertainty"
+        },
+        {
+          "role": "ATLAS",
+          "id": "ATL-001",
+          "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
+          "jurisdiction": "receiver_relative_relations_predecessor_chain"
+        },
+        {
+          "role": "FADT",
+          "id": "FAD-001",
+          "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
+          "jurisdiction": "finite_quotient_survival_lawful_support"
+        },
+        {
+          "role": "TEMPORAL_CUSTODIAN",
+          "id": "TEM-001",
+          "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
+          "jurisdiction": "chronological_sequence_and_attempt_lineage"
+        }
+      ],
+      "detected_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "HELD",
+      "failure_mode": null,
+      "replication_status": "SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
     },
-    {
-      "condition": "MINUS_PEDAGOGUE",
-      "active_roles": [
-        "APERTURE",
-        "ATLAS",
-        "FADT"
-      ],
-      "findings_lost": 1,
-      "lost_finding_id": "PEDAGOGUE_ROUTE_BURDEN",
-      "unresolved_coordinates": 1,
-      "decision": "HUMAN_COST_IGNORED",
-      "failure_mode": "Orchestrator declares technical validity while ignoring broken user experience and navigation trap."
+    "NO_DOLLHOUSE_BASELINE": {
+      "active_roles": [],
+      "findings_count": 0,
+      "findings": [],
+      "detected_infractions": [],
+      "decision": "UNCHECKED_MUTATION_PERMITTED",
+      "failure_mode": "System executes unverified mutation with zero role audits or epistemic checks.",
+      "consensus": "NONE",
+      "replication_count": 0,
+      "independent_replication": false
     },
-    {
-      "condition": "MINUS_APERTURE",
+    "ORCHESTRATOR_ALONE": {
+      "active_roles": [],
+      "findings_count": 0,
+      "findings": [],
+      "detected_infractions": [],
+      "decision": "UNCHECKED_MUTATION_PERMITTED",
+      "failure_mode": "System executes unverified mutation with zero role audits or epistemic checks.",
+      "consensus": "NONE",
+      "replication_count": 0,
+      "independent_replication": false
+    },
+    "SINGLE_ROLE_PEDAGOGUE": {
       "active_roles": [
-        "PEDAGOGUE",
-        "ATLAS",
-        "FADT"
+        "PEDAGOGUE"
       ],
-      "findings_lost": 1,
-      "lost_finding_id": "APERTURE_OBSERVABILITY_CONFLATION",
-      "incorrect_promotions": 1,
+      "findings_count": 1,
+      "findings": [
+        {
+          "role": "PEDAGOGUE",
+          "id": "PED-001",
+          "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
+          "jurisdiction": "consequence_order_route_burden_practice"
+        }
+      ],
+      "detected_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE"
+      ],
       "decision": "FALSE_COMPLETION_ADMITTED",
-      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace."
+      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
     },
-    {
-      "condition": "MINUS_ATLAS",
+    "SINGLE_ROLE_APERTURE": {
       "active_roles": [
-        "PEDAGOGUE",
-        "APERTURE",
-        "FADT"
+        "APERTURE"
       ],
-      "findings_lost": 1,
-      "lost_finding_id": "ATLAS_CROSS_WINDOW_CHAIN",
-      "incorrect_promotions": 1,
+      "findings_count": 1,
+      "findings": [
+        {
+          "role": "APERTURE",
+          "id": "APE-001",
+          "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
+          "jurisdiction": "observability_identifiability_uncertainty"
+        }
+      ],
+      "detected_infractions": [
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED"
+      ],
       "decision": "CUSTODY_FORK_RISK_ACCEPTED",
-      "failure_mode": "Orchestrator treats C2 as valid without verifying predecessor receipt digest continuity."
+      "failure_mode": "Orchestrator treats C2 as valid without verifying predecessor receipt digest continuity across window boundaries.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
     },
-    {
-      "condition": "MINUS_FADT",
+    "SINGLE_ROLE_ATLAS": {
       "active_roles": [
-        "PEDAGOGUE",
-        "APERTURE",
         "ATLAS"
       ],
-      "findings_lost": 1,
-      "lost_finding_id": "FADT_LAWFUL_SUPPORT_BOUNDARY",
-      "incorrect_promotions": 1,
-      "decision": "ILLEGAL_ACTION_ESCALATION_ACCEPTED",
-      "failure_mode": "Orchestrator allows Export action grant without verifying conditioning state survival."
-    }
-  ],
-  "ablation_runs": {
+      "findings_count": 1,
+      "findings": [
+        {
+          "role": "ATLAS",
+          "id": "ATL-001",
+          "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
+          "jurisdiction": "receiver_relative_relations_predecessor_chain"
+        }
+      ],
+      "detected_infractions": [
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK"
+      ],
+      "decision": "FALSE_COMPLETION_ADMITTED",
+      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
+    },
+    "SINGLE_ROLE_FADT": {
+      "active_roles": [
+        "FADT"
+      ],
+      "findings_count": 1,
+      "findings": [
+        {
+          "role": "FADT",
+          "id": "FAD-001",
+          "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
+          "jurisdiction": "finite_quotient_survival_lawful_support"
+        }
+      ],
+      "detected_infractions": [
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING"
+      ],
+      "decision": "FALSE_COMPLETION_ADMITTED",
+      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
+    },
+    "SINGLE_ROLE_TEMPORAL_CUSTODIAN": {
+      "active_roles": [
+        "TEMPORAL_CUSTODIAN"
+      ],
+      "findings_count": 1,
+      "findings": [
+        {
+          "role": "TEMPORAL_CUSTODIAN",
+          "id": "TEM-001",
+          "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
+          "jurisdiction": "chronological_sequence_and_attempt_lineage"
+        }
+      ],
+      "detected_infractions": [
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "FALSE_COMPLETION_ADMITTED",
+      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
+    },
     "MINUS_PEDAGOGUE": {
-      "active_roles_count": 3,
+      "active_roles": [
+        "APERTURE",
+        "ATLAS",
+        "FADT",
+        "TEMPORAL_CUSTODIAN"
+      ],
+      "findings_count": 4,
+      "findings": [
+        {
+          "role": "APERTURE",
+          "id": "APE-001",
+          "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
+          "jurisdiction": "observability_identifiability_uncertainty"
+        },
+        {
+          "role": "ATLAS",
+          "id": "ATL-001",
+          "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
+          "jurisdiction": "receiver_relative_relations_predecessor_chain"
+        },
+        {
+          "role": "FADT",
+          "id": "FAD-001",
+          "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
+          "jurisdiction": "finite_quotient_survival_lawful_support"
+        },
+        {
+          "role": "TEMPORAL_CUSTODIAN",
+          "id": "TEM-001",
+          "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
+          "jurisdiction": "chronological_sequence_and_attempt_lineage"
+        }
+      ],
+      "detected_infractions": [
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "HUMAN_COST_IGNORED",
+      "failure_mode": "Orchestrator declares technical validity while ignoring broken user experience and navigation trap.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
+    },
+    "MINUS_APERTURE": {
+      "active_roles": [
+        "PEDAGOGUE",
+        "ATLAS",
+        "FADT",
+        "TEMPORAL_CUSTODIAN"
+      ],
+      "findings_count": 4,
+      "findings": [
+        {
+          "role": "PEDAGOGUE",
+          "id": "PED-001",
+          "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
+          "jurisdiction": "consequence_order_route_burden_practice"
+        },
+        {
+          "role": "ATLAS",
+          "id": "ATL-001",
+          "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
+          "jurisdiction": "receiver_relative_relations_predecessor_chain"
+        },
+        {
+          "role": "FADT",
+          "id": "FAD-001",
+          "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
+          "jurisdiction": "finite_quotient_survival_lawful_support"
+        },
+        {
+          "role": "TEMPORAL_CUSTODIAN",
+          "id": "TEM-001",
+          "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
+          "jurisdiction": "chronological_sequence_and_attempt_lineage"
+        }
+      ],
+      "detected_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "FALSE_COMPLETION_ADMITTED",
+      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
+    },
+    "MINUS_ATLAS": {
+      "active_roles": [
+        "PEDAGOGUE",
+        "APERTURE",
+        "FADT",
+        "TEMPORAL_CUSTODIAN"
+      ],
+      "findings_count": 4,
+      "findings": [
+        {
+          "role": "PEDAGOGUE",
+          "id": "PED-001",
+          "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
+          "jurisdiction": "consequence_order_route_burden_practice"
+        },
+        {
+          "role": "APERTURE",
+          "id": "APE-001",
+          "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
+          "jurisdiction": "observability_identifiability_uncertainty"
+        },
+        {
+          "role": "FADT",
+          "id": "FAD-001",
+          "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
+          "jurisdiction": "finite_quotient_survival_lawful_support"
+        },
+        {
+          "role": "TEMPORAL_CUSTODIAN",
+          "id": "TEM-001",
+          "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
+          "jurisdiction": "chronological_sequence_and_attempt_lineage"
+        }
+      ],
+      "detected_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "CUSTODY_FORK_RISK_ACCEPTED",
+      "failure_mode": "Orchestrator treats C2 as valid without verifying predecessor receipt digest continuity across window boundaries.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
+    },
+    "MINUS_FADT": {
+      "active_roles": [
+        "PEDAGOGUE",
+        "APERTURE",
+        "ATLAS",
+        "TEMPORAL_CUSTODIAN"
+      ],
+      "findings_count": 4,
+      "findings": [
+        {
+          "role": "PEDAGOGUE",
+          "id": "PED-001",
+          "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
+          "jurisdiction": "consequence_order_route_burden_practice"
+        },
+        {
+          "role": "APERTURE",
+          "id": "APE-001",
+          "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
+          "jurisdiction": "observability_identifiability_uncertainty"
+        },
+        {
+          "role": "ATLAS",
+          "id": "ATL-001",
+          "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
+          "jurisdiction": "receiver_relative_relations_predecessor_chain"
+        },
+        {
+          "role": "TEMPORAL_CUSTODIAN",
+          "id": "TEM-001",
+          "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
+          "jurisdiction": "chronological_sequence_and_attempt_lineage"
+        }
+      ],
+      "detected_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "ILLEGAL_ACTION_ESCALATION_ACCEPTED",
+      "failure_mode": "Orchestrator allows Export action grant without verifying conditioning state survival under stage erasure.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
+    },
+    "MINUS_TEMPORAL_CUSTODIAN": {
+      "active_roles": [
+        "PEDAGOGUE",
+        "APERTURE",
+        "ATLAS",
+        "FADT"
+      ],
+      "findings_count": 4,
+      "findings": [
+        {
+          "role": "PEDAGOGUE",
+          "id": "PED-001",
+          "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
+          "jurisdiction": "consequence_order_route_burden_practice"
+        },
+        {
+          "role": "APERTURE",
+          "id": "APE-001",
+          "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
+          "jurisdiction": "observability_identifiability_uncertainty"
+        },
+        {
+          "role": "ATLAS",
+          "id": "ATL-001",
+          "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
+          "jurisdiction": "receiver_relative_relations_predecessor_chain"
+        },
+        {
+          "role": "FADT",
+          "id": "FAD-001",
+          "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
+          "jurisdiction": "finite_quotient_survival_lawful_support"
+        }
+      ],
+      "detected_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING"
+      ],
+      "decision": "CHRONOLOGICAL_OBLIVION_ADMITTED",
+      "failure_mode": "Orchestrator accepts out-of-order unreferenced retry without predecessor citation or phase completeness.",
+      "replication_status": "PARTIAL_ROLE_CONSENSUS",
+      "empirical_replication_count": 1,
+      "independent_replication": false,
+      "release_authority": false,
+      "deployment_authority": false,
+      "human_closure_required": true
+    }
+  },
+  "diff_metrics": {
+    "NO_DOLLHOUSE_BASELINE": {
+      "active_roles_count": 0,
+      "lost_findings_count": 5,
+      "lost_findings": [
+        "PEDAGOGUE:PED-001 (Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.)",
+        "APERTURE:APE-001 (State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.)",
+        "ATLAS:ATL-001 (Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.)",
+        "FADT:FAD-001 (Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.)",
+        "TEMPORAL_CUSTODIAN:TEM-001 (Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.)"
+      ],
+      "lost_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "UNCHECKED_MUTATION_PERMITTED",
+      "failure_mode": "System executes unverified mutation with zero role audits or epistemic checks.",
+      "decision_matches_baseline": false
+    },
+    "ORCHESTRATOR_ALONE": {
+      "active_roles_count": 0,
+      "lost_findings_count": 5,
+      "lost_findings": [
+        "PEDAGOGUE:PED-001 (Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.)",
+        "APERTURE:APE-001 (State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.)",
+        "ATLAS:ATL-001 (Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.)",
+        "FADT:FAD-001 (Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.)",
+        "TEMPORAL_CUSTODIAN:TEM-001 (Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.)"
+      ],
+      "lost_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "UNCHECKED_MUTATION_PERMITTED",
+      "failure_mode": "System executes unverified mutation with zero role audits or epistemic checks.",
+      "decision_matches_baseline": false
+    },
+    "SINGLE_ROLE_PEDAGOGUE": {
+      "active_roles_count": 1,
+      "lost_findings_count": 4,
+      "lost_findings": [
+        "APERTURE:APE-001 (State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.)",
+        "ATLAS:ATL-001 (Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.)",
+        "FADT:FAD-001 (Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.)",
+        "TEMPORAL_CUSTODIAN:TEM-001 (Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.)"
+      ],
+      "lost_infractions": [
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "FALSE_COMPLETION_ADMITTED",
+      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
+      "decision_matches_baseline": false
+    },
+    "SINGLE_ROLE_APERTURE": {
+      "active_roles_count": 1,
+      "lost_findings_count": 4,
+      "lost_findings": [
+        "PEDAGOGUE:PED-001 (Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.)",
+        "ATLAS:ATL-001 (Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.)",
+        "FADT:FAD-001 (Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.)",
+        "TEMPORAL_CUSTODIAN:TEM-001 (Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.)"
+      ],
+      "lost_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "CUSTODY_FORK_RISK_ACCEPTED",
+      "failure_mode": "Orchestrator treats C2 as valid without verifying predecessor receipt digest continuity across window boundaries.",
+      "decision_matches_baseline": false
+    },
+    "SINGLE_ROLE_ATLAS": {
+      "active_roles_count": 1,
+      "lost_findings_count": 4,
+      "lost_findings": [
+        "PEDAGOGUE:PED-001 (Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.)",
+        "APERTURE:APE-001 (State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.)",
+        "FADT:FAD-001 (Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.)",
+        "TEMPORAL_CUSTODIAN:TEM-001 (Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.)"
+      ],
+      "lost_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "FALSE_COMPLETION_ADMITTED",
+      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
+      "decision_matches_baseline": false
+    },
+    "SINGLE_ROLE_FADT": {
+      "active_roles_count": 1,
+      "lost_findings_count": 4,
+      "lost_findings": [
+        "PEDAGOGUE:PED-001 (Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.)",
+        "APERTURE:APE-001 (State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.)",
+        "ATLAS:ATL-001 (Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.)",
+        "TEMPORAL_CUSTODIAN:TEM-001 (Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.)"
+      ],
+      "lost_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "FALSE_COMPLETION_ADMITTED",
+      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
+      "decision_matches_baseline": false
+    },
+    "SINGLE_ROLE_TEMPORAL_CUSTODIAN": {
+      "active_roles_count": 1,
+      "lost_findings_count": 4,
+      "lost_findings": [
+        "PEDAGOGUE:PED-001 (Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.)",
+        "APERTURE:APE-001 (State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.)",
+        "ATLAS:ATL-001 (Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.)",
+        "FADT:FAD-001 (Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.)"
+      ],
+      "lost_infractions": [
+        "HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE",
+        "URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED",
+        "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK",
+        "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING"
+      ],
+      "decision": "FALSE_COMPLETION_ADMITTED",
+      "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
+      "decision_matches_baseline": false
+    },
+    "MINUS_PEDAGOGUE": {
+      "active_roles_count": 4,
       "lost_findings_count": 1,
       "lost_findings": [
         "PEDAGOGUE:PED-001 (Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.)"
@@ -101,7 +618,7 @@
       "decision_matches_baseline": false
     },
     "MINUS_APERTURE": {
-      "active_roles_count": 3,
+      "active_roles_count": 4,
       "lost_findings_count": 1,
       "lost_findings": [
         "APERTURE:APE-001 (State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.)"
@@ -114,7 +631,7 @@
       "decision_matches_baseline": false
     },
     "MINUS_ATLAS": {
-      "active_roles_count": 3,
+      "active_roles_count": 4,
       "lost_findings_count": 1,
       "lost_findings": [
         "ATLAS:ATL-001 (Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.)"
@@ -123,11 +640,11 @@
         "PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK"
       ],
       "decision": "CUSTODY_FORK_RISK_ACCEPTED",
-      "failure_mode": "Orchestrator treats C2 as valid without verifying predecessor receipt digest continuity.",
+      "failure_mode": "Orchestrator treats C2 as valid without verifying predecessor receipt digest continuity across window boundaries.",
       "decision_matches_baseline": false
     },
     "MINUS_FADT": {
-      "active_roles_count": 3,
+      "active_roles_count": 4,
       "lost_findings_count": 1,
       "lost_findings": [
         "FADT:FAD-001 (Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.)"
@@ -136,7 +653,20 @@
         "ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING"
       ],
       "decision": "ILLEGAL_ACTION_ESCALATION_ACCEPTED",
-      "failure_mode": "Orchestrator allows Export action grant without verifying conditioning state survival.",
+      "failure_mode": "Orchestrator allows Export action grant without verifying conditioning state survival under stage erasure.",
+      "decision_matches_baseline": false
+    },
+    "MINUS_TEMPORAL_CUSTODIAN": {
+      "active_roles_count": 4,
+      "lost_findings_count": 1,
+      "lost_findings": [
+        "TEMPORAL_CUSTODIAN:TEM-001 (Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.)"
+      ],
+      "lost_infractions": [
+        "UNREFERENCED_RETRY_CHRONOLOGICAL_OBLIVION"
+      ],
+      "decision": "CHRONOLOGICAL_OBLIVION_ADMITTED",
+      "failure_mode": "Orchestrator accepts out-of-order unreferenced retry without predecessor citation or phase completeness.",
       "decision_matches_baseline": false
     }
   },
@@ -144,7 +674,8 @@
     "Ablating Aperture produces FALSE_COMPLETION_ADMITTED by conflating the URL hash with DOM workspace admittance.",
     "Ablating Atlas produces CUSTODY_FORK_RISK_ACCEPTED by ignoring unverified predecessor receipt digest chaining.",
     "Ablating FADT produces ILLEGAL_ACTION_ESCALATION_ACCEPTED by allowing unconditioned export capability exposure.",
+    "Ablating Temporal Custodian produces CHRONOLOGICAL_OBLIVION_ADMITTED by allowing out-of-order unreferenced retries.",
     "Ablating Pedagogue produces HUMAN_COST_IGNORED by validating technical state while masking user cognitive navigation traps.",
-    "Bounded experimental non-redundancy: Under this 5-condition ablation assay, no single role is redundant. Each jurisdiction detects an exclusive structural failure mode."
+    "Bounded non-redundancy: Under this 13-condition ablation assay, no single role is redundant. Every jurisdiction detects an exclusive structural failure mode."
   ]
 }

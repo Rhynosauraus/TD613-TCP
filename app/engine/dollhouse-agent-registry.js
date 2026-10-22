@@ -11,9 +11,23 @@ export const DOLLHOUSE_AGENT_REGISTRY = freeze({
       kind: 'OPERATIONAL_AGENT',
       status: 'INSTALLED',
       role: 'consequence-order-route-burden-practice-and-research-transfer',
-      invocation: 'PEDAGOGUE.md / npm run pedagogue:design -- <fixture.json>',
-      canonical_sources: freeze(['PEDAGOGUE.md', 'app/engine/pedagogue-design-gate.js']),
-      audit_extensions: freeze(['app/engine/pedagogue-gesture-consequence.js::compilePedagogueGestureConsequenceAudit']),
+      invocation: 'PEDAGOGUE.md / app/engine/dollhouse-pedagogue-dromological.js::runPedagogueAgent',
+      canonical_sources: freeze([
+        'PEDAGOGUE.md',
+        'app/engine/pedagogue-design-gate.js',
+        'app/engine/pedagogue-institutional-time.js',
+        'app/engine/pedagogue-lineage-second-pass.js'
+      ]),
+      audit_extensions: freeze([
+        'app/engine/dollhouse-pedagogue-dromological.js::runPedagogueAgent',
+        'app/engine/dollhouse-pedagogue-dromological.js::auditDollhouseDromologicalCadence',
+        'app/engine/dollhouse-pedagogue-dromological.js::auditDollhouseInstitutionalTime',
+        'app/engine/dollhouse-pedagogue-dromological.js::auditDollhouseLineageSecondPass',
+        'app/engine/pedagogue-gesture-consequence.js::compilePedagogueGestureConsequenceAudit',
+        'app/engine/pedagogue-institutional-time.js::compileInstitutionalTimeAudit',
+        'app/engine/pedagogue-institutional-time.js::compileDromologicalSequenceAudit',
+        'app/engine/pedagogue-lineage-second-pass.js::compilePedagogueLineageSecondPass'
+      ]),
       authority_ceiling: 'recommendation-and-verification-only-human-closure-required'
     }),
     APERTURE: freeze({
@@ -24,7 +38,10 @@ export const DOLLHOUSE_AGENT_REGISTRY = freeze({
       role: 'observability-identifiability-reconstruction-conditioning-and-replay-audit',
       invocation: 'APERTURE.md / installed Aperture lane',
       canonical_sources: freeze(['APERTURE.md', 'app/aperture/release.json']),
-      audit_extensions: freeze(['app/engine/dollhouse-witness-plan.js::auditDollhouseWitnessPlan']),
+      audit_extensions: freeze([
+        'app/engine/dollhouse-witness-plan.js::auditDollhouseWitnessPlan',
+        'app/engine/aperture-v32-typed-epistemic-deficit.js::auditTypedEpistemicDeficit'
+      ]),
       authority_ceiling: 'experimental-research-instrument-no-external-reality-or-release-authority'
     }),
     ATLAS: freeze({
@@ -40,7 +57,12 @@ export const DOLLHOUSE_AGENT_REGISTRY = freeze({
         'app/dome-world/holonomy-loom/flowcore-aia-motion.js'
       ]),
       research_lineage_note: 'Atlas research receipts remain separately bound; this adapter does not merge or promote that unmerged estate.',
-      audit_extensions: freeze(['app/engine/dollhouse-continuity-audit.js::runAtlasContinuityAudit']),
+      audit_extensions: freeze([
+        'app/engine/dollhouse-continuity-audit.js::runAtlasContinuityAudit',
+        'app/engine/dollhouse-atlas-relational-custody.js::classifyAtlasRelationIdentity',
+        'app/engine/dollhouse-atlas-relational-custody.js::auditAtlasHolonomyHistoryParity',
+        'app/engine/dollhouse-atlas-relational-custody.js::auditPhasonCustodyDiff'
+      ]),
       authority_ceiling: 'receiver-relation-audit-only-no-basis-free-geometry-no-release-no-lineage-promotion'
     }),
     FADT: freeze({
@@ -52,8 +74,27 @@ export const DOLLHOUSE_AGENT_REGISTRY = freeze({
       invocation: 'FADT.md / app/engine/dollhouse-atlas-fadt.js::runFadtAgent',
       canonical_sources: freeze(['FADT.md', 'PR #752 · Finite Admissibility Descent Theorem']),
       theorem_lineage_note: 'PR #752 remains theorem ancestry; this adapter operationalizes the finite law without granting merge, deployment, or universal-theorem authority.',
-      audit_extensions: freeze(['app/engine/dollhouse-continuity-audit.js::runFadtStageAudit']),
+      audit_extensions: freeze([
+        'app/engine/dollhouse-continuity-audit.js::runFadtStageAudit',
+        'app/engine/dollhouse-fadt-reparative-assistance.js::evaluateFadtCoordinateRecovery',
+        'app/engine/dollhouse-fadt-reparative-assistance.js::evaluateFadtDiscrepancyIdentity',
+        'app/engine/dollhouse-fadt-reparative-assistance.js::compileFadtReparativePacket'
+      ]),
       authority_ceiling: 'finite-support-descent-audit-only-no-universal-ai-law-no-release-no-source-state-reconstruction'
+    }),
+    TEMPORAL_CUSTODIAN: freeze({
+      id: 'TEMPORAL_CUSTODIAN',
+      canonical_name: 'TD613 Temporal Custodian',
+      kind: 'OPERATIONAL_AGENT_ADAPTER',
+      status: 'BOUNDED_RESEARCH_CANDIDATE',
+      role: 'independent-temporal-audit-monotonic-chronology-and-attempt-lineage-preservation',
+      invocation: 'app/engine/dollhouse-temporal-custodian.js::runTemporalCustodianAudit',
+      canonical_sources: freeze([
+        'app/engine/dollhouse-temporal-custodian.js',
+        'LOOM_TWIN_DOME_WORLD_LINEAGE_FIDELITY.md'
+      ]),
+      audit_extensions: freeze(['app/engine/dollhouse-temporal-custodian.js::runTemporalCustodianAudit']),
+      authority_ceiling: 'chronological-and-phase-verification-only-no-clock-synthesis-no-release'
     })
   }),
   shared_authority: freeze({
