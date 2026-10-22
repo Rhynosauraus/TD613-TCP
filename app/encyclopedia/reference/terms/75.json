@@ -1,0 +1,612 @@
+{
+  "universal": [
+    "G-001",
+    "G-045",
+    "G-063",
+    "G-106",
+    "G-109",
+    "G-110",
+    "G-127",
+    "G-151",
+    "G-260",
+    "G-267",
+    "G-273",
+    "G-340",
+    "G-474",
+    "M-10",
+    "M-11",
+    "M-21",
+    "F-36",
+    "H-03",
+    "SRC-ROUND_CODE"
+  ],
+  "unless": [
+    "G-001",
+    "G-179",
+    "F-33"
+  ],
+  "u_t": [
+    "G-002"
+  ],
+  "under": [
+    "G-004",
+    "G-015",
+    "G-020",
+    "G-026",
+    "G-056",
+    "G-062",
+    "G-064",
+    "G-070",
+    "G-093",
+    "G-132",
+    "G-135",
+    "G-151",
+    "G-157",
+    "G-171",
+    "G-184",
+    "G-195",
+    "G-196",
+    "G-245",
+    "G-249",
+    "G-252",
+    "G-270",
+    "G-288",
+    "G-323",
+    "G-347",
+    "G-353",
+    "G-357",
+    "G-358",
+    "G-369",
+    "G-371",
+    "G-387",
+    "G-388",
+    "G-407",
+    "G-409",
+    "G-430",
+    "G-433",
+    "G-465",
+    "G-478",
+    "M-18",
+    "X-12",
+    "APT-02"
+  ],
+  "undisclosed": [
+    "G-004"
+  ],
+  "u": [
+    "G-004",
+    "G-334"
+  ],
+  "underlying": [
+    "G-006",
+    "G-049",
+    "G-498",
+    "H-26",
+    "SRC-ZEN_SR_P2"
+  ],
+  "underdetermined": [
+    "G-010"
+  ],
+  "unavailable": [
+    "G-011",
+    "G-015",
+    "G-189",
+    "G-194",
+    "G-237"
+  ],
+  "used": [
+    "G-012",
+    "G-072",
+    "G-077",
+    "G-092",
+    "G-179",
+    "G-335",
+    "G-348",
+    "G-350",
+    "LAB-17"
+  ],
+  "unique": [
+    "G-016",
+    "G-397"
+  ],
+  "uniquely": [
+    "G-016",
+    "M-28"
+  ],
+  "uses": [
+    "G-023",
+    "G-081",
+    "G-139",
+    "G-307",
+    "G-490",
+    "LAB-39"
+  ],
+  "unregistered": [
+    "G-031"
+  ],
+  "user-supplied": [
+    "G-034",
+    "G-435",
+    "G-477",
+    "LAB-38"
+  ],
+  "usage": [
+    "G-046",
+    "G-280"
+  ],
+  "up": [
+    "G-053",
+    "G-200",
+    "M-06"
+  ],
+  "usable": [
+    "G-055",
+    "G-130",
+    "X-17",
+    "H-16"
+  ],
+  "uniqueness": [
+    "G-055",
+    "G-056",
+    "M-06"
+  ],
+  "unresolved": [
+    "G-057",
+    "G-199",
+    "G-366",
+    "G-432",
+    "M-19",
+    "LAB-36",
+    "LAB-39",
+    "X-18",
+    "SRC-GE",
+    "EDITION"
+  ],
+  "unverified": [
+    "G-068",
+    "G-160",
+    "G-331",
+    "G-416",
+    "G-494"
+  ],
+  "use": [
+    "G-069",
+    "G-182",
+    "G-288",
+    "G-347",
+    "G-487",
+    "G-508",
+    "G-526",
+    "X-16",
+    "LINEAGE-04"
+  ],
+  "unit-of-analysis": [
+    "G-070"
+  ],
+  "unit-triangle": [
+    "G-073"
+  ],
+  "using": [
+    "G-082",
+    "G-086",
+    "G-175",
+    "G-246",
+    "G-386",
+    "G-473"
+  ],
+  "u_y": [
+    "G-101",
+    "G-105",
+    "G-107",
+    "G-108",
+    "G-110",
+    "G-111",
+    "G-114",
+    "M-07",
+    "M-08",
+    "M-09",
+    "M-11",
+    "M-12"
+  ],
+  "union": [
+    "G-105",
+    "G-226",
+    "M-07"
+  ],
+  "unlawful": [
+    "G-113"
+  ],
+  "useful": [
+    "G-116",
+    "G-171",
+    "G-184",
+    "G-288",
+    "G-294",
+    "M-18",
+    "LAB-12",
+    "X-12",
+    "H-06",
+    "SRC-LIVE"
+  ],
+  "unchanged": [
+    "G-118",
+    "G-234"
+  ],
+  "untrusted": [
+    "G-123",
+    "G-144",
+    "G-264"
+  ],
+  "user": [
+    "G-129",
+    "G-138",
+    "G-142",
+    "G-156",
+    "G-159",
+    "G-161",
+    "G-173",
+    "G-230",
+    "G-234",
+    "G-241",
+    "G-242",
+    "G-246",
+    "G-247",
+    "G-256",
+    "G-258",
+    "G-264",
+    "G-268",
+    "G-270",
+    "G-289",
+    "G-291",
+    "G-302",
+    "G-304",
+    "G-320",
+    "G-324",
+    "G-335",
+    "G-336",
+    "G-453",
+    "G-477",
+    "X-20",
+    "H-22",
+    "SRC-P1",
+    "SRC-P2",
+    "SRC-TWINPDF",
+    "SRC-TWINENG",
+    "SRC-EX_ENTRO"
+  ],
+  "unauthorized": [
+    "G-146",
+    "X-05"
+  ],
+  "unrepaired": [
+    "G-155"
+  ],
+  "user-described": [
+    "G-158"
+  ],
+  "user-named": [
+    "G-161"
+  ],
+  "unproved": [
+    "G-172",
+    "X-15"
+  ],
+  "unbuilt": [
+    "G-179"
+  ],
+  "until": [
+    "G-184",
+    "G-219",
+    "G-220",
+    "G-291"
+  ],
+  "uninterrupted": [
+    "G-185"
+  ],
+  "unseen": [
+    "G-196",
+    "G-243",
+    "X-01"
+  ],
+  "unlike": [
+    "G-207"
+  ],
+  "uncertainties": [
+    "G-210",
+    "G-410"
+  ],
+  "unrelated": [
+    "G-212"
+  ],
+  "unmounted": [
+    "G-220"
+  ],
+  "user-facing": [
+    "G-221"
+  ],
+  "underrepresent": [
+    "G-221"
+  ],
+  "user-selected": [
+    "G-223"
+  ],
+  "unintended": [
+    "G-231"
+  ],
+  "uncertain": [
+    "G-231"
+  ],
+  "ui": [
+    "G-233",
+    "H-16"
+  ],
+  "user-accepted": [
+    "G-234"
+  ],
+  "unit": [
+    "G-240",
+    "H-10"
+  ],
+  "unwanted": [
+    "G-246"
+  ],
+  "unpublished": [
+    "G-248"
+  ],
+  "utility": [
+    "G-249",
+    "G-267",
+    "G-268",
+    "G-294",
+    "G-411",
+    "X-14"
+  ],
+  "unhelpful": [
+    "G-249"
+  ],
+  "upload": [
+    "G-254"
+  ],
+  "unmeasured": [
+    "G-254"
+  ],
+  "user-visible": [
+    "G-269"
+  ],
+  "uncertainty-respecting": [
+    "G-288"
+  ],
+  "ungrounded": [
+    "G-302"
+  ],
+  "upgrade": [
+    "G-302"
+  ],
+  "ux": [
+    "G-304",
+    "H-18"
+  ],
+  "uncertainty": [
+    "G-306",
+    "G-406",
+    "G-424",
+    "G-487",
+    "G-504",
+    "LAB-41",
+    "H-31"
+  ],
+  "unmerged": [
+    "G-310",
+    "LAB-08",
+    "H-17",
+    "SRC-LINEAGE",
+    "SRC-PR984"
+  ],
+  "upstream": [
+    "G-313"
+  ],
+  "user-acknowledged": [
+    "G-333"
+  ],
+  "unfolding": [
+    "G-360",
+    "SRC-AP32_DROMO"
+  ],
+  "undone": [
+    "G-371"
+  ],
+  "unicode": [
+    "G-372",
+    "G-378",
+    "G-398",
+    "M-30",
+    "LAB-30",
+    "X-20",
+    "H-26",
+    "SRC-AP32_EPI"
+  ],
+  "unknown": [
+    "G-383",
+    "G-406"
+  ],
+  "under-measured": [
+    "G-385"
+  ],
+  "undeclared_operator_geometry": [
+    "G-404"
+  ],
+  "untransferred": [
+    "G-414"
+  ],
+  "unified": [
+    "G-416",
+    "G-432",
+    "G-463",
+    "G-469",
+    "G-475",
+    "G-476",
+    "G-521",
+    "G-522",
+    "G-524",
+    "G-525",
+    "G-527",
+    "M-48",
+    "M-49",
+    "LAB-39",
+    "LAB-44",
+    "X-13",
+    "H-29",
+    "SRC-AP32_ROUTING",
+    "SRC-ZEN_SR_FRAME",
+    "SRC-SR_SRC_FRAME",
+    "SRC-SR_UF_PDF",
+    "APT-12",
+    "PDF-SR_UF_PDF",
+    "LINEAGE-05"
+  ],
+  "umbrella": [
+    "G-416",
+    "G-432",
+    "G-475",
+    "G-527",
+    "LAB-36",
+    "LAB-39",
+    "LAB-45",
+    "H-21",
+    "H-22",
+    "LINEAGE-06",
+    "LINEAGE-08",
+    "LINEAGE-10"
+  ],
+  "updates": [
+    "G-419"
+  ],
+  "update": [
+    "G-427",
+    "G-429",
+    "G-430",
+    "G-471",
+    "G-472",
+    "G-474",
+    "G-511",
+    "G-512",
+    "G-513",
+    "G-514",
+    "G-520",
+    "F-34",
+    "F-35",
+    "M-45",
+    "M-46",
+    "LAB-43",
+    "X-26",
+    "SRC-SR_P3_TEXT"
+  ],
+  "unequal": [
+    "G-430"
+  ],
+  "unestablished": [
+    "G-450",
+    "M-44",
+    "LAB-31"
+  ],
+  "unambiguous": [
+    "G-476"
+  ],
+  "units": [
+    "G-478",
+    "G-512",
+    "G-519",
+    "M-47"
+  ],
+  "unvalidated": [
+    "G-493",
+    "LAB-44"
+  ],
+  "universality": [
+    "G-505"
+  ],
+  "unacknowledged": [
+    "G-510"
+  ],
+  "unspecified": [
+    "G-513",
+    "G-522"
+  ],
+  "update-speed": [
+    "G-518"
+  ],
+  "uploaded": [
+    "G-520",
+    "G-526",
+    "LAB-40",
+    "LAB-46",
+    "H-32",
+    "LINEAGE-07"
+  ],
+  "undefined": [
+    "G-528",
+    "F-33"
+  ],
+  "unsafe": [
+    "M-11"
+  ],
+  "untested": [
+    "F-35",
+    "LAB-46"
+  ],
+  "unsupported": [
+    "LAB-10"
+  ],
+  "unobserved": [
+    "LAB-15"
+  ],
+  "undeployed": [
+    "LAB-22",
+    "H-17",
+    "SRC-P1REPORT"
+  ],
+  "unearned": [
+    "LAB-27",
+    "LAB-32",
+    "LINEAGE-06"
+  ],
+  "unlocated": [
+    "H-05"
+  ],
+  "unpushed": [
+    "H-17"
+  ],
+  "undetectable": [
+    "SRC-OBSERV"
+  ],
+  "unpopulated": [
+    "SRC-DOME"
+  ],
+  "uploads": [
+    "SRC-EX_CACHE"
+  ],
+  "unreplicated": [
+    "SRC-ZEN_SR_P1"
+  ],
+  "user-provided": [
+    "SRC-SR_P1_PDF",
+    "SRC-SR_P2_PDF",
+    "SRC-SR_P3_PDF",
+    "SRC-SR_UF_PDF"
+  ],
+  "unfolding-cost": [
+    "APT-01"
+  ],
+  "usagerule": [
+    "APT-27"
+  ],
+  "use_when": [
+    "APT-40"
+  ],
+  "urls": [
+    "LINEAGE-02"
+  ],
+  "unaltered": [
+    "EDITION"
+  ]
+}

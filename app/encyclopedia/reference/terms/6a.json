@@ -1,0 +1,139 @@
+{
+  "jacobian": [
+    "G-056",
+    "G-057"
+  ],
+  "joint": [
+    "G-064",
+    "G-068",
+    "G-340",
+    "G-410",
+    "X-23",
+    "X-25",
+    "H-37"
+  ],
+  "joining": [
+    "G-065",
+    "G-176",
+    "G-206",
+    "G-209",
+    "G-325",
+    "G-447",
+    "X-23"
+  ],
+  "j": [
+    "G-068",
+    "G-205",
+    "G-206",
+    "G-209",
+    "G-214",
+    "G-291",
+    "G-340",
+    "M-19",
+    "LAB-20",
+    "X-23",
+    "SRC-GE",
+    "SRC-EX_REVIEW",
+    "SRC-ER2013",
+    "SRC-ER_REPEC"
+  ],
+  "juxtaposes": [
+    "G-097"
+  ],
+  "juridical": [
+    "G-159"
+  ],
+  "jacquard": [
+    "G-173",
+    "G-175",
+    "LAB-24",
+    "SRC-TWINPDF"
+  ],
+  "jacquard-like": [
+    "G-174"
+  ],
+  "js": [
+    "G-220",
+    "SRC-FLOW",
+    "SRC-DROMO",
+    "SRC-ROUND_CODE",
+    "SRC-PORT_JOURNEY",
+    "SRC-PORT_GOV",
+    "SRC-PORT_MECH"
+  ],
+  "json": [
+    "G-222",
+    "G-223",
+    "G-437",
+    "G-438",
+    "G-439",
+    "G-440",
+    "G-441",
+    "G-442",
+    "G-443",
+    "G-444",
+    "G-445",
+    "G-446",
+    "G-447",
+    "G-448",
+    "G-449",
+    "G-450",
+    "G-451",
+    "G-452",
+    "G-453",
+    "G-454",
+    "G-455",
+    "LAB-29",
+    "H-24",
+    "SRC-AP32_USER",
+    "SRC-AP32_DROMO",
+    "SRC-AP32_ER",
+    "SRC-AP32_EPI",
+    "SRC-AP32_DEFICIT",
+    "SRC-AP32_ROUTING",
+    "SRC-AP32_RECEIPT",
+    "SRC-AP32_DOCTRINE",
+    "SRC-SR_SRC_SEAL"
+  ],
+  "jurisdiction": [
+    "G-240",
+    "SRC-ISS405",
+    "APT-36"
+  ],
+  "just": [
+    "G-297"
+  ],
+  "joint-information": [
+    "G-340"
+  ],
+  "j_t": [
+    "G-393",
+    "M-28"
+  ],
+  "justice": [
+    "G-393"
+  ],
+  "justify": [
+    "G-409"
+  ],
+  "jurisdictional": [
+    "G-445"
+  ],
+  "journal": [
+    "M-23",
+    "LAB-35",
+    "X-26",
+    "SRC-ER2013"
+  ],
+  "jul": [
+    "SRC-EX_ENTRO",
+    "SRC-EX_AGENT",
+    "SRC-EX_TTP"
+  ],
+  "javascript": [
+    "SRC-AP32_USER"
+  ],
+  "jsonl": [
+    "SRC-SR_SRC_RESOLVER"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "browser": "Chromium",
+  "browser_version": "134.0.6998.35",
+  "artifact_html_sha256": "570a51d2db1bf7e76a8dc6e16486bf454096731d08f77bef1138d552e0a87c75",
+  "scope": "Emulated portrait widths and height-only viewport changes; physical iOS remains unobserved.",
+  "witnesses": [
+    {
+      "width": 358,
+      "toolbar_resize": "stable",
+      "history_writes_during_scroll": 0,
+      "transparent_single_header": 66,
+      "copy_gap": 16,
+      "back_restored": true,
+      "reference_records_verified": 835
+    },
+    {
+      "width": 390,
+      "toolbar_resize": "stable",
+      "history_writes_during_scroll": 0,
+      "transparent_single_header": 66,
+      "copy_gap": 16,
+      "back_restored": true,
+      "reference_records_verified": 835
+    },
+    {
+      "width": 430,
+      "toolbar_resize": "stable",
+      "history_writes_during_scroll": 0,
+      "transparent_single_header": 66,
+      "copy_gap": 16,
+      "back_restored": true,
+      "reference_records_verified": 835
+    }
+  ]
+}

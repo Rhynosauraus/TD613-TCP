@@ -1,0 +1,12 @@
+const fs=require('node:fs'),path=require('node:path'),{createHash}=require('node:crypto');
+const intake=require('./encyclopedia-intake.cjs');
+const [input,flag,reviewRef]=process.argv.slice(2);if(!input||flag!=='--human-review-ref'||!reviewRef)throw new Error('Usage: node scripts/admit-encyclopedia-record.cjs proposal.json --human-review-ref exact-review-reference');
+const proposal=JSON.parse(fs.readFileSync(input,'utf8')),schema=JSON.parse(fs.readFileSync(path.join(__dirname,'encyclopedia-intake-schema.json')));
+if(proposal.schema!=='td613.research-proposal/v1'||proposal.disposition!=='PROPOSED')throw new Error('Expected a staged proposal');
+if(createHash('sha256').update(proposal.original_json).digest('hex')!==proposal.input_sha256)throw new Error('Original input digest mismatch');
+const report=intake.inspect(proposal.original_json,schema);if(!report.valid||JSON.stringify(report.record)!==JSON.stringify(proposal.record))throw new Error('Proposal content changed or failed schema validation');
+if(!report.publication_eligible)throw new Error('Private proposals cannot enter the public repository index');
+const directory=process.env.TD613_INTAKE_OUTPUT_DIR||path.join(__dirname,'../app/encyclopedia/intake/admitted');fs.mkdirSync(directory,{recursive:true});
+const accession={schema:'td613.research-accession/v1',record:proposal.record,original_json:proposal.original_json,input_sha256:proposal.input_sha256,review_reference:reviewRef,authority:'Declared human review reference; index admission supplies no independent scientific adjudication.'};
+const output=path.join(directory,proposal.record.record_id+'.json');fs.writeFileSync(output,JSON.stringify(accession,null,2)+'\n',{flag:'wx'});
+console.log(JSON.stringify({disposition:'ADMITTED_TO_SOURCE_INDEX',record_id:proposal.record.record_id,output,merge_or_deployment_authority:'NONE'}));

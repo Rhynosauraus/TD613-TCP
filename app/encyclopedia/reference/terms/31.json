@@ -1,0 +1,281 @@
+{
+  "1": [
+    "G-002",
+    "G-008",
+    "G-012",
+    "G-015",
+    "G-020",
+    "G-063",
+    "G-072",
+    "G-077",
+    "G-080",
+    "G-083",
+    "G-102",
+    "G-105",
+    "G-106",
+    "G-109",
+    "G-110",
+    "G-114",
+    "G-164",
+    "G-190",
+    "G-205",
+    "G-209",
+    "G-225",
+    "G-246",
+    "G-291",
+    "G-340",
+    "G-429",
+    "G-471",
+    "G-472",
+    "G-503",
+    "G-512",
+    "G-519",
+    "M-07",
+    "M-10",
+    "M-11",
+    "M-14",
+    "M-15",
+    "M-19",
+    "M-27",
+    "F-34",
+    "F-35",
+    "M-45",
+    "M-46",
+    "M-49",
+    "LAB-29",
+    "LAB-43",
+    "LAB-45",
+    "SRC-TWINENG",
+    "SRC-BASELINE",
+    "SRC-P1REPORT",
+    "SRC-ER2013",
+    "SRC-AP32_USER",
+    "APT-04",
+    "APT-07",
+    "APT-08",
+    "LINEAGE-06",
+    "EDITION"
+  ],
+  "10": [
+    "LAB-12",
+    "LAB-13",
+    "LAB-40",
+    "SRC-WRC",
+    "SRC-EX_QUASI",
+    "SRC-EX_PHASON",
+    "SRC-EX_COLD",
+    "SRC-EX_REVIEW",
+    "SRC-ER2013",
+    "SRC-ER_REPEC",
+    "SRC-SR_P3_TEXT",
+    "SRC-SR_P2_PDF",
+    "APT-01",
+    "APT-34",
+    "PDF-SR_P2_PDF",
+    "EDITION"
+  ],
+  "11": [
+    "G-171",
+    "G-280",
+    "G-332",
+    "LAB-14",
+    "SRC-NOVEL",
+    "APT-04",
+    "APT-10",
+    "APT-16",
+    "APT-38",
+    "EDITION"
+  ],
+  "12": [
+    "G-083",
+    "M-22",
+    "APT-12",
+    "APT-39",
+    "EDITION"
+  ],
+  "13": [
+    "G-083",
+    "M-22",
+    "APT-12",
+    "APT-18",
+    "APT-39"
+  ],
+  "14": [
+    "APT-11",
+    "APT-12"
+  ],
+  "15": [
+    "G-279",
+    "H-19",
+    "SRC-EX_REVIEW",
+    "EDITION"
+  ],
+  "16": [
+    "G-215",
+    "LAB-18",
+    "APT-11"
+  ],
+  "17": [
+    "SRC-CLASSIC"
+  ],
+  "18": [
+    "SRC-PROCESS",
+    "APT-27",
+    "APT-38",
+    "EDITION"
+  ],
+  "19": [
+    "SRC-ASH_TOMO",
+    "EDITION"
+  ],
+  "103": [
+    "LAB-22",
+    "EDITION"
+  ],
+  "133": [
+    "SRC-EX_COLD"
+  ],
+  "192": [
+    "G-397",
+    "M-30"
+  ],
+  "1000": [
+    "APT-09"
+  ],
+  "1003": [
+    "LAB-27"
+  ],
+  "1005": [
+    "LAB-27"
+  ],
+  "1016": [
+    "SRC-EX_REVIEW",
+    "SRC-ER2013",
+    "SRC-ER_REPEC"
+  ],
+  "1092": [
+    "SRC-PR1092"
+  ],
+  "1101": [
+    "APT-16"
+  ],
+  "1103": [
+    "SRC-EX_COLD"
+  ],
+  "1126": [
+    "SRC-EX_PHASON"
+  ],
+  "1137": [
+    "SRC-EX_QUASI"
+  ],
+  "1145": [
+    "APT-31"
+  ],
+  "1282": [
+    "APT-36"
+  ],
+  "1493": [
+    "G-234",
+    "LAB-21",
+    "SRC-CLASSIC"
+  ],
+  "1497": [
+    "G-234",
+    "LAB-21",
+    "SRC-CLASSIC"
+  ],
+  "1588": [
+    "APT-30"
+  ],
+  "1698": [
+    "APT-40"
+  ],
+  "1729": [
+    "APT-05"
+  ],
+  "1769": [
+    "APT-26"
+  ],
+  "1770": [
+    "APT-21"
+  ],
+  "1777": [
+    "APT-13"
+  ],
+  "1781": [
+    "APT-24"
+  ],
+  "1876": [
+    "APT-37"
+  ],
+  "1887": [
+    "APT-15"
+  ],
+  "1902": [
+    "APT-34"
+  ],
+  "1980": [
+    "APT-25"
+  ],
+  "11693": [
+    "APT-39"
+  ],
+  "116398": [
+    "SRC-EX_REVIEW"
+  ],
+  "130229": [
+    "PDF-SR_UF_PDF"
+  ],
+  "167249": [
+    "PDF-SR_P3_PDF"
+  ],
+  "180199": [
+    "PDF-SR_P1_PDF"
+  ],
+  "184672": [
+    "PDF-SR_P2_PDF"
+  ],
+  "10-wave": [
+    "G-081"
+  ],
+  "1003-1005": [
+    "G-203",
+    "SRC-DOLLHOUSE"
+  ],
+  "16-subset": [
+    "G-215"
+  ],
+  "10d613": [
+    "G-334"
+  ],
+  "10-page": [
+    "LAB-42"
+  ],
+  "1-alpha": [
+    "SRC-AP32_RECEIPT",
+    "APT-07",
+    "APT-08",
+    "APT-17"
+  ],
+  "158be842e830c0be3b5eca1a": [
+    "SRC-SR_SRC_FRAME"
+  ],
+  "1db27bd91ceafc66dfe6fc88a947f8628b9632e40d337a258caafacbd514e77b": [
+    "APT-10"
+  ],
+  "163f3e26a9015b39d93dc328f8fc3acd30114ff2b53ba9d6aa0ed8be81046ecf": [
+    "APT-15"
+  ],
+  "136de38cb16079ef8177c7cc40fba30cb34cecdf2eeb42a5cee4eacb9e4f6e77": [
+    "APT-19"
+  ],
+  "10d41edf296a9caea3d7a454ff64f8f42bcccaa067c10205df0ad6bf6d5d4643": [
+    "APT-22"
+  ],
+  "1a9971330b007ac32c62574791cced7761b8df5eee92a01f60ade6c63158a64c": [
+    "APT-37"
+  ],
+  "1d6962c7604d6d9a226792cd5813f36bafcbae853420af5dd065aea80afd6567": [
+    "APT-40"
+  ]
+}
