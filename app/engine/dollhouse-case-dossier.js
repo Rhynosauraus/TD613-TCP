@@ -48,19 +48,42 @@ export function createDollhouseCaseDossier(input) {
   text(input.case_id, 100, 'case id');
   if (typeof input.source_revision !== 'string' || !/^[a-f0-9]{40}$/.test(input.source_revision)) throw new TypeError('case: exact source revision required');
 
-  let repairDemonstrated = false;
+  let repairScore = 0.0;
+  let repairStatus = 'UNMEASURED';
   let repairEvidenceText = 'No structured before/after repair demonstration supplied.';
+  let repairLimitations = null;
+
   if (input.repair_demonstration) {
-    exact(input.repair_demonstration, ['initial_verdict', 'reparative_action', 'post_repair_verdict', 'verified'], 'repair demonstration');
+    exact(input.repair_demonstration, ['initial_verdict', 'reparative_action', 'post_repair_verdict', 'verified', 'verification_mode'], 'repair demonstration');
     text(input.repair_demonstration.initial_verdict, 20, 'initial verdict');
     text(input.repair_demonstration.reparative_action, 500, 'reparative action');
     text(input.repair_demonstration.post_repair_verdict, 20, 'post repair verdict');
     if (typeof input.repair_demonstration.verified !== 'boolean') throw new TypeError('repair demonstration: verified must be boolean');
-    if (input.repair_demonstration.initial_verdict === 'HELD' &&
-        input.repair_demonstration.post_repair_verdict === 'SUPPORTED' &&
-        input.repair_demonstration.verified === true) {
-      repairDemonstrated = true;
-      repairEvidenceText = `Demonstrated recovery: initial HELD resolved to post-repair SUPPORTED via ${input.repair_demonstration.reparative_action}`;
+    text(input.repair_demonstration.verification_mode, 40, 'verification mode');
+    if (!['INDEPENDENT_AUDIT_WITNESS', 'CALLER_DECLARED'].includes(input.repair_demonstration.verification_mode)) {
+      throw new TypeError('repair demonstration: unsupported verification mode');
+    }
+
+    const validInitial = input.repair_demonstration.initial_verdict === 'HELD';
+    const validPost = input.repair_demonstration.post_repair_verdict === 'SUPPORTED';
+    const isVerified = input.repair_demonstration.verified === true;
+    const mode = input.repair_demonstration.verification_mode;
+
+    if (validInitial && validPost && isVerified && mode === 'INDEPENDENT_AUDIT_WITNESS') {
+      repairScore = 1.0;
+      repairStatus = 'DEMONSTRATED';
+      repairEvidenceText = `Demonstrated recovery: initial HELD resolved to post-repair SUPPORTED via ${input.repair_demonstration.reparative_action} with independent audit witness.`;
+      repairLimitations = 'Demonstrated in test harness; live runtime replay not executed by clerk.';
+    } else if (validInitial && validPost && isVerified && mode === 'CALLER_DECLARED') {
+      repairScore = 0.5;
+      repairStatus = 'CALLER_DECLARED_RECOVERY';
+      repairEvidenceText = `Caller self-attested recovery via ${input.repair_demonstration.reparative_action} without independent audit witness.`;
+      repairLimitations = 'Caller assertion only; unverified by independent witness.';
+    } else {
+      repairScore = 0.0;
+      repairStatus = 'UNMEASURED';
+      repairEvidenceText = 'Repair demonstration does not satisfy recovery criteria.';
+      repairLimitations = 'Invalid before/after verdicts or unverified state.';
     }
   }
 
@@ -171,8 +194,8 @@ export function createDollhouseCaseDossier(input) {
     ? 'Disagreements or held findings are catalogued and preserved for human operator adjudication under HUMAN_REVIEW_REQUIRED.'
     : 'All agents in unanimous consensus; score calibrated to 0.5 reflecting absence of active dispute to contest.';
 
-  const repairability = repairDemonstrated ? 1.0 : 0.0;
-  const repairabilityStatus = repairDemonstrated ? 'DEMONSTRATED' : 'UNMEASURED';
+  const repairability = repairScore;
+  const repairabilityStatus = repairStatus;
 
   return freeze({
     schema: DOLLHOUSE_CASE_DOSSIER_SCHEMA, case_id: input.case_id, source_revision: input.source_revision,
@@ -224,7 +247,8 @@ export function createDollhouseCaseDossier(input) {
           repairability: {
             status: repairabilityStatus,
             score: repairability,
-            evidence: repairEvidenceText
+            evidence: repairEvidenceText,
+            limitations: repairLimitations
           }
         }
       }

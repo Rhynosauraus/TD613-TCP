@@ -100,8 +100,20 @@ export function executeSpecialistRole(role, domainInput) {
     };
   }
 
+  // Defect/concern input: domain specialist verdict is unconditionally HELD
+  // Caller-declared verdicts must NEVER contaminate or override domain specialist audits
+  if (domainInput.concern || domainInput.defective) {
+    return {
+      verdict: 'HELD',
+      status: 'VIOLATION_DETECTED',
+      infractions: [ROLE_INFRACTIONS[role] || 'UNKNOWN_ROLE_INFRACTION'],
+      concern: domainInput.concern || `Defect detected by ${role}`,
+      jurisdiction: domainInput.jurisdiction || jurisdiction
+    };
+  }
+
   if (role === 'PEDAGOGUE') {
-    if (domainInput.events) {
+    if (domainInput.events && Array.isArray(domainInput.events)) {
       const res = auditDollhouseDromologicalCadence(domainInput);
       const hasViolations = res.violations && res.violations.length > 0;
       return {
@@ -112,20 +124,20 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.concern || domainInput.defective) {
-      return {
-        verdict: domainInput.verdict || 'HELD',
-        status: 'VIOLATION_DETECTED',
-        infractions: [ROLE_INFRACTIONS.PEDAGOGUE],
-        concern: domainInput.concern || 'Cadence or consequence violation',
-        jurisdiction: domainInput.jurisdiction || jurisdiction
-      };
+    if (domainInput.clean === true) {
+      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
     }
-    return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
+    return {
+      verdict: 'HELD',
+      status: 'MALFORMED_OBSERVATION_SCHEMA',
+      infractions: [ROLE_INFRACTIONS.PEDAGOGUE],
+      concern: 'Malformed observation schema for PEDAGOGUE (expected events array or clean declaration)',
+      jurisdiction
+    };
   }
 
   if (role === 'APERTURE') {
-    if (domainInput.current_operator) {
+    if (domainInput.current_operator && Array.isArray(domainInput.current_operator)) {
       const res = auditTypedEpistemicDeficit(domainInput);
       const isDeficit = res.disposition === 'REJECT' ||
                         res.candidate_probe_evaluation?.disposition === 'REJECT' ||
@@ -139,16 +151,16 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.concern || domainInput.defective) {
-      return {
-        verdict: domainInput.verdict || 'HELD',
-        status: 'VIOLATION_DETECTED',
-        infractions: [ROLE_INFRACTIONS.APERTURE],
-        concern: domainInput.concern || 'Epistemic deficit detected',
-        jurisdiction: domainInput.jurisdiction || jurisdiction
-      };
+    if (domainInput.clean === true) {
+      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
     }
-    return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
+    return {
+      verdict: 'HELD',
+      status: 'MALFORMED_OBSERVATION_SCHEMA',
+      infractions: [ROLE_INFRACTIONS.APERTURE],
+      concern: 'Malformed observation schema for APERTURE (expected current_operator matrix or clean declaration)',
+      jurisdiction
+    };
   }
 
   if (role === 'ATLAS') {
@@ -163,20 +175,20 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.concern || domainInput.defective) {
-      return {
-        verdict: domainInput.verdict || 'HELD',
-        status: 'VIOLATION_DETECTED',
-        infractions: [ROLE_INFRACTIONS.ATLAS],
-        concern: domainInput.concern || 'Receiver-relative custody divergence',
-        jurisdiction: domainInput.jurisdiction || jurisdiction
-      };
+    if (domainInput.clean === true) {
+      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
     }
-    return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
+    return {
+      verdict: 'HELD',
+      status: 'MALFORMED_OBSERVATION_SCHEMA',
+      infractions: [ROLE_INFRACTIONS.ATLAS],
+      concern: 'Malformed observation schema for ATLAS (expected trajectoryA and trajectoryB or clean declaration)',
+      jurisdiction
+    };
   }
 
   if (role === 'FADT') {
-    if (domainInput.fiberRows) {
+    if (domainInput.fiberRows && Array.isArray(domainInput.fiberRows)) {
       const res = computeFadtFiberBounds(domainInput.fiberRows);
       const hasGap = res.irreducible_gap_cardinality > 0 && domainInput.attempts_unconditioned_action;
       return {
@@ -187,16 +199,16 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.concern || domainInput.defective) {
-      return {
-        verdict: domainInput.verdict || 'HELD',
-        status: 'VIOLATION_DETECTED',
-        infractions: [ROLE_INFRACTIONS.FADT],
-        concern: domainInput.concern || 'Lawful support boundary violation',
-        jurisdiction: domainInput.jurisdiction || jurisdiction
-      };
+    if (domainInput.clean === true) {
+      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
     }
-    return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
+    return {
+      verdict: 'HELD',
+      status: 'MALFORMED_OBSERVATION_SCHEMA',
+      infractions: [ROLE_INFRACTIONS.FADT],
+      concern: 'Malformed observation schema for FADT (expected fiberRows array or clean declaration)',
+      jurisdiction
+    };
   }
 
   if (role === 'TEMPORAL_CUSTODIAN') {
@@ -211,19 +223,25 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.concern || domainInput.defective) {
-      return {
-        verdict: domainInput.verdict || 'HELD',
-        status: 'VIOLATION_DETECTED',
-        infractions: [ROLE_INFRACTIONS.TEMPORAL_CUSTODIAN],
-        concern: domainInput.concern || 'Chronological sequence violation',
-        jurisdiction: domainInput.jurisdiction || jurisdiction
-      };
+    if (domainInput.clean === true) {
+      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
     }
-    return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
+    return {
+      verdict: 'HELD',
+      status: 'MALFORMED_OBSERVATION_SCHEMA',
+      infractions: [ROLE_INFRACTIONS.TEMPORAL_CUSTODIAN],
+      concern: 'Malformed observation schema for TEMPORAL_CUSTODIAN (expected phases and required_phases or clean declaration)',
+      jurisdiction
+    };
   }
 
-  return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction: 'unspecified' };
+  return {
+    verdict: 'HELD',
+    status: 'UNKNOWN_ROLE_REJECTED',
+    infractions: ['UNKNOWN_ROLE_REJECTED'],
+    concern: `Unrecognized specialist role: ${role}`,
+    jurisdiction: 'unspecified'
+  };
 }
 
 /**
@@ -233,12 +251,57 @@ export function executeSpecialistRole(role, domainInput) {
  *   The Orchestrator receives ONLY observations permitted to active roles.
  *   Ground truth is strictly decoupled and never inspected by this function.
  */
-export function runOrchestrationDecision(activeRoleNames = [], observations = {}) {
-  const activeSet = new Set(activeRoleNames.map(r => String(r).toUpperCase()));
+export function runOrchestrationDecision(activeRoleNames = [], observations = {}, options = {}) {
+  const activeRolesUpper = activeRoleNames.map(r => String(r).toUpperCase());
+  const activeSet = new Set(activeRolesUpper);
   const gatheredFindings = [];
   const detectedInfractions = new Set();
 
+  // Validate active role identities against canonical FIVE_ROLES fail-closed
+  const unknownRoles = activeRolesUpper.filter(r => !FIVE_ROLES.includes(r));
+  if (unknownRoles.length > 0) {
+    return deepFreeze({
+      active_roles: activeRolesUpper,
+      findings_count: unknownRoles.length,
+      findings: unknownRoles.map(r => ({
+        role: r,
+        id: `${r.slice(0, 3)}-ERR`,
+        claim: `Unrecognized specialist role rejected fail-closed: ${r}`,
+        jurisdiction: 'unknown',
+        verdict: 'HELD',
+        status: 'UNKNOWN_ROLE_REJECTED'
+      })),
+      detected_infractions: ['UNRECOGNIZED_ROLE_REJECTED'],
+      decision: 'HELD_UNKNOWN_ROLE',
+      consensus: 'HELD_UNKNOWN_ROLE',
+      replication_status: 'UNRECOGNIZED_ROLE_REJECTED',
+      empirical_replication_count: 0,
+      independent_replication: false,
+      release_authority: false,
+      deployment_authority: false,
+      human_closure_required: true
+    });
+  }
+
+  // Differentiate unmonitored baseline from active orchestrator with zero specialists
   if (activeSet.size === 0) {
+    if (options.orchestrator_governance === true || options.condition_name === 'ORCHESTRATOR_ALONE') {
+      return deepFreeze({
+        active_roles: [],
+        findings_count: 0,
+        findings: [],
+        detected_infractions: [],
+        decision: 'HELD_NO_ACTIVE_SPECIALISTS',
+        consensus: 'ABSTAIN_NO_SPECIALIST_SENSES',
+        replication_status: 'ZERO_ROLES_ACTIVE',
+        empirical_replication_count: 0,
+        independent_replication: false,
+        release_authority: false,
+        deployment_authority: false,
+        human_closure_required: true
+      });
+    }
+
     return deepFreeze({
       active_roles: [],
       findings_count: 0,
@@ -277,7 +340,9 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
   const hasHeld = gatheredFindings.some(f => f.verdict === 'HELD');
   const hasMissing = gatheredFindings.some(f => f.verdict === 'NOT_EVALUATED');
 
-  if (hasHeld) {
+  if (activeSet.size > 0 && gatheredFindings.length === 0) {
+    decision = 'HELD_INSUFFICIENT_OBSERVATION';
+  } else if (hasHeld) {
     decision = 'HELD';
   } else if (hasMissing) {
     decision = 'HELD_MISSING_OBSERVATION';
@@ -296,9 +361,14 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
     consensus = 'INCOMPLETE_OBSERVATION';
   }
 
-  const replicationStatus = unanimousAllFive
-    ? 'SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION'
-    : 'PARTIAL_ROLE_CONSENSUS';
+  // Replication counting:
+  // Offline synthetic fixtures count as ZERO empirical replications
+  // A shared empirical acquisition counts as ONE empirical replication
+  const isEmpiricalAcquisition = observations.acquisition_class === 'EMPIRICAL_ACQUISITION';
+  const empiricalReplicationCount = isEmpiricalAcquisition ? 1 : 0;
+  const replicationStatus = isEmpiricalAcquisition
+    ? (unanimousAllFive ? 'SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION' : 'PARTIAL_ROLE_CONSENSUS')
+    : 'SYNTHETIC_EXECUTION_ZERO_EMPIRICAL_REPLICATION';
 
   return deepFreeze({
     active_roles: [...activeSet],
@@ -308,7 +378,7 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
     decision,
     consensus,
     replication_status: replicationStatus,
-    empirical_replication_count: 1, // SHARED ACQUISITION COUNTS AS 1 REPLICATION ONLY
+    empirical_replication_count: empiricalReplicationCount,
     independent_replication: false,
     release_authority: false,
     deployment_authority: false,
@@ -322,6 +392,7 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
  * Separates the evaluator from the runtime orchestrator:
  *   - Compares frozen orchestrator decision with withheld ground truth;
  *   - Detects escaped defects when an ablated role allowed a domain hazard to pass;
+ *   - Distinguishes active true-negative defect detection from safe evidence-abstention;
  *   - Verifies sound admission when four dolls succeed on benign inputs without the fifth.
  */
 export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth) {
@@ -344,6 +415,7 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
   let outcome_class = 'UNKNOWN';
   let is_sound = false;
   let defect_escaped = false;
+  let defect_detected = false;
   let failure_mode = null;
   let escaped_classification = null;
   let missed_defects = [];
@@ -354,25 +426,44 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
       outcome_class = 'TRUE_POSITIVE_ADMISSION';
       is_sound = true;
       defect_escaped = false;
+      defect_detected = false;
       description = 'Benign input packet verified and admitted; no false alarm raised by active dolls.';
     } else {
       outcome_class = 'FALSE_NEGATIVE_REJECTION';
       is_sound = false;
       defect_escaped = false;
+      defect_detected = false;
       description = 'Benign input packet rejected by active dolls (conservative false alarm).';
     }
   } else {
     // Expected verdict is HELD (ground-truth defect present)
-    if (decision === 'HELD' || decision === 'HELD_MISSING_OBSERVATION') {
-      outcome_class = 'TRUE_NEGATIVE_PREVENTION';
+    if (decision === 'HELD_MISSING_OBSERVATION' || decision === 'HELD_NO_ACTIVE_SPECIALISTS') {
+      outcome_class = 'SAFE_ABSTENTION_INSUFFICIENT_EVIDENCE';
       is_sound = true;
       defect_escaped = false;
-      description = 'True defect detected and held fail-closed by active specialists.';
+      defect_detected = false;
+      description = 'Orchestrator held fail-closed due to insufficient or missing specialist observations (safe abstention; defect was not actively detected by specialist instrumentation).';
+    } else if (decision === 'HELD' || decision === 'HELD_UNKNOWN_ROLE') {
+      const defectMatched = expectedDefects.length > 0 && detectedInfractions.some(i => expectedDefects.includes(i));
+      if (defectMatched) {
+        outcome_class = 'TRUE_NEGATIVE_PREVENTION';
+        is_sound = true;
+        defect_escaped = false;
+        defect_detected = true;
+        description = 'True defect detected and held fail-closed by active specialists.';
+      } else {
+        outcome_class = 'PROTECTIVE_HOLD_UNMATCHED_DEFECT';
+        is_sound = true;
+        defect_escaped = false;
+        defect_detected = false;
+        description = 'Run held fail-closed, but detected infractions did not match expected withheld defect.';
+      }
     } else {
       // Decision was SUPPORTED, ADMITTED, or UNCHECKED_MUTATION_PERMITTED -> DEFECT ESCAPED!
       outcome_class = 'FALSE_POSITIVE_ADMISSION';
       is_sound = false;
       defect_escaped = true;
+      defect_detected = false;
       missed_defects = expectedDefects.filter(d => !detectedInfractions.includes(d));
 
       if (activeRoles.length === 0) {
@@ -411,6 +502,7 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
     outcome_class,
     is_sound,
     defect_escaped,
+    defect_detected,
     escaped_classification,
     failure_mode,
     expected_verdict: expectedVerdict,
@@ -427,9 +519,9 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
  *   2. Runs the blind Orchestrator;
  *   3. Evaluates the frozen decision against withheld ground truth.
  */
-export function runAblationTrial(activeRoleNames = [], scenarioPacket = {}) {
+export function runAblationTrial(activeRoleNames = [], scenarioPacket = {}, options = {}) {
   const { ground_truth: withheldGroundTruth, ...blindedObservations } = scenarioPacket;
-  const orchestrator = runOrchestrationDecision(activeRoleNames, blindedObservations);
+  const orchestrator = runOrchestrationDecision(activeRoleNames, blindedObservations, options);
   const evaluation = evaluateAblationOutcome(orchestrator, withheldGroundTruth);
   return deepFreeze({
     orchestrator,
@@ -442,8 +534,8 @@ export function runAblationTrial(activeRoleNames = [], scenarioPacket = {}) {
  */
 export function runCompleteDollhouseAblation(roleAudits = {}) {
   const fullCondition = runOrchestrationDecision(FIVE_ROLES, roleAudits);
-  const noDollhouseCondition = runOrchestrationDecision([], roleAudits);
-  const orchestratorAloneCondition = runOrchestrationDecision([], roleAudits);
+  const noDollhouseCondition = runOrchestrationDecision([], roleAudits, { orchestrator_governance: false, condition_name: 'NO_DOLLHOUSE_BASELINE' });
+  const orchestratorAloneCondition = runOrchestrationDecision([], roleAudits, { orchestrator_governance: true, condition_name: 'ORCHESTRATOR_ALONE' });
 
   const singleRoleConditions = {
     SINGLE_ROLE_PEDAGOGUE: runOrchestrationDecision(['PEDAGOGUE'], roleAudits),
@@ -462,6 +554,8 @@ export function runCompleteDollhouseAblation(roleAudits = {}) {
   };
 
   const empiricalTrials = {
+    NO_DOLLHOUSE_BASELINE: runAblationTrial([], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_APERTURE_OBSERVABILITY, { orchestrator_governance: false }),
+    ORCHESTRATOR_ALONE: runAblationTrial([], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_APERTURE_OBSERVABILITY, { orchestrator_governance: true }),
     MINUS_PEDAGOGUE: runAblationTrial(['APERTURE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_PEDAGOGUE_CADENCE),
     MINUS_APERTURE: runAblationTrial(['PEDAGOGUE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_APERTURE_OBSERVABILITY),
     MINUS_ATLAS: runAblationTrial(['PEDAGOGUE', 'APERTURE', 'FADT', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_ATLAS_RELATIONAL),

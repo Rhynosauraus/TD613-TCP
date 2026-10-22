@@ -203,7 +203,8 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
         initial_verdict: 'HELD',
         reparative_action: 'Operator adopted canonical cadence, well-conditioned aperture probe, zero-winding atlas path, and largest sound FADT support',
         post_repair_verdict: 'SUPPORTED',
-        verified: true
+        verified: true,
+        verification_mode: 'INDEPENDENT_AUDIT_WITNESS'
       },
       findings: [
         {
@@ -326,8 +327,9 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
     assert.ok(ablationReport.diff_metrics.MINUS_FADT.lost_findings_count === 1);
     assert.ok(ablationReport.diff_metrics.MINUS_TEMPORAL_CUSTODIAN.lost_findings_count === 1);
 
-    // Verify false consensus defense on shared acquisition
-    assert.equal(ablationReport.replication_audit.empirical_replication_count, 1);
+    // Verify false consensus defense on offline synthetic execution vs shared acquisition
+    assert.equal(ablationReport.replication_audit.empirical_replication_count, 0);
+    assert.equal(ablationReport.replication_audit.status, 'SYNTHETIC_EXECUTION_ZERO_EMPIRICAL_REPLICATION');
   });
 
 });

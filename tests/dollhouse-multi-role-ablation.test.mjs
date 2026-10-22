@@ -6,6 +6,7 @@ import {
   evaluateAblationOutcome,
   runAblationTrial,
   runCompleteDollhouseAblation,
+  executeSpecialistRole,
   FIVE_ROLES,
   ROLE_INFRACTIONS,
   FAILURE_MODES,
@@ -42,16 +43,46 @@ test('Full 5-Role Dollhouse detects all 5 infractions and holds route fail-close
   assert.equal(result.human_closure_required, true);
 });
 
-test('No-Dollhouse baseline permits unchecked mutation', () => {
-  const baseline = runOrchestrationDecision([], mockAudits);
+test('No-Dollhouse baseline permits unchecked mutation while Orchestrator-alone holds fail-closed', () => {
+  // 1. Raw baseline: no dollhouse governance
+  const baseline = runOrchestrationDecision([], mockAudits, { orchestrator_governance: false });
   assert.equal(baseline.active_roles.length, 0);
   assert.equal(baseline.findings_count, 0);
   assert.equal(baseline.decision, 'UNCHECKED_MUTATION_PERMITTED');
+  assert.equal(baseline.consensus, 'NONE');
   assert.equal(baseline.replication_status, 'ZERO_ROLES_UNCHECKED');
   assert.equal(baseline.empirical_replication_count, 0);
+
+  // 2. Orchestrator active but possesses zero specialist senses: fails closed
+  const orchAlone = runOrchestrationDecision([], mockAudits, { orchestrator_governance: true });
+  assert.equal(orchAlone.active_roles.length, 0);
+  assert.equal(orchAlone.findings_count, 0);
+  assert.equal(orchAlone.decision, 'HELD_NO_ACTIVE_SPECIALISTS');
+  assert.equal(orchAlone.consensus, 'ABSTAIN_NO_SPECIALIST_SENSES');
+  assert.equal(orchAlone.replication_status, 'ZERO_ROLES_ACTIVE');
+  assert.equal(orchAlone.empirical_replication_count, 0);
 });
 
-test('Missing observation input fails closed with HELD_MISSING_OBSERVATION', () => {
+test('Unrecognized role identities and malformed schemas reject fail-closed', () => {
+  // 1. Unknown role rejected
+  const unknownRoleResult = runOrchestrationDecision(['PEDAGOGUE', 'GHOST_SPECIALIST'], mockAudits);
+  assert.equal(unknownRoleResult.decision, 'HELD_UNKNOWN_ROLE');
+  assert.equal(unknownRoleResult.detected_infractions[0], 'UNRECOGNIZED_ROLE_REJECTED');
+  assert.equal(unknownRoleResult.findings[0].status, 'UNKNOWN_ROLE_REJECTED');
+
+  // 2. Malformed observation schema rejected fail-closed
+  const malformedAperture = executeSpecialistRole('APERTURE', { arbitrary_field: 123 });
+  assert.equal(malformedAperture.verdict, 'HELD');
+  assert.equal(malformedAperture.status, 'MALFORMED_OBSERVATION_SCHEMA');
+  assert.ok(malformedAperture.concern.includes('Malformed observation schema'));
+
+  // 3. Caller-declared verdict cannot override detected defect
+  const contaminatedInput = executeSpecialistRole('PEDAGOGUE', { concern: 'user navigation trap', verdict: 'SUPPORTED' });
+  assert.equal(contaminatedInput.verdict, 'HELD');
+  assert.equal(contaminatedInput.status, 'VIOLATION_DETECTED');
+});
+
+test('Missing observation input fails closed with HELD_MISSING_OBSERVATION and evaluates to safe abstention', () => {
   // Aperture is active, but observation payload is empty/missing for Aperture
   const partialObservations = {
     PEDAGOGUE: { events: [{ phase: 'NOTICE', at: 10 }, { phase: 'ACT', at: 20 }, { phase: 'WORLD_ANSWERS', at: 30 }, { phase: 'NAME', at: 40 }] }
@@ -61,6 +92,13 @@ test('Missing observation input fails closed with HELD_MISSING_OBSERVATION', () 
   const apeFinding = result.findings.find(f => f.role === 'APERTURE');
   assert.equal(apeFinding.status, 'INPUT_MISSING');
   assert.equal(apeFinding.verdict, 'NOT_EVALUATED');
+
+  // Evaluate against ground truth: safe abstention (not counted as true negative detection)
+  const evalOutcome = evaluateAblationOutcome(result, { verdict: 'HELD', defects: [ROLE_INFRACTIONS.APERTURE] });
+  assert.equal(evalOutcome.outcome_class, 'SAFE_ABSTENTION_INSUFFICIENT_EVIDENCE');
+  assert.equal(evalOutcome.is_sound, true);
+  assert.equal(evalOutcome.defect_escaped, false);
+  assert.equal(evalOutcome.defect_detected, false);
 });
 
 test('Decoupled Evaluator accurately classifies true negative prevention and benign true positive admission', () => {
@@ -141,12 +179,18 @@ test('Empirical specialist trials: ablating specialized doll allows domain defec
 });
 
 test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empirical replication only', () => {
-  const result = runOrchestrationDecision(FIVE_ROLES, mockAudits);
+  // 1. Synthetic offline execution yields 0 empirical replications
+  const syntheticResult = runOrchestrationDecision(FIVE_ROLES, mockAudits);
+  assert.equal(syntheticResult.replication_status, 'SYNTHETIC_EXECUTION_ZERO_EMPIRICAL_REPLICATION');
+  assert.equal(syntheticResult.empirical_replication_count, 0);
+  assert.equal(syntheticResult.independent_replication, false);
 
-  // 5 roles agreed, but on a single acquisition receipt!
-  assert.equal(result.replication_status, 'SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION');
-  assert.equal(result.empirical_replication_count, 1);
-  assert.equal(result.independent_replication, false);
+  // 2. Shared empirical acquisition yields at most 1 empirical replication
+  const empiricalAudits = { ...mockAudits, acquisition_class: 'EMPIRICAL_ACQUISITION' };
+  const empiricalResult = runOrchestrationDecision(FIVE_ROLES, empiricalAudits);
+  assert.equal(empiricalResult.replication_status, 'SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION');
+  assert.equal(empiricalResult.empirical_replication_count, 1);
+  assert.equal(empiricalResult.independent_replication, false);
 });
 
 test('runCompleteDollhouseAblation runs all 13 conditions and proves non-redundancy', () => {
