@@ -15,6 +15,7 @@ function fixture({mobile=false,url='https://td613.test/encyclopedia/',state=null
   w.HTMLCanvasElement.prototype.getContext=()=>canvas;
   w.HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','')};
   w.HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');this.dispatchEvent(new w.Event('close'))};
+  w.queueMicrotask=callback=>callback(); // Deliberately flush at scheduling time: before the later bubble listener.
   if(state)w.history.replaceState(state,'',url);
  }});
  const w=dom.window,d=w.document;
