@@ -36,7 +36,7 @@ for (const [role, path] of Object.entries(roleAuditFiles)) {
 
 const ablationReport = runCompleteDollhouseAblation(roleAudits);
 
-const targetAblationPath = resolve('tests/fixtures/dollhouse/blind-divergence/ablation-experiment.json');
+const targetAblationPath = resolve('tests/fixtures/dollhouse/blind-divergence/five-role-ablation-experiment.json');
 await writeFile(targetAblationPath, JSON.stringify(ablationReport, null, 2), 'utf8');
 
 console.log('5-Role Ablation Experiment successfully executed and written to: ' + targetAblationPath);

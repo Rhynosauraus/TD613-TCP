@@ -52,11 +52,12 @@ It operationalizes all five distinct Dollhouse roles (**Pedagogue**, **Aperture*
    - Implemented `evaluateFadtCoordinateRecovery` resolving **Counterexample 2** (XOR non-submodular coordinate interaction where only joint $\{c_1, c_2\}$ resolves the gap);
    - Implemented `evaluateFadtDiscrepancyIdentity` proving $|A_y \setminus I_y| + |U_y \setminus A_y| \equiv |\Gamma_y| + |A_y \setminus U_y| + |I_y \setminus A_y|$ and strictly rejecting unlawful widening ($A_y \setminus U_y \neq \emptyset$);
    - Compiled child-legible operator guidance in `compileFadtReparativePacket`.
-5. **Orchestrator Hardening & Empirical 13-Condition Blind Ablation (`REST-05`):**
-   - Created `app/engine/dollhouse-ablation-harness.js` running all 13 canonical conditions with genuine specialist execution;
-   - Eliminated circular predetermined dictionary assignments: executes actual specialist domain functions on blinded scenario packets and derives failure modes by comparing Orchestrator decisions against independent ground truth;
-   - Permitted four-doll success: on benign inputs, 4 dolls succeed without the 5th (`decision: 'SUPPORTED'`, `failure_mode: null`);
-   - Proved empirical non-redundancy: every minus-one role condition exposes an exclusive characteristic blind spot under specialist jurisdiction;
+5. **Orchestrator Hardening & Decoupled Blind Ablation (`REST-05` & `REST-06`):**
+   - Created pure blind Orchestrator `runOrchestrationDecision` in `app/engine/dollhouse-ablation-harness.js` that receives ONLY active roles and blinded observations without access to ground truth;
+   - Decoupled independent evaluator `evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)` strictly outside the runtime orchestrator;
+   - Distinguishes missing inputs (`INPUT_MISSING` / `NOT_EVALUATED` $\implies$ `HELD_MISSING_OBSERVATION`) from clean domain evaluation;
+   - Evaluated all 13 canonical conditions and 5 empirical specialization trials on canonical defect scenarios, proving empirical non-redundancy: every minus-one role condition allows its exclusive domain defect to escape (`HUMAN_COST_IGNORED`, `FALSE_COMPLETION_ADMITTED`, `CUSTODY_FORK_RISK_ACCEPTED`, `ILLEGAL_ACTION_ESCALATION_ACCEPTED`, `CHRONOLOGICAL_OBLIVION_ADMITTED`);
+   - Permitted four-doll success: on benign inputs, 4 dolls succeed without the 5th (`TRUE_POSITIVE_ADMISSION`);
    - Enforced false consensus defense: 5/5 role agreement on 1 receipt yields $\text{empirical\_replication\_count} = 1$ (`SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION`).
 6. **Pedagogue Dromological Restoration:**
    - Created `app/engine/dollhouse-pedagogue-dromological.js` wrapping `pedagogue-institutional-time.js` and `pedagogue-lineage-second-pass.js`;
@@ -65,7 +66,13 @@ It operationalizes all five distinct Dollhouse roles (**Pedagogue**, **Aperture*
    - Audited cadence compression, rest/exit availability, and second-pass lineage routing without user profiling.
 7. **Demonstrated Synthetic Operator Workflow & Measured Knowledge-Survival:**
    - Authored `tests/dollhouse-synthetic-operator-workflow.test.mjs` verifying scientific fidelity, error recovery, and orchestrator necessity across all five dolls;
-   - Upgraded `dollhouse-case-dossier.js` to measure actual evidence properties: checks file accessibility on disk (`retrievability`), verifies exact SHA-256 byte hashes vs declared placeholders (`attributable_provenance`), measures structured bounds (`interpretability`), checks serialization invariance (`transmissibility`), calibrates consensus vs hold states (`contestability`), and awards `repairability` only when explicit recovery alternatives are demonstrated.
+   - Upgraded `dollhouse-case-dossier.js` to measure actual evidence capacity models:
+     - `retrievability`: verified on disk (`VERIFIED`, score $1.0$);
+     - `attributable_provenance`: local byte consistency (`LOCAL_BYTE_CONSISTENT`, score $1.0$), with explicit boundary notice that external author origin remains unauthenticated;
+     - `interpretability`: validated against strict four-vector observation scope schema with declared epistemic limitations (`VERIFIED`, score $1.0$);
+     - `transmissibility`: validated by lossless JSON serialization/deserialization roundtrip (`DEMONSTRATED`, score $1.0$);
+     - `contestability`: calibrated to $0.5$ on clean consensus (`CALIBRATED_CONSENSUS`) and $1.0$ when disputes/holds are preserved for human review (`PRESERVED_FOR_HUMAN_CONTESTATION`);
+     - `repairability`: awarded ($1.0$, `DEMONSTRATED`) ONLY when an explicit verified before/after recovery demonstration is supplied (`repair_demonstration`), otherwise $0.0$ (`UNMEASURED`), completely replacing keyword regex matching.
 
 ---
 
@@ -133,7 +140,14 @@ Temporal Custodian   Whole-route veto across planned execution phases.
 ## 4. Distinction Between Synthetic Scores and Human Evidence
 
 In accordance with TD613 epistemic governance:
-- **Synthetic Reparative Scores:** The 6-vector Knowledge-Survival metrics ($1.0$ across retrievability, attributable provenance, interpretability, transmissibility, contestability, and repairability) are **synthetic structural metrics** computed from deterministic local receipts.
+- **Synthetic Reparative Capacities:** The 6-vector Knowledge-Survival metrics are **measured structural capacity indicators** derived from deterministic local artifacts:
+  - `retrievability` ($1.0$, `VERIFIED`): verified by filesystem presence check;
+  - `attributable_provenance` ($1.0$, `LOCAL_BYTE_CONSISTENT`): verified by exact local SHA-256 byte digest matching against declared commitments, with explicit ceiling that external author identity remains unauthenticated;
+  - `interpretability` ($1.0$, `VERIFIED`): validated against strict four-vector observation scope schema and declared epistemic limitations;
+  - `transmissibility` ($1.0$, `DEMONSTRATED`): validated by lossless JSON serialization/deserialization roundtrip;
+  - `contestability` ($0.5$, `CALIBRATED_CONSENSUS`): calibrated to $0.5$ in clean consensus (where all agents agree and no dispute exists to contest), and rising to $1.0$ (`PRESERVED_FOR_HUMAN_CONTESTATION`) only when explicit disagreements or held verdicts are preserved for human review;
+  - `repairability` ($1.0$, `DEMONSTRATED`): awarded only upon verified before/after recovery demonstration (initial `HELD` $\to$ reparative action applied $\to$ post-repair `SUPPORTED`).
+  - Total consensus score: $5.5 / 6.0$ ($0.917$), accurately reflecting calibrated contestability ($0.5$).
 - **Human Evidence:** These metrics do **not** constitute empirical human user studies, classroom learning verification, physical iOS device telemetry, or external origin authentication. Human closure remains mandatory at all times.
 
 ---

@@ -3,6 +3,8 @@ import test from 'node:test';
 
 import {
   runOrchestrationDecision,
+  evaluateAblationOutcome,
+  runAblationTrial,
   runCompleteDollhouseAblation,
   FIVE_ROLES,
   ROLE_INFRACTIONS,
@@ -25,7 +27,6 @@ test('Full 5-Role Dollhouse detects all 5 infractions and holds route fail-close
   assert.equal(result.active_roles.length, 5);
   assert.equal(result.findings_count, 5);
   assert.equal(result.decision, 'HELD');
-  assert.equal(result.failure_mode, null);
 
   // All 5 distinct infractions detected
   assert.equal(result.detected_infractions.length, 5);
@@ -46,34 +47,97 @@ test('No-Dollhouse baseline permits unchecked mutation', () => {
   assert.equal(baseline.active_roles.length, 0);
   assert.equal(baseline.findings_count, 0);
   assert.equal(baseline.decision, 'UNCHECKED_MUTATION_PERMITTED');
-  assert.equal(baseline.failure_mode, FAILURE_MODES.NO_DOLLHOUSE.failure_mode);
+  assert.equal(baseline.replication_status, 'ZERO_ROLES_UNCHECKED');
+  assert.equal(baseline.empirical_replication_count, 0);
 });
 
-test('Every minus-one role ablation exposes its exclusive characteristic defect', () => {
-  // 1. MINUS_APERTURE => FALSE_COMPLETION_ADMITTED
-  const minusAperture = runOrchestrationDecision(['PEDAGOGUE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'], mockAudits);
-  assert.equal(minusAperture.decision, 'FALSE_COMPLETION_ADMITTED');
-  assert.equal(minusAperture.failure_mode, FAILURE_MODES.MISSING_APERTURE.failure_mode);
+test('Missing observation input fails closed with HELD_MISSING_OBSERVATION', () => {
+  // Aperture is active, but observation payload is empty/missing for Aperture
+  const partialObservations = {
+    PEDAGOGUE: { events: [{ phase: 'NOTICE', at: 10 }, { phase: 'ACT', at: 20 }, { phase: 'WORLD_ANSWERS', at: 30 }, { phase: 'NAME', at: 40 }] }
+  };
+  const result = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE'], partialObservations);
+  assert.equal(result.decision, 'HELD_MISSING_OBSERVATION');
+  const apeFinding = result.findings.find(f => f.role === 'APERTURE');
+  assert.equal(apeFinding.status, 'INPUT_MISSING');
+  assert.equal(apeFinding.verdict, 'NOT_EVALUATED');
+});
 
-  // 2. MINUS_ATLAS => CUSTODY_FORK_RISK_ACCEPTED
-  const minusAtlas = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE', 'FADT', 'TEMPORAL_CUSTODIAN'], mockAudits);
-  assert.equal(minusAtlas.decision, 'CUSTODY_FORK_RISK_ACCEPTED');
-  assert.equal(minusAtlas.failure_mode, FAILURE_MODES.MISSING_ATLAS.failure_mode);
+test('Decoupled Evaluator accurately classifies true negative prevention and benign true positive admission', () => {
+  // 1. Benign scenario: 4 dolls succeed on benign inputs
+  const benignTrial = runAblationTrial(
+    ['PEDAGOGUE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'],
+    CANONICAL_EMPIRICAL_SCENARIOS.BENIGN_ALL_PASS
+  );
+  assert.equal(benignTrial.orchestrator.decision, 'SUPPORTED');
+  assert.equal(benignTrial.evaluation.outcome_class, 'TRUE_POSITIVE_ADMISSION');
+  assert.equal(benignTrial.evaluation.is_sound, true);
+  assert.equal(benignTrial.evaluation.defect_escaped, false);
+  assert.equal(benignTrial.evaluation.failure_mode, null);
 
-  // 3. MINUS_FADT => ILLEGAL_ACTION_ESCALATION_ACCEPTED
-  const minusFadt = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE', 'ATLAS', 'TEMPORAL_CUSTODIAN'], mockAudits);
-  assert.equal(minusFadt.decision, 'ILLEGAL_ACTION_ESCALATION_ACCEPTED');
-  assert.equal(minusFadt.failure_mode, FAILURE_MODES.MISSING_FADT.failure_mode);
+  // 2. Full 5-role catches true defect
+  const defectTrial = runAblationTrial(
+    FIVE_ROLES,
+    CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_APERTURE_OBSERVABILITY
+  );
+  assert.equal(defectTrial.orchestrator.decision, 'HELD');
+  assert.equal(defectTrial.evaluation.outcome_class, 'TRUE_NEGATIVE_PREVENTION');
+  assert.equal(defectTrial.evaluation.is_sound, true);
+  assert.equal(defectTrial.evaluation.defect_escaped, false);
+});
 
-  // 4. MINUS_TEMPORAL_CUSTODIAN => CHRONOLOGICAL_OBLIVION_ADMITTED
-  const minusTemporal = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE', 'ATLAS', 'FADT'], mockAudits);
-  assert.equal(minusTemporal.decision, 'CHRONOLOGICAL_OBLIVION_ADMITTED');
-  assert.equal(minusTemporal.failure_mode, FAILURE_MODES.MISSING_TEMPORAL_CUSTODIAN.failure_mode);
+test('Empirical specialist trials: ablating specialized doll allows domain defect to escape to its characteristic failure mode', () => {
+  // 1. Aperture defect (nonsymmetric covariance)
+  const apTrial4 = runAblationTrial(
+    ['PEDAGOGUE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'],
+    CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_APERTURE_OBSERVABILITY
+  );
+  assert.equal(apTrial4.orchestrator.decision, 'SUPPORTED'); // Blinded orchestrator admits!
+  assert.equal(apTrial4.evaluation.outcome_class, 'FALSE_POSITIVE_ADMISSION');
+  assert.equal(apTrial4.evaluation.is_sound, false);
+  assert.equal(apTrial4.evaluation.defect_escaped, true);
+  assert.equal(apTrial4.evaluation.escaped_classification, 'FALSE_COMPLETION_ADMITTED');
+  assert.equal(apTrial4.evaluation.failure_mode, FAILURE_MODES.MISSING_APERTURE.failure_mode);
 
-  // 5. MINUS_PEDAGOGUE => HUMAN_COST_IGNORED
-  const minusPedagogue = runOrchestrationDecision(['APERTURE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'], mockAudits);
-  assert.equal(minusPedagogue.decision, 'HUMAN_COST_IGNORED');
-  assert.equal(minusPedagogue.failure_mode, FAILURE_MODES.MISSING_PEDAGOGUE.failure_mode);
+  // 2. Atlas defect (winding mismatch)
+  const atlasTrial4 = runAblationTrial(
+    ['PEDAGOGUE', 'APERTURE', 'FADT', 'TEMPORAL_CUSTODIAN'],
+    CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_ATLAS_RELATIONAL
+  );
+  assert.equal(atlasTrial4.orchestrator.decision, 'SUPPORTED');
+  assert.equal(atlasTrial4.evaluation.outcome_class, 'FALSE_POSITIVE_ADMISSION');
+  assert.equal(atlasTrial4.evaluation.escaped_classification, 'CUSTODY_FORK_RISK_ACCEPTED');
+  assert.equal(atlasTrial4.evaluation.failure_mode, FAILURE_MODES.MISSING_ATLAS.failure_mode);
+
+  // 3. FADT defect (unconditioned action grant)
+  const fadtTrial4 = runAblationTrial(
+    ['PEDAGOGUE', 'APERTURE', 'ATLAS', 'TEMPORAL_CUSTODIAN'],
+    CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_FADT_STAGE_ERASURE
+  );
+  assert.equal(fadtTrial4.orchestrator.decision, 'SUPPORTED');
+  assert.equal(fadtTrial4.evaluation.outcome_class, 'FALSE_POSITIVE_ADMISSION');
+  assert.equal(fadtTrial4.evaluation.escaped_classification, 'ILLEGAL_ACTION_ESCALATION_ACCEPTED');
+  assert.equal(fadtTrial4.evaluation.failure_mode, FAILURE_MODES.MISSING_FADT.failure_mode);
+
+  // 4. Temporal Custodian defect (missing required phase)
+  const tempTrial4 = runAblationTrial(
+    ['PEDAGOGUE', 'APERTURE', 'ATLAS', 'FADT'],
+    CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_TEMPORAL_CHRONOLOGY
+  );
+  assert.equal(tempTrial4.orchestrator.decision, 'SUPPORTED');
+  assert.equal(tempTrial4.evaluation.outcome_class, 'FALSE_POSITIVE_ADMISSION');
+  assert.equal(tempTrial4.evaluation.escaped_classification, 'CHRONOLOGICAL_OBLIVION_ADMITTED');
+  assert.equal(tempTrial4.evaluation.failure_mode, FAILURE_MODES.MISSING_TEMPORAL_CUSTODIAN.failure_mode);
+
+  // 5. Pedagogue defect (cadence inversion: ACT before NOTICE)
+  const pedTrial4 = runAblationTrial(
+    ['APERTURE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'],
+    CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_PEDAGOGUE_CADENCE
+  );
+  assert.equal(pedTrial4.orchestrator.decision, 'SUPPORTED');
+  assert.equal(pedTrial4.evaluation.outcome_class, 'FALSE_POSITIVE_ADMISSION');
+  assert.equal(pedTrial4.evaluation.escaped_classification, 'HUMAN_COST_IGNORED');
+  assert.equal(pedTrial4.evaluation.failure_mode, FAILURE_MODES.MISSING_PEDAGOGUE.failure_mode);
 });
 
 test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empirical replication only', () => {
@@ -100,12 +164,12 @@ test('runCompleteDollhouseAblation runs all 13 conditions and proves non-redunda
   assert.ok(report.diff_metrics.MINUS_FADT.lost_findings_count === 1);
   assert.ok(report.diff_metrics.MINUS_TEMPORAL_CUSTODIAN.lost_findings_count === 1);
 
-  // Check that every minus-one condition diverged from baseline decision
-  assert.equal(report.diff_metrics.MINUS_PEDAGOGUE.decision_matches_baseline, false);
-  assert.equal(report.diff_metrics.MINUS_APERTURE.decision_matches_baseline, false);
-  assert.equal(report.diff_metrics.MINUS_ATLAS.decision_matches_baseline, false);
-  assert.equal(report.diff_metrics.MINUS_FADT.decision_matches_baseline, false);
-  assert.equal(report.diff_metrics.MINUS_TEMPORAL_CUSTODIAN.decision_matches_baseline, false);
+  // Check that every minus-one condition diverged from baseline in empirical trials
+  assert.equal(report.diff_metrics.MINUS_PEDAGOGUE.empirical_trial_escaped_classification, 'HUMAN_COST_IGNORED');
+  assert.equal(report.diff_metrics.MINUS_APERTURE.empirical_trial_escaped_classification, 'FALSE_COMPLETION_ADMITTED');
+  assert.equal(report.diff_metrics.MINUS_ATLAS.empirical_trial_escaped_classification, 'CUSTODY_FORK_RISK_ACCEPTED');
+  assert.equal(report.diff_metrics.MINUS_FADT.empirical_trial_escaped_classification, 'ILLEGAL_ACTION_ESCALATION_ACCEPTED');
+  assert.equal(report.diff_metrics.MINUS_TEMPORAL_CUSTODIAN.empirical_trial_escaped_classification, 'CHRONOLOGICAL_OBLIVION_ADMITTED');
 });
 
 test('Empirical non-redundancy: four dolls succeed on benign inputs without fifth', () => {
@@ -117,7 +181,6 @@ test('Empirical non-redundancy: four dolls succeed on benign inputs without fift
     benign
   );
   assert.equal(withoutAperture.decision, 'SUPPORTED');
-  assert.equal(withoutAperture.failure_mode, null);
   assert.equal(withoutAperture.findings_count, 4);
 
   // Four dolls without Pedagogue:
@@ -126,7 +189,6 @@ test('Empirical non-redundancy: four dolls succeed on benign inputs without fift
     benign
   );
   assert.equal(withoutPedagogue.decision, 'SUPPORTED');
-  assert.equal(withoutPedagogue.failure_mode, null);
 
   // Four dolls without Atlas:
   const withoutAtlas = runOrchestrationDecision(
@@ -134,7 +196,6 @@ test('Empirical non-redundancy: four dolls succeed on benign inputs without fift
     benign
   );
   assert.equal(withoutAtlas.decision, 'SUPPORTED');
-  assert.equal(withoutAtlas.failure_mode, null);
 
   // Four dolls without FADT:
   const withoutFadt = runOrchestrationDecision(
@@ -142,7 +203,6 @@ test('Empirical non-redundancy: four dolls succeed on benign inputs without fift
     benign
   );
   assert.equal(withoutFadt.decision, 'SUPPORTED');
-  assert.equal(withoutFadt.failure_mode, null);
 
   // Four dolls without Temporal Custodian:
   const withoutTemporal = runOrchestrationDecision(
@@ -150,48 +210,4 @@ test('Empirical non-redundancy: four dolls succeed on benign inputs without fift
     benign
   );
   assert.equal(withoutTemporal.decision, 'SUPPORTED');
-  assert.equal(withoutTemporal.failure_mode, null);
-});
-
-test('Empirical specialist trials: ablating specialized doll allows domain defect to escape to its characteristic failure mode', () => {
-  // 1. Aperture defect (nonsymmetric covariance)
-  const apTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_APERTURE_OBSERVABILITY);
-  assert.equal(apTrial5.decision, 'HELD');
-  assert.ok(apTrial5.detected_infractions.includes(ROLE_INFRACTIONS.APERTURE));
-
-  const apTrial4 = runOrchestrationDecision(['PEDAGOGUE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_APERTURE_OBSERVABILITY);
-  assert.equal(apTrial4.decision, 'FALSE_COMPLETION_ADMITTED');
-  assert.equal(apTrial4.failure_mode, FAILURE_MODES.MISSING_APERTURE.failure_mode);
-
-  // 2. Atlas defect (winding mismatch)
-  const atlasTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_ATLAS_RELATIONAL);
-  assert.equal(atlasTrial5.decision, 'HELD');
-
-  const atlasTrial4 = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE', 'FADT', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_ATLAS_RELATIONAL);
-  assert.equal(atlasTrial4.decision, 'CUSTODY_FORK_RISK_ACCEPTED');
-  assert.equal(atlasTrial4.failure_mode, FAILURE_MODES.MISSING_ATLAS.failure_mode);
-
-  // 3. FADT defect (unconditioned action grant)
-  const fadtTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_FADT_STAGE_ERASURE);
-  assert.equal(fadtTrial5.decision, 'HELD');
-
-  const fadtTrial4 = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE', 'ATLAS', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_FADT_STAGE_ERASURE);
-  assert.equal(fadtTrial4.decision, 'ILLEGAL_ACTION_ESCALATION_ACCEPTED');
-  assert.equal(fadtTrial4.failure_mode, FAILURE_MODES.MISSING_FADT.failure_mode);
-
-  // 4. Temporal Custodian defect (missing required phase)
-  const tempTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_TEMPORAL_CHRONOLOGY);
-  assert.equal(tempTrial5.decision, 'HELD');
-
-  const tempTrial4 = runOrchestrationDecision(['PEDAGOGUE', 'APERTURE', 'ATLAS', 'FADT'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_TEMPORAL_CHRONOLOGY);
-  assert.equal(tempTrial4.decision, 'CHRONOLOGICAL_OBLIVION_ADMITTED');
-  assert.equal(tempTrial4.failure_mode, FAILURE_MODES.MISSING_TEMPORAL_CUSTODIAN.failure_mode);
-
-  // 5. Pedagogue defect (cadence inversion: ACT before NOTICE)
-  const pedTrial5 = runOrchestrationDecision(FIVE_ROLES, CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_PEDAGOGUE_CADENCE);
-  assert.equal(pedTrial5.decision, 'HELD');
-
-  const pedTrial4 = runOrchestrationDecision(['APERTURE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN'], CANONICAL_EMPIRICAL_SCENARIOS.DEFECT_PEDAGOGUE_CADENCE);
-  assert.equal(pedTrial4.decision, 'HUMAN_COST_IGNORED');
-  assert.equal(pedTrial4.failure_mode, FAILURE_MODES.MISSING_PEDAGOGUE.failure_mode);
 });

@@ -29,10 +29,41 @@ function freeze(value) {
  * function neither reads their artifacts nor authenticates their authors.
  */
 export function createDollhouseCaseDossier(input) {
-  exact(input, ['schema', 'case_id', 'source_revision', 'findings'], 'case');
+  const baseKeys = ['schema', 'case_id', 'source_revision', 'findings'];
+  const inputKeys = Reflect.ownKeys(input);
+  if (!input || Object.getPrototypeOf(input) !== Object.prototype) throw new TypeError('case: exact fields required');
+  if (inputKeys.length === 4) {
+    if (baseKeys.some(k => !Object.hasOwn(input, k))) throw new TypeError('case: exact fields required');
+  } else if (inputKeys.length === 5) {
+    if ([...baseKeys, 'repair_demonstration'].some(k => !Object.hasOwn(input, k))) throw new TypeError('case: exact fields required');
+  } else {
+    throw new TypeError('case: exact fields required');
+  }
+  const descriptors = Object.getOwnPropertyDescriptors(input);
+  for (const k of inputKeys) {
+    if (!descriptors[k].enumerable || !Object.hasOwn(descriptors[k], 'value')) throw new TypeError('case: accessors and hidden data forbidden');
+  }
+
   if (input.schema !== DOLLHOUSE_CASE_DOSSIER_SCHEMA) throw new TypeError('case: unsupported schema');
   text(input.case_id, 100, 'case id');
   if (typeof input.source_revision !== 'string' || !/^[a-f0-9]{40}$/.test(input.source_revision)) throw new TypeError('case: exact source revision required');
+
+  let repairDemonstrated = false;
+  let repairEvidenceText = 'No structured before/after repair demonstration supplied.';
+  if (input.repair_demonstration) {
+    exact(input.repair_demonstration, ['initial_verdict', 'reparative_action', 'post_repair_verdict', 'verified'], 'repair demonstration');
+    text(input.repair_demonstration.initial_verdict, 20, 'initial verdict');
+    text(input.repair_demonstration.reparative_action, 500, 'reparative action');
+    text(input.repair_demonstration.post_repair_verdict, 20, 'post repair verdict');
+    if (typeof input.repair_demonstration.verified !== 'boolean') throw new TypeError('repair demonstration: verified must be boolean');
+    if (input.repair_demonstration.initial_verdict === 'HELD' &&
+        input.repair_demonstration.post_repair_verdict === 'SUPPORTED' &&
+        input.repair_demonstration.verified === true) {
+      repairDemonstrated = true;
+      repairEvidenceText = `Demonstrated recovery: initial HELD resolved to post-repair SUPPORTED via ${input.repair_demonstration.reparative_action}`;
+    }
+  }
+
   const ids = new Set();
   const findings = dense(input.findings, 1, 64, 'findings').map(finding => {
     exact(finding, ['id', 'agent', 'claim_key', 'verdict', 'evidence_class', 'observation_scope', 'reference', 'limitations'], 'finding');
@@ -64,7 +95,6 @@ export function createDollhouseCaseDossier(input) {
 
   let allArtifactsExist = findings.length > 0;
   let allBytesMatch = findings.length > 0;
-  let hasReparativePath = false;
 
   const fs = globalThis.process?.getBuiltinModule?.('node:fs');
   const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
@@ -93,19 +123,56 @@ export function createDollhouseCaseDossier(input) {
         allBytesMatch = false;
       }
     }
-
-    const findingStr = JSON.stringify(finding);
-    if (/reparative|recovery|sound-support|stabiliz|probe\.stability|alternative/i.test(findingStr)) {
-      hasReparativePath = true;
-    }
   }
 
+  // Measured Knowledge Survival Capacities:
   const retrievability = findings.length === 0 ? 0.0 : (allArtifactsExist ? 1.0 : 0.5);
+  const retrievabilityStatus = findings.length === 0 ? 'UNMEASURED' : (allArtifactsExist ? 'VERIFIED' : 'PARTIAL');
+  const retrievabilityEvidence = allArtifactsExist
+    ? 'All referenced artifact files exist on local disk at declared paths.'
+    : (findings.length > 0 ? 'One or more referenced artifact files could not be located on local disk.' : 'No findings present.');
+
   const attributable_provenance = findings.length === 0 ? 0.0 : (allBytesMatch ? 1.0 : 0.5);
-  const interpretability = findings.length > 0 ? 1.0 : 0.0;
-  const transmissibility = findings.length > 0 ? 1.0 : 0.0;
-  const contestability = (disagreements.length > 0 || findings.some(item => item.verdict !== 'SUPPORTED')) ? 1.0 : 0.5;
-  const repairability = hasReparativePath ? 1.0 : 0.0;
+  const attributableProvenanceStatus = findings.length === 0 ? 'UNMEASURED' : (allBytesMatch ? 'LOCAL_BYTE_CONSISTENT' : 'UNVERIFIED_CALLER_DECLARATION');
+  const attributableProvenanceEvidence = allBytesMatch
+    ? 'All referenced local artifact files match declared SHA-256 digests exactly.'
+    : (findings.length > 0 ? 'Artifact digests are caller-declared or file bytes differ from declared hashes.' : 'No findings present.');
+  const attributableProvenanceLimitations = allBytesMatch
+    ? 'Verifies local byte consistency only; external author origin remains unauthenticated.'
+    : 'Caller-declared unverified references.';
+
+  const interpretabilityValid = findings.length > 0 && findings.every(f => f.observation_scope && f.limitations && f.limitations.length > 0);
+  const interpretability = interpretabilityValid ? 1.0 : 0.0;
+  const interpretabilityStatus = interpretabilityValid ? 'VERIFIED' : (findings.length > 0 ? 'FAILED' : 'UNMEASURED');
+  const interpretabilityEvidence = interpretabilityValid
+    ? 'All findings declare strict four-vector observation scopes and explicit epistemic limitations.'
+    : 'One or more findings lack complete observation scopes or epistemic limitations.';
+
+  let transmissibilityDemonstrated = false;
+  if (findings.length > 0) {
+    try {
+      const serialized = JSON.stringify(findings);
+      const parsed = JSON.parse(serialized);
+      transmissibilityDemonstrated = JSON.stringify(parsed) === serialized;
+    } catch {
+      transmissibilityDemonstrated = false;
+    }
+  }
+  const transmissibility = transmissibilityDemonstrated ? 1.0 : 0.0;
+  const transmissibilityStatus = transmissibilityDemonstrated ? 'DEMONSTRATED' : (findings.length > 0 ? 'FAILED' : 'UNMEASURED');
+  const transmissibilityEvidence = transmissibilityDemonstrated
+    ? 'Finding records survive JSON serialization/deserialization without mutation or data loss.'
+    : 'Serialization roundtrip failed.';
+
+  const hasContestationOpportunity = disagreements.length > 0 || findings.some(item => item.verdict !== 'SUPPORTED');
+  const contestability = hasContestationOpportunity ? 1.0 : 0.5;
+  const contestabilityStatus = hasContestationOpportunity ? 'PRESERVED_FOR_HUMAN_CONTESTATION' : 'CALIBRATED_CONSENSUS';
+  const contestabilityEvidence = hasContestationOpportunity
+    ? 'Disagreements or held findings are catalogued and preserved for human operator adjudication under HUMAN_REVIEW_REQUIRED.'
+    : 'All agents in unanimous consensus; score calibrated to 0.5 reflecting absence of active dispute to contest.';
+
+  const repairability = repairDemonstrated ? 1.0 : 0.0;
+  const repairabilityStatus = repairDemonstrated ? 'DEMONSTRATED' : 'UNMEASURED';
 
   return freeze({
     schema: DOLLHOUSE_CASE_DOSSIER_SCHEMA, case_id: input.case_id, source_revision: input.source_revision,
@@ -126,7 +193,40 @@ export function createDollhouseCaseDossier(input) {
         interpretability,
         transmissibility,
         contestability,
-        repairability
+        repairability,
+        capacities: {
+          retrievability: {
+            status: retrievabilityStatus,
+            score: retrievability,
+            evidence: retrievabilityEvidence
+          },
+          attributable_provenance: {
+            status: attributableProvenanceStatus,
+            score: attributable_provenance,
+            evidence: attributableProvenanceEvidence,
+            limitations: attributableProvenanceLimitations
+          },
+          interpretability: {
+            status: interpretabilityStatus,
+            score: interpretability,
+            evidence: interpretabilityEvidence
+          },
+          transmissibility: {
+            status: transmissibilityStatus,
+            score: transmissibility,
+            evidence: transmissibilityEvidence
+          },
+          contestability: {
+            status: contestabilityStatus,
+            score: contestability,
+            evidence: contestabilityEvidence
+          },
+          repairability: {
+            status: repairabilityStatus,
+            score: repairability,
+            evidence: repairEvidenceText
+          }
+        }
       }
     },
     decision: 'HUMAN_REVIEW_REQUIRED',

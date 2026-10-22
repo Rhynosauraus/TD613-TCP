@@ -44,6 +44,28 @@ test('computeMatrixSvd accurately extracts rank, singular values, and condition 
   assert.ok(tall.sigma_min > 0);
 });
 
+test('Numerical calibration: one-sided Jacobi column SVD accurately computes ill-conditioned spectrum without squaring cancellation', () => {
+  // Ill-conditioned matrix with known singular values [1, 1e-4, 1e-8]
+  // In normal equations (A^T A), (1e-8)^2 = 1e-16 < machine epsilon (2.22e-16), causing squaring cancellation.
+  // Direct one-sided Jacobi column orthogonalization computes sigma_3 = 1e-8 with 8 digits of precision above machine eps.
+  const illConditionedMatrix = [
+    [1.0, 0.0, 0.0],
+    [0.0, 1e-4, 0.0],
+    [0.0, 0.0, 1e-8]
+  ];
+
+  const svd = computeMatrixSvd(illConditionedMatrix);
+  assert.equal(svd.m, 3);
+  assert.equal(svd.n, 3);
+  assert.equal(svd.rank, 3);
+  assert.equal(svd.sigma_max, 1.0);
+  assert.equal(svd.singular_values[0], 1.0);
+  assert.equal(svd.singular_values[1], 1e-4);
+  assert.equal(svd.singular_values[2], 1e-8);
+  assert.equal(svd.sigma_min, 1e-8);
+  assert.equal(svd.condition_number, 1e8);
+});
+
 test('Counterexample 1: candidate probe lifting algebraic rank but exploding condition number is rejected', () => {
   const current_operator = [[1, 0]]; // rank 1, latent dimension 2
   const bad_probe = [1, 1e-5];       // nominally lifts rank to 2, but near-collinear

@@ -74,3 +74,41 @@ test('malformed, sparse, duplicate, unbounded, unscoped and authority-bearing do
   ];
   for (const mutate of mutations) { const value = fixture(); mutate(value); assert.throws(() => createDollhouseCaseDossier(value), TypeError); }
 });
+
+test('repair demonstration is validated by explicit before/after task recovery rather than keyword matching', () => {
+  // Without repair_demonstration, repairability is UNMEASURED (score 0.0)
+  const unmeasured = fixture();
+  const resUnmeasured = createDollhouseCaseDossier(unmeasured);
+  assert.equal(resUnmeasured.evidence_posture.knowledge_survival.repairability, 0.0);
+  assert.equal(resUnmeasured.evidence_posture.knowledge_survival.capacities.repairability.status, 'UNMEASURED');
+
+  // With verified repair_demonstration, repairability is DEMONSTRATED (score 1.0)
+  const demonstrated = fixture();
+  demonstrated.repair_demonstration = {
+    initial_verdict: 'HELD',
+    reparative_action: 'Applied least-restrictive lawful action support under stage erasure',
+    post_repair_verdict: 'SUPPORTED',
+    verified: true
+  };
+  const resDemonstrated = createDollhouseCaseDossier(demonstrated);
+  assert.equal(resDemonstrated.evidence_posture.knowledge_survival.repairability, 1.0);
+  assert.equal(resDemonstrated.evidence_posture.knowledge_survival.capacities.repairability.status, 'DEMONSTRATED');
+
+  // Malformed repair demonstration throws TypeError
+  const invalidMutations = [
+    d => { d.repair_demonstration.initial_verdict = ''; },
+    d => { d.repair_demonstration.verified = 'true'; },
+    d => { d.repair_demonstration.extra = 1; }
+  ];
+  for (const mut of invalidMutations) {
+    const bad = fixture();
+    bad.repair_demonstration = {
+      initial_verdict: 'HELD',
+      reparative_action: 'Action',
+      post_repair_verdict: 'SUPPORTED',
+      verified: true
+    };
+    mut(bad);
+    assert.throws(() => createDollhouseCaseDossier(bad), TypeError);
+  }
+});

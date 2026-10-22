@@ -199,6 +199,12 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
       schema: 'td613.dollhouse.case-dossier/v0.1',
       case_id: 'synthetic-operator-repaired-case-01',
       source_revision: '78c7ea6b974e176611fb2ed4d0c59649ebf05f62',
+      repair_demonstration: {
+        initial_verdict: 'HELD',
+        reparative_action: 'Operator adopted canonical cadence, well-conditioned aperture probe, zero-winding atlas path, and largest sound FADT support',
+        post_repair_verdict: 'SUPPORTED',
+        verified: true
+      },
       findings: [
         {
           id: 'find-pedagogue-01',
@@ -268,6 +274,14 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
     assert.equal(survival.contestability, 0.5); // clean consensus
     assert.equal(survival.repairability, 1.0);
 
+    // Verify Measured Capacities Statuses
+    assert.equal(survival.capacities.retrievability.status, 'VERIFIED');
+    assert.equal(survival.capacities.attributable_provenance.status, 'LOCAL_BYTE_CONSISTENT');
+    assert.equal(survival.capacities.interpretability.status, 'VERIFIED');
+    assert.equal(survival.capacities.transmissibility.status, 'DEMONSTRATED');
+    assert.equal(survival.capacities.contestability.status, 'CALIBRATED_CONSENSUS');
+    assert.equal(survival.capacities.repairability.status, 'DEMONSTRATED');
+
     // Verify Governance Boundaries
     assert.equal(unifiedDossier.authority.human_closure_required, true);
     assert.equal(unifiedDossier.authority.release, false);
@@ -292,12 +306,18 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
     assert.equal(ablationReport.full_five_role_verdict, 'HELD');
     assert.equal(ablationReport.evaluated_roles.length, 5);
 
-    // Verify each minus-one condition fails its unique jurisdiction
-    assert.equal(ablationReport.conditions.MINUS_PEDAGOGUE.decision, 'HUMAN_COST_IGNORED');
-    assert.equal(ablationReport.conditions.MINUS_APERTURE.decision, 'FALSE_COMPLETION_ADMITTED');
-    assert.equal(ablationReport.conditions.MINUS_ATLAS.decision, 'CUSTODY_FORK_RISK_ACCEPTED');
-    assert.equal(ablationReport.conditions.MINUS_FADT.decision, 'ILLEGAL_ACTION_ESCALATION_ACCEPTED');
-    assert.equal(ablationReport.conditions.MINUS_TEMPORAL_CUSTODIAN.decision, 'CHRONOLOGICAL_OBLIVION_ADMITTED');
+    // Verify each minus-one condition fails its unique jurisdiction in empirical trials
+    assert.equal(ablationReport.diff_metrics.MINUS_PEDAGOGUE.empirical_trial_escaped_classification, 'HUMAN_COST_IGNORED');
+    assert.equal(ablationReport.diff_metrics.MINUS_APERTURE.empirical_trial_escaped_classification, 'FALSE_COMPLETION_ADMITTED');
+    assert.equal(ablationReport.diff_metrics.MINUS_ATLAS.empirical_trial_escaped_classification, 'CUSTODY_FORK_RISK_ACCEPTED');
+    assert.equal(ablationReport.diff_metrics.MINUS_FADT.empirical_trial_escaped_classification, 'ILLEGAL_ACTION_ESCALATION_ACCEPTED');
+    assert.equal(ablationReport.diff_metrics.MINUS_TEMPORAL_CUSTODIAN.empirical_trial_escaped_classification, 'CHRONOLOGICAL_OBLIVION_ADMITTED');
+
+    assert.equal(ablationReport.empirical_trials.MINUS_PEDAGOGUE.evaluation.escaped_classification, 'HUMAN_COST_IGNORED');
+    assert.equal(ablationReport.empirical_trials.MINUS_APERTURE.evaluation.escaped_classification, 'FALSE_COMPLETION_ADMITTED');
+    assert.equal(ablationReport.empirical_trials.MINUS_ATLAS.evaluation.escaped_classification, 'CUSTODY_FORK_RISK_ACCEPTED');
+    assert.equal(ablationReport.empirical_trials.MINUS_FADT.evaluation.escaped_classification, 'ILLEGAL_ACTION_ESCALATION_ACCEPTED');
+    assert.equal(ablationReport.empirical_trials.MINUS_TEMPORAL_CUSTODIAN.evaluation.escaped_classification, 'CHRONOLOGICAL_OBLIVION_ADMITTED');
 
     // Verify non-redundancy diff metrics
     assert.ok(ablationReport.diff_metrics.MINUS_PEDAGOGUE.lost_findings_count === 1);
