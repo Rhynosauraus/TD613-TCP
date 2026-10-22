@@ -11022,7 +11022,9 @@ function initReadingNavigation(){
     if(b.dataset.action==='back-to-results'){e.preventDefault();e.stopImmediatePropagation();if($('lexiconReader').classList.contains('mobile-reader-open'))readingBack();else{$('lexiconSearch').scrollIntoView({block:'center',behavior:'instant'});$('lexiconSearch').focus({preventScroll:true})}return}
     const navigation=b.dataset.view||b.dataset.record||b.dataset.searchRecord||b.dataset.selectTerm||b.dataset.pageKind||b.dataset.evidenceKind||b.dataset.sourceKind||b.dataset.formulaFilter||b.dataset.stageEnter||b.dataset.adjacentTerm||b.dataset.action==='about'||b.dataset.action==='reset-lexicon';
     if(!navigation)return;saveReadingPosition();const previous=readingState();if(b.dataset.adjacentTerm){e.stopImmediatePropagation();adjacentTerm(Number(b.dataset.adjacentTerm))}else if(b.dataset.view){if($('dossierDialog').open){$('dossierDialog').close();UI.record=null}$('lexiconReader').classList.remove('mobile-reader-open')}
-    queueMicrotask(()=>recordReadingStep(previous));
+    // A browser may checkpoint microtasks between capture and bubble listeners.
+    // Commit after the complete click dispatch, including the existing rendering handler.
+    setTimeout(()=>recordReadingStep(previous),0);
   },true);
   // Escape and backdrop dismissal use the same return protocol as the visible close control.
   $('dossierDialog').addEventListener('cancel',e=>{e.preventDefault();e.stopImmediatePropagation();readingBack({closeRecord:true})},true);
