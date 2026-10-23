@@ -23,20 +23,23 @@ import { auditTypedEpistemicDeficit } from './aperture-v32-typed-epistemic-defic
 import { auditAtlasHolonomyHistoryParity } from './dollhouse-atlas-relational-custody.js';
 import { computeFadtFiberBounds } from './dollhouse-fadt-reparative-assistance.js';
 import { auditServiceJourneyChronology } from './dollhouse-temporal-custodian.js';
+import { parsePublicKey } from './dollhouse-case-dossier.js';
 
 export const DOLLHOUSE_ABLATION_EXPERIMENT_SCHEMA = 'td613.dollhouse.ablation-experiment/v1.2';
-export const DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA = 'td613.dollhouse.acquisition-receipt/v0.2';
+export const DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA = 'td613.dollhouse.acquisition-receipt/v0.3';
 
 export const TRUSTED_ACQUISITION_REGISTRIES = Object.freeze({
   NEON_LOOM_CUSTODY_OBSERVATORY: Object.freeze({
     authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY',
     authority_class: 'AUTHENTIC_EXTERNAL_CUSTODY_OBSERVATORY',
-    env_key_var: 'TD613_NEON_OBSERVATORY_VERIFICATION_KEY',
+    signature_algorithm: 'ed25519',
+    env_public_key_var: 'TD613_NEON_OBSERVATORY_PUBLIC_KEY',
     is_authentic_external: true
   }),
   SYNTHETIC_TEST_ACQUISITION: Object.freeze({
     authority_id: 'SYNTHETIC_TEST_ACQUISITION',
     authority_class: 'SYNTHETIC_TEST_FIXTURE',
+    signature_algorithm: 'hmac-sha256',
     verification_key: 'td613-synthetic-acquisition-test-key-001',
     is_authentic_external: false
   })
@@ -65,16 +68,26 @@ export function computeAcquisitionReceiptDigest(receipt) {
     receipt.authority_id,
     receipt.acquisition_boundary,
     receipt.source_revision,
+    receipt.episode_id,
     receipt.observation_digest
   ].join('::');
   return crypto.createHash('sha256').update(canonical).digest('hex');
 }
 
-export function signAcquisitionReceipt(receipt, secretKey) {
+export function signAcquisitionReceipt(receipt, signingKey, algorithm = 'ed25519') {
   const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
-  if (!crypto) return null;
+  if (!crypto || !signingKey) return null;
   const digest = computeAcquisitionReceiptDigest(receipt);
-  return crypto.createHmac('sha256', secretKey).update(digest).digest('hex');
+  if (!digest) return null;
+  if (algorithm === 'ed25519') {
+    const dataBuffer = Buffer.from(digest, 'utf8');
+    const sig = crypto.sign(null, dataBuffer, signingKey);
+    return sig.toString('hex');
+  }
+  if (algorithm === 'hmac-sha256') {
+    return crypto.createHmac('sha256', signingKey).update(digest).digest('hex');
+  }
+  return null;
 }
 
 export function verifyAcquisitionReceipt(receipt, observations = {}, options = {}) {
@@ -83,11 +96,19 @@ export function verifyAcquisitionReceipt(receipt, observations = {}, options = {
     return { verified: false, failure_reason: 'RECEIPT_NOT_PROVIDED' };
   }
 
-  if (receipt.schema === 'td613.dollhouse.acquisition-receipt/v0.1') {
-    return { verified: false, failure_reason: 'LEGACY_V01_UNAUTHENTICATED' };
+  if (['td613.dollhouse.acquisition-receipt/v0.1', 'td613.dollhouse.acquisition-receipt/v0.2'].includes(receipt.schema)) {
+    return { verified: false, failure_reason: 'LEGACY_RECEIPT_SCHEMA_DEPRECATED' };
   }
   if (receipt.schema !== DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA) {
     return { verified: false, failure_reason: 'UNSUPPORTED_RECEIPT_SCHEMA' };
+  }
+
+  // Mandatory exact source revision and episode binding
+  if (!options.expected_source_revision || receipt.source_revision !== options.expected_source_revision) {
+    return { verified: false, failure_reason: 'SOURCE_REVISION_UNPINNED_OR_MISMATCH' };
+  }
+  if (!receipt.episode_id || typeof receipt.episode_id !== 'string' || !receipt.episode_id.trim()) {
+    return { verified: false, failure_reason: 'EPISODE_ID_REQUIRED' };
   }
 
   // Verifier uses ONLY the verifier-sealed TRUSTED_ACQUISITION_REGISTRIES.
@@ -95,22 +116,6 @@ export function verifyAcquisitionReceipt(receipt, observations = {}, options = {
   const authority = TRUSTED_ACQUISITION_REGISTRIES[receipt.authority_id];
   if (!authority) {
     return { verified: false, failure_reason: 'UNTRUSTED_ACQUISITION_AUTHORITY' };
-  }
-
-  let verificationKey;
-  if (authority.is_authentic_external) {
-    verificationKey = globalThis.process?.env?.[authority.env_key_var];
-    if (!verificationKey || typeof verificationKey !== 'string' || !verificationKey.trim()) {
-      return {
-        verified: false,
-        authority_id: authority.authority_id,
-        authority_class: authority.authority_class,
-        is_authentic_external: true,
-        failure_reason: 'EXTERNAL_TRUST_ANCHOR_NOT_PROVISIONED'
-      };
-    }
-  } else {
-    verificationKey = authority.verification_key;
   }
 
   if (!receipt.observation_digest || typeof receipt.observation_digest !== 'string' || !/^[a-f0-9]{64}$/.test(receipt.observation_digest)) {
@@ -133,20 +138,61 @@ export function verifyAcquisitionReceipt(receipt, observations = {}, options = {
     return { verified: false, failure_reason: 'SIGNATURE_MISSING' };
   }
 
-  const expectedSignature = crypto.createHmac('sha256', verificationKey).update(expectedReceiptDigest).digest('hex');
-  if (receipt.signature !== expectedSignature) {
-    return { verified: false, failure_reason: 'INVALID_SIGNATURE' };
-  }
-
-  if (options.expected_source_revision && receipt.source_revision !== options.expected_source_revision) {
-    return { verified: false, failure_reason: 'STALE_SOURCE_REVISION' };
+  if (authority.signature_algorithm === 'ed25519') {
+    if (!/^[a-f0-9]{128}$/.test(receipt.signature)) {
+      return { verified: false, failure_reason: 'INVALID_SIGNATURE' };
+    }
+    const rawPubKey = globalThis.process?.env?.[authority.env_public_key_var];
+    if (!rawPubKey || typeof rawPubKey !== 'string' || !rawPubKey.trim()) {
+      return {
+        verified: false,
+        authority_id: authority.authority_id,
+        authority_class: authority.authority_class,
+        is_authentic_external: true,
+        failure_reason: 'EXTERNAL_TRUST_ANCHOR_NOT_PROVISIONED'
+      };
+    }
+    const pubKey = parsePublicKey(rawPubKey);
+    if (!pubKey) {
+      return {
+        verified: false,
+        authority_id: authority.authority_id,
+        authority_class: authority.authority_class,
+        is_authentic_external: true,
+        failure_reason: 'MALFORMED_PUBLIC_KEY_ANCHOR'
+      };
+    }
+    try {
+      const dataBuffer = Buffer.from(expectedReceiptDigest, 'utf8');
+      const sigBuffer = Buffer.from(receipt.signature, 'hex');
+      const ok = crypto.verify(null, dataBuffer, pubKey, sigBuffer);
+      if (!ok) {
+        return { verified: false, failure_reason: 'INVALID_SIGNATURE' };
+      }
+    } catch {
+      return { verified: false, failure_reason: 'INVALID_SIGNATURE' };
+    }
+  } else if (authority.signature_algorithm === 'hmac-sha256') {
+    if (!/^[a-f0-9]{64}$/.test(receipt.signature)) {
+      return { verified: false, failure_reason: 'INVALID_SIGNATURE' };
+    }
+    const expectedSignature = crypto.createHmac('sha256', authority.verification_key).update(expectedReceiptDigest).digest('hex');
+    if (receipt.signature !== expectedSignature) {
+      return { verified: false, failure_reason: 'INVALID_SIGNATURE' };
+    }
+  } else {
+    return { verified: false, failure_reason: 'UNSUPPORTED_SIGNATURE_ALGORITHM' };
   }
 
   return {
     verified: true,
     authority_id: authority.authority_id,
     authority_class: authority.authority_class,
+    signature_algorithm: authority.signature_algorithm,
     is_authentic_external: authority.is_authentic_external,
+    episode_id: receipt.episode_id,
+    source_revision: receipt.source_revision,
+    observation_digest: receipt.observation_digest,
     failure_reason: null
   };
 }
@@ -449,18 +495,28 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
 
   // Replication counting & provenance classification:
   // Caller passing acquisition_class: 'EMPIRICAL_ACQUISITION' alone does NOT earn empirical replication count.
-  // 1. Authenticated receipt verified against authentic external authority -> count 1 (AUTHENTICATED_EMPIRICAL_ACQUISITION)
-  // 2. Synthetic test key receipt -> count 0 (SYNTHETIC_VERIFIED_RECEIPT_ZERO_EMPIRICAL_CREDIT)
-  // 3. Unauthenticated/tampered/untrusted receipt -> count 0 (UNAUTHENTICATED_RECEIPT_REJECTED)
-  // 4. Caller-declared empirical string without receipt -> count 0 (CALLER_DECLARED_UNAUTHENTICATED_EMPIRICAL)
-  // 5. Default synthetic offline fixture -> count 0 (SYNTHETIC_OFFLINE_FIXTURE)
+  // 1. Authenticated receipt verified against authentic external authority on empirical source -> count 1 (AUTHENTICATED_EMPIRICAL_ACQUISITION)
+  // 2. Authenticated receipt on synthetic fault injection -> count 0 (AUTHENTICATED_SYNTHETIC_TEST_ZERO_EMPIRICAL_CREDIT)
+  // 3. Synthetic test key receipt -> count 0 (SYNTHETIC_VERIFIED_RECEIPT_ZERO_EMPIRICAL_CREDIT)
+  // 4. Unauthenticated/tampered/untrusted receipt -> count 0 (UNAUTHENTICATED_RECEIPT_REJECTED)
+  // 5. Caller-declared empirical string without receipt -> count 0 (CALLER_DECLARED_UNAUTHENTICATED_EMPIRICAL)
+  // 6. Default synthetic offline fixture -> count 0 (SYNTHETIC_OFFLINE_FIXTURE)
   const receipt = observations.acquisition_receipt;
   let verificationResult = null;
   if (receipt && typeof receipt === 'object') {
-    verificationResult = verifyAcquisitionReceipt(receipt, observations, options);
+    const verifyOpts = {
+      expected_source_revision: options.expected_source_revision || observations.source_revision,
+      ...options
+    };
+    verificationResult = verifyAcquisitionReceipt(receipt, observations, verifyOpts);
   }
 
-  const isCallerDeclaredEmpirical = observations.acquisition_class === 'EMPIRICAL_ACQUISITION';
+  const hasSyntheticInjection = (
+    gatheredFindings.some(f => f.is_synthetic_injection || f.status === 'SYNTHETIC_FAULT_CONTAINED') ||
+    Object.values(observations).some(v => v && typeof v === 'object' && (v.fixture_class === 'SYNTHETIC_FAULT_INJECTION' || v.is_synthetic_injection)) ||
+    (observations.domains && Object.values(observations.domains).some(v => v && typeof v === 'object' && (v.fixture_class === 'SYNTHETIC_FAULT_INJECTION' || v.is_synthetic_injection)))
+  );
+  const isEmpiricalSource = !hasSyntheticInjection && observations.acquisition_class === 'EMPIRICAL_ACQUISITION';
 
   let replicationStatus = 'SYNTHETIC_OFFLINE_FIXTURE';
   let empiricalReplicationCount = 0;
@@ -468,10 +524,15 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
   if (verificationResult) {
     if (verificationResult.verified) {
       if (verificationResult.is_authentic_external) {
-        empiricalReplicationCount = 1;
-        replicationStatus = unanimousAllFive
-          ? 'AUTHENTICATED_EMPIRICAL_ACQUISITION'
-          : 'PARTIAL_ROLE_EMPIRICAL_CONSENSUS';
+        if (!isEmpiricalSource) {
+          empiricalReplicationCount = 0;
+          replicationStatus = 'AUTHENTICATED_SYNTHETIC_TEST_ZERO_EMPIRICAL_CREDIT';
+        } else {
+          empiricalReplicationCount = 1;
+          replicationStatus = unanimousAllFive
+            ? 'AUTHENTICATED_EMPIRICAL_ACQUISITION'
+            : 'PARTIAL_ROLE_EMPIRICAL_CONSENSUS';
+        }
       } else {
         empiricalReplicationCount = 0;
         replicationStatus = 'SYNTHETIC_VERIFIED_RECEIPT_ZERO_EMPIRICAL_CREDIT';
@@ -483,13 +544,26 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
       empiricalReplicationCount = 0;
       replicationStatus = 'UNAUTHENTICATED_RECEIPT_REJECTED';
     }
-  } else if (isCallerDeclaredEmpirical) {
+  } else if (observations.acquisition_class === 'EMPIRICAL_ACQUISITION') {
     empiricalReplicationCount = 0;
     replicationStatus = 'CALLER_DECLARED_UNAUTHENTICATED_EMPIRICAL';
   } else {
     empiricalReplicationCount = 0;
     replicationStatus = 'SYNTHETIC_OFFLINE_FIXTURE';
   }
+
+  const verifiedAcquisitionRecord = (verificationResult && verificationResult.verified) ? Object.freeze({
+    verified: true,
+    authority_id: verificationResult.authority_id,
+    authority_class: verificationResult.authority_class,
+    signature_algorithm: verificationResult.signature_algorithm,
+    is_authentic_external: verificationResult.is_authentic_external,
+    is_empirical_source: isEmpiricalSource,
+    source_revision: receipt.source_revision,
+    episode_id: receipt.episode_id,
+    observation_digest: receipt.observation_digest,
+    verified_at: new Date().toISOString()
+  }) : null;
 
   return deepFreeze({
     active_roles: [...activeSet],
@@ -500,6 +574,7 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
     consensus,
     replication_status: replicationStatus,
     empirical_replication_count: empiricalReplicationCount,
+    verified_acquisition_record: verifiedAcquisitionRecord,
     independent_replication: false,
     release_authority: false,
     deployment_authority: false,
@@ -535,7 +610,16 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
   const activeRoles = orchestratorResult?.active_roles || [];
   const detectedInfractions = orchestratorResult?.detected_infractions || [];
   const decision = orchestratorResult?.decision;
-  const isEmpiricallyAcquired = orchestratorResult?.replication_status === 'AUTHENTICATED_EMPIRICAL_ACQUISITION';
+  const record = orchestratorResult?.verified_acquisition_record;
+  const isEmpiricallyAcquired = Boolean(
+    record &&
+    record.verified === true &&
+    record.is_authentic_external === true &&
+    record.is_empirical_source === true &&
+    typeof record.source_revision === 'string' &&
+    typeof record.episode_id === 'string' &&
+    orchestratorResult?.replication_status === 'AUTHENTICATED_EMPIRICAL_ACQUISITION'
+  );
 
   let outcome_class = 'UNKNOWN';
   let is_sound = false;

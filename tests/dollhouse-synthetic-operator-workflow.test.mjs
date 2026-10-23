@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import crypto, { createHash } from 'node:crypto';
 
 const fileSha256 = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
@@ -221,11 +221,14 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
         verdict: 'SUPPORTED',
         predecessor_sha256: beforeSha
       },
+      episode_id: 'ep-synthetic-operator-repair-01',
       transition_claim: 'Operator adopted canonical cadence, well-conditioned aperture probe, zero-winding atlas path, and largest sound FADT support'
     };
-    process.env.TD613_AMARI_WITNESS_PUBLIC_KEY = 'amari-synthetic-workflow-key-2026';
+    const amariKeyPair = crypto.generateKeyPairSync('ed25519');
+    const amariPublicKeyPem = amariKeyPair.publicKey.export({ type: 'spki', format: 'pem' });
+    process.env.TD613_AMARI_WITNESS_PUBLIC_KEY = amariPublicKeyPem;
     witnessReceipt.verification_digest = computeWitnessReceiptDigest(witnessReceipt);
-    witnessReceipt.signature = signWitnessReceipt(witnessReceipt, process.env.TD613_AMARI_WITNESS_PUBLIC_KEY);
+    witnessReceipt.signature = signWitnessReceipt(witnessReceipt, amariKeyPair.privateKey, 'ed25519');
 
     // 2F. Orchestrator Synthesis: Unified 5-Doll Case Dossier
     const unifiedDossier = createDollhouseCaseDossier({

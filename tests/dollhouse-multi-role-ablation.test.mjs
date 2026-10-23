@@ -20,7 +20,12 @@ import {
   CANONICAL_EMPIRICAL_SCENARIOS
 } from '../app/engine/dollhouse-ablation-harness.js';
 
+const neonKeyPair = crypto.generateKeyPairSync('ed25519');
+const neonPublicKeyPem = neonKeyPair.publicKey.export({ type: 'spki', format: 'pem' });
+const neonPrivateKey = neonKeyPair.privateKey;
+
 const mockAudits = {
+  source_revision: 'b'.repeat(40),
   PEDAGOGUE: { fixture_class: 'SYNTHETIC_FAULT_INJECTION', concern: 'Broken return promise trapped operator', jurisdiction: 'human_consequence_and_burden' },
   APERTURE: { fixture_class: 'SYNTHETIC_FAULT_INJECTION', concern: 'URL hash does not equal workspace admitted', jurisdiction: 'observability_and_identifiability' },
   ATLAS: { fixture_class: 'SYNTHETIC_FAULT_INJECTION', concern: 'Predecessor chain unverified across windows', jurisdiction: 'receiver_relative_custody' },
@@ -35,6 +40,7 @@ function makeAcquisitionReceipt(observations, overrides = {}) {
     authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY',
     acquisition_boundary: 'NEON_LOOM_CUSTODY_OBSERVATORY',
     source_revision: 'b'.repeat(40),
+    episode_id: 'ep-acq-2026-001',
     observation_digest: observationDigest,
     ...overrides
   };
@@ -42,9 +48,13 @@ function makeAcquisitionReceipt(observations, overrides = {}) {
   receipt.verification_digest = receiptDigest;
 
   const authority = TRUSTED_ACQUISITION_REGISTRIES[receipt.authority_id];
-  const envKey = authority?.env_key_var ? process.env[authority.env_key_var] : null;
-  const key = overrides.signing_key || envKey || authority?.verification_key || 'test-key';
-  receipt.signature = crypto.createHmac('sha256', key).update(receiptDigest).digest('hex');
+  if (authority?.signature_algorithm === 'ed25519') {
+    const privKey = overrides.signing_key || neonPrivateKey;
+    receipt.signature = crypto.sign(null, Buffer.from(receiptDigest, 'utf8'), privKey).toString('hex');
+  } else {
+    const key = overrides.signing_key || authority?.verification_key || 'test-key';
+    receipt.signature = crypto.createHmac('sha256', key).update(receiptDigest).digest('hex');
+  }
   delete receipt.signing_key;
   return receipt;
 }
@@ -271,11 +281,11 @@ test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empir
   assert.equal(untrustedResult.replication_status, 'UNAUTHENTICATED_RECEIPT_REJECTED');
   assert.equal(untrustedResult.empirical_replication_count, 0);
 
-  process.env.TD613_NEON_OBSERVATORY_VERIFICATION_KEY = 'neon-test-observatory-key-2026';
+  process.env.TD613_NEON_OBSERVATORY_PUBLIC_KEY = neonPublicKeyPem;
   try {
     // 5. Corrupted signature receives 0 empirical credit
     const corruptedReceipt = makeAcquisitionReceipt(mockAudits);
-    corruptedReceipt.signature = '0'.repeat(64);
+    corruptedReceipt.signature = '0'.repeat(128);
     const corruptedResult = runOrchestrationDecision(FIVE_ROLES, {
       ...mockAudits,
       acquisition_class: 'EMPIRICAL_ACQUISITION',
@@ -307,7 +317,7 @@ test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empir
     assert.equal(syntheticKeyResult.replication_status, 'SYNTHETIC_VERIFIED_RECEIPT_ZERO_EMPIRICAL_CREDIT');
     assert.equal(syntheticKeyResult.empirical_replication_count, 0);
 
-    // 8. Authenticated empirical acquisition receipt from authentic external authority yields count 1
+    // 8. Cryptographically valid receipt on synthetic fault injection earns ZERO empirical credit
     const authenticatedAudits = {
       ...mockAudits,
       acquisition_class: 'EMPIRICAL_ACQUISITION',
@@ -316,16 +326,67 @@ test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empir
       })
     };
     const authenticatedResult = runOrchestrationDecision(FIVE_ROLES, authenticatedAudits);
-    assert.equal(authenticatedResult.replication_status, 'AUTHENTICATED_EMPIRICAL_ACQUISITION');
-    assert.equal(authenticatedResult.empirical_replication_count, 1);
-    // Shared acquisition across 5 dolls does NOT manufacture independent replication across multiple acquisitions
+    assert.equal(authenticatedResult.replication_status, 'AUTHENTICATED_SYNTHETIC_TEST_ZERO_EMPIRICAL_CREDIT');
+    assert.equal(authenticatedResult.empirical_replication_count, 0);
     assert.equal(authenticatedResult.independent_replication, false);
+
+    // 8b. Authenticated empirical acquisition receipt on genuine empirical source yields count 1
+    const genuineEmpiricalAudits = {
+      pedagogue: {
+        events: [
+          { phase: 'NOTICE', at: 10 },
+          { phase: 'ACT', at: 20 },
+          { phase: 'NAME', at: 25 },
+          { phase: 'WORLD_ANSWERS', at: 30 }
+        ]
+      },
+      aperture: { current_operator: [[1, 0], [0, 1]] },
+      atlas: { trajectoryA: { endpoint: 'R', winding_number: 0 }, trajectoryB: { endpoint: 'R', winding_number: 0 } },
+      fadt: { declared_fiber: { x: 1 } },
+      temporal: { completed_phases: ['NOTICE', 'ACT', 'WORLD_ANSWERS', 'NAME'] },
+      source_revision: 'b'.repeat(40),
+      acquisition_class: 'EMPIRICAL_ACQUISITION'
+    };
+    genuineEmpiricalAudits.acquisition_receipt = makeAcquisitionReceipt(genuineEmpiricalAudits, {
+      authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY'
+    });
+    const genuineResult = runOrchestrationDecision(FIVE_ROLES, genuineEmpiricalAudits);
+    assert.equal(genuineResult.replication_status, 'AUTHENTICATED_EMPIRICAL_ACQUISITION');
+    assert.equal(genuineResult.empirical_replication_count, 1);
+    assert.equal(genuineResult.independent_replication, false);
+    assert.ok(genuineResult.verified_acquisition_record);
+    assert.equal(genuineResult.verified_acquisition_record.is_empirical_source, true);
+    assert.equal(genuineResult.verified_acquisition_record.is_authentic_external, true);
+
+    // 8c. Missing episode_id fails fail-closed
+    const noEpisodeReceipt = makeAcquisitionReceipt(genuineEmpiricalAudits);
+    delete noEpisodeReceipt.episode_id;
+    const noEpisodeVerify = verifyAcquisitionReceipt(noEpisodeReceipt, genuineEmpiricalAudits, {
+      expected_source_revision: genuineEmpiricalAudits.source_revision
+    });
+    assert.equal(noEpisodeVerify.verified, false);
+    assert.equal(noEpisodeVerify.failure_reason, 'EPISODE_ID_REQUIRED');
+
+    // 8d. Caller fabricating status string without verified_acquisition_record receives 0 discovery credit
+    const fabricatedOrchestrator = {
+      decision: 'HELD',
+      replication_status: 'AUTHENTICATED_EMPIRICAL_ACQUISITION',
+      active_roles: FIVE_ROLES,
+      detected_infractions: [ROLE_INFRACTIONS.PEDAGOGUE],
+      findings: [{ role: 'PEDAGOGUE', verdict: 'HELD' }]
+    };
+    const evalFabricated = evaluateAblationOutcome(fabricatedOrchestrator, {
+      verdict: 'HELD',
+      defects: [ROLE_INFRACTIONS.PEDAGOGUE]
+    });
+    assert.equal(evalFabricated.offline_detection_credit, 1);
+    assert.equal(evalFabricated.empirical_discovery_credit, 0);
   } finally {
-    delete process.env.TD613_NEON_OBSERVATORY_VERIFICATION_KEY;
+    delete process.env.TD613_NEON_OBSERVATORY_PUBLIC_KEY;
   }
 
   // 9. When external observatory key is NOT provisioned -> EXTERNAL_ACQUISITION_ANCHOR_UNAVAILABLE_HELD
-  delete process.env.TD613_NEON_OBSERVATORY_VERIFICATION_KEY;
+  delete process.env.TD613_NEON_OBSERVATORY_PUBLIC_KEY;
   const unprovisionedAudits = {
     ...mockAudits,
     acquisition_class: 'EMPIRICAL_ACQUISITION',
@@ -346,8 +407,11 @@ test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empir
       is_authentic_external: true
     }
   };
-  const callerReceipt = makeAcquisitionReceipt(mockAudits, { signing_key: 'backdoor-acq-key' });
-  const directVerify = verifyAcquisitionReceipt(callerReceipt, mockAudits, { trusted_registry: forgedAcqRegistry });
+  const callerReceipt = makeAcquisitionReceipt(mockAudits, { signing_key: neonPrivateKey });
+  const directVerify = verifyAcquisitionReceipt(callerReceipt, mockAudits, {
+    expected_source_revision: callerReceipt.source_revision,
+    trusted_registry: forgedAcqRegistry
+  });
   assert.equal(directVerify.verified, false);
   assert.equal(directVerify.failure_reason, 'EXTERNAL_TRUST_ANCHOR_NOT_PROVISIONED');
 
@@ -437,7 +501,7 @@ test('Elimination of synthetic concern injection: untyped caller concerns reject
   assert.equal(offlineDefectTrial.evaluation.empirical_discovery_credit, 0);
 
   // 5. When backed by authenticated external empirical acquisition, empirical_discovery_credit is 1
-  process.env.TD613_NEON_OBSERVATORY_VERIFICATION_KEY = 'neon-test-key-for-discovery';
+  process.env.TD613_NEON_OBSERVATORY_PUBLIC_KEY = neonPublicKeyPem;
   try {
     const empiricalObservations = {
       pedagogue: {
@@ -451,7 +515,8 @@ test('Elimination of synthetic concern injection: untyped caller concerns reject
       aperture: { current_operator: [[1, 0], [0, 1]] },
       atlas: { trajectoryA: { endpoint: 'R', winding_number: 0 }, trajectoryB: { endpoint: 'R', winding_number: 0 } },
       fadt: { declared_fiber: { x: 1 } },
-      temporal: { completed_phases: ['NOTICE', 'ACT', 'WORLD_ANSWERS', 'NAME'] }
+      temporal: { completed_phases: ['NOTICE', 'ACT', 'WORLD_ANSWERS', 'NAME'] },
+      source_revision: 'b'.repeat(40)
     };
     const receipt = makeAcquisitionReceipt(empiricalObservations, {
       authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY'
@@ -469,8 +534,11 @@ test('Elimination of synthetic concern injection: untyped caller concerns reject
     assert.equal(empiricalTrial.evaluation.outcome_class, 'TRUE_NEGATIVE_PREVENTION');
     assert.equal(empiricalTrial.evaluation.offline_detection_credit, 1);
     assert.equal(empiricalTrial.evaluation.empirical_discovery_credit, 1);
+    assert.ok(empiricalTrial.orchestrator.verified_acquisition_record);
+    assert.equal(empiricalTrial.orchestrator.verified_acquisition_record.is_empirical_source, true);
+    assert.equal(empiricalTrial.orchestrator.verified_acquisition_record.is_authentic_external, true);
   } finally {
-    delete process.env.TD613_NEON_OBSERVATORY_VERIFICATION_KEY;
+    delete process.env.TD613_NEON_OBSERVATORY_PUBLIC_KEY;
   }
 });
 
