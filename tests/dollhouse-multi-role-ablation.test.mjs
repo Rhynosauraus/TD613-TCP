@@ -330,8 +330,8 @@ test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empir
     assert.equal(authenticatedResult.empirical_replication_count, 0);
     assert.equal(authenticatedResult.independent_replication, false);
 
-    // 8b. Authenticated empirical acquisition receipt on genuine empirical source yields count 1
-    const genuineEmpiricalAudits = {
+    // 8b. Authenticated signature verification test on non-fault observations yields ZERO empirical acquisition credit
+    const signatureVerificationAudits = {
       pedagogue: {
         events: [
           { phase: 'NOTICE', at: 10 },
@@ -345,24 +345,28 @@ test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empir
       fadt: { declared_fiber: { x: 1 } },
       temporal: { completed_phases: ['NOTICE', 'ACT', 'WORLD_ANSWERS', 'NAME'] },
       source_revision: 'b'.repeat(40),
-      acquisition_class: 'EMPIRICAL_ACQUISITION'
+      acquisition_class: 'SIGNATURE_VERIFICATION_TEST'
     };
-    genuineEmpiricalAudits.acquisition_receipt = makeAcquisitionReceipt(genuineEmpiricalAudits, {
-      authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY'
+    signatureVerificationAudits.acquisition_receipt = makeAcquisitionReceipt(signatureVerificationAudits, {
+      authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY',
+      provenance_class: 'SIGNATURE_VERIFICATION_TEST'
     });
-    const genuineResult = runOrchestrationDecision(FIVE_ROLES, genuineEmpiricalAudits);
-    assert.equal(genuineResult.replication_status, 'AUTHENTICATED_EMPIRICAL_ACQUISITION');
-    assert.equal(genuineResult.empirical_replication_count, 1);
-    assert.equal(genuineResult.independent_replication, false);
-    assert.ok(genuineResult.verified_acquisition_record);
-    assert.equal(genuineResult.verified_acquisition_record.is_empirical_source, true);
-    assert.equal(genuineResult.verified_acquisition_record.is_authentic_external, true);
+    const sigTestResult = runOrchestrationDecision(FIVE_ROLES, signatureVerificationAudits);
+    // Successful signature verification, but ZERO empirical acquisition credit (Western Horizon boundary)
+    assert.equal(sigTestResult.replication_status, 'AUTHENTICATED_SIGNATURE_VERIFIED_ZERO_EMPIRICAL_CREDIT');
+    assert.equal(sigTestResult.empirical_replication_count, 0);
+    assert.equal(sigTestResult.independent_replication, false);
+    assert.ok(sigTestResult.verified_acquisition_record);
+    assert.equal(sigTestResult.verified_acquisition_record.verified, true);
+    assert.equal(sigTestResult.verified_acquisition_record.signature_algorithm, 'ed25519');
+    assert.equal(sigTestResult.verified_acquisition_record.is_authentic_external, true);
+    assert.equal(sigTestResult.verified_acquisition_record.provenance_class, 'SIGNATURE_VERIFICATION_TEST');
 
     // 8c. Missing episode_id fails fail-closed
-    const noEpisodeReceipt = makeAcquisitionReceipt(genuineEmpiricalAudits);
+    const noEpisodeReceipt = makeAcquisitionReceipt(signatureVerificationAudits);
     delete noEpisodeReceipt.episode_id;
-    const noEpisodeVerify = verifyAcquisitionReceipt(noEpisodeReceipt, genuineEmpiricalAudits, {
-      expected_source_revision: genuineEmpiricalAudits.source_revision
+    const noEpisodeVerify = verifyAcquisitionReceipt(noEpisodeReceipt, signatureVerificationAudits, {
+      expected_source_revision: signatureVerificationAudits.source_revision
     });
     assert.equal(noEpisodeVerify.verified, false);
     assert.equal(noEpisodeVerify.failure_reason, 'EPISODE_ID_REQUIRED');
@@ -381,6 +385,53 @@ test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empir
     });
     assert.equal(evalFabricated.offline_detection_credit, 1);
     assert.equal(evalFabricated.empirical_discovery_credit, 0);
+
+    // 8e. Caller fabricating BOTH status string AND verified_acquisition_record object receives 0 discovery credit
+    const fullyForgedOrchestrator = {
+      decision: 'HELD',
+      replication_status: 'AUTHENTICATED_EMPIRICAL_ACQUISITION',
+      active_roles: FIVE_ROLES,
+      detected_infractions: [ROLE_INFRACTIONS.PEDAGOGUE],
+      findings: [{ role: 'PEDAGOGUE', verdict: 'HELD' }],
+      verified_acquisition_record: {
+        verified: true,
+        authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY',
+        authority_class: 'AUTHENTIC_EXTERNAL_CUSTODY_OBSERVATORY',
+        signature_algorithm: 'ed25519',
+        is_authentic_external: true,
+        is_empirical_source: true,
+        provenance_class: 'INDEPENDENT_LIVE_ACQUISITION',
+        source_revision: 'b'.repeat(40),
+        episode_id: 'ep-forged-001',
+        observation_digest: 'f'.repeat(64),
+        authenticity_seal: 'fake-caller-seal'
+      }
+    };
+    const evalFullyForged = evaluateAblationOutcome(fullyForgedOrchestrator, {
+      verdict: 'HELD',
+      defects: [ROLE_INFRACTIONS.PEDAGOGUE]
+    });
+    assert.equal(evalFullyForged.offline_detection_credit, 1);
+    assert.equal(evalFullyForged.empirical_discovery_credit, 0);
+
+    // 8f. Exact Evidence Binding: Divergent observations between case variants (e.g. PEDAGOGUE: "" vs pedagogue: {...})
+    // are rejected fail-closed and cannot escape observation digest commitment
+    const divergentObservations = {
+      source_revision: 'b'.repeat(40),
+      PEDAGOGUE: '',
+      pedagogue: {
+        events: [
+          { phase: 'NOTICE', at: 10 },
+          { phase: 'ACT', at: 20 },
+          { phase: 'WORLD_ANSWERS', at: 30 },
+          { phase: 'NAME', at: 40 }
+        ]
+      }
+    };
+    const divergentResult = runOrchestrationDecision(FIVE_ROLES, divergentObservations);
+    assert.equal(divergentResult.decision, 'HELD');
+    assert.ok(divergentResult.detected_infractions.includes('DIVERGENT_ROLE_OBSERVATION_CONFLICT'));
+    assert.equal(divergentResult.replication_status, 'DIVERGENT_OBSERVATION_REJECTED');
   } finally {
     delete process.env.TD613_NEON_OBSERVATORY_PUBLIC_KEY;
   }
@@ -500,10 +551,12 @@ test('Elimination of synthetic concern injection: untyped caller concerns reject
   assert.equal(offlineDefectTrial.evaluation.offline_detection_credit, 1);
   assert.equal(offlineDefectTrial.evaluation.empirical_discovery_credit, 0);
 
-  // 5. When backed by authenticated external empirical acquisition, empirical_discovery_credit is 1
+  // 5. In offline verification trials with an authenticated signature-verification receipt,
+  // specialist dolls actively detect the defect (offline_detection_credit = 1),
+  // but zero independent empirical credit is awarded (empirical_discovery_credit = 0, empirical_replication_count = 0).
   process.env.TD613_NEON_OBSERVATORY_PUBLIC_KEY = neonPublicKeyPem;
   try {
-    const empiricalObservations = {
+    const trialObservations = {
       pedagogue: {
         events: [
           { phase: 'NOTICE', at: 10 },
@@ -518,25 +571,29 @@ test('Elimination of synthetic concern injection: untyped caller concerns reject
       temporal: { completed_phases: ['NOTICE', 'ACT', 'WORLD_ANSWERS', 'NAME'] },
       source_revision: 'b'.repeat(40)
     };
-    const receipt = makeAcquisitionReceipt(empiricalObservations, {
-      authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY'
+    const receipt = makeAcquisitionReceipt(trialObservations, {
+      authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY',
+      provenance_class: 'SIGNATURE_VERIFICATION_TEST'
     });
-    const empiricalTrial = runAblationTrial(
+    const sigTrial = runAblationTrial(
       FIVE_ROLES,
       {
         ground_truth: { verdict: 'HELD', defects: [ROLE_INFRACTIONS.PEDAGOGUE] },
-        ...empiricalObservations,
-        acquisition_class: 'EMPIRICAL_ACQUISITION',
+        ...trialObservations,
+        acquisition_class: 'SIGNATURE_VERIFICATION_TEST',
         acquisition_receipt: receipt
       }
     );
-    assert.equal(empiricalTrial.orchestrator.replication_status, 'AUTHENTICATED_EMPIRICAL_ACQUISITION');
-    assert.equal(empiricalTrial.evaluation.outcome_class, 'TRUE_NEGATIVE_PREVENTION');
-    assert.equal(empiricalTrial.evaluation.offline_detection_credit, 1);
-    assert.equal(empiricalTrial.evaluation.empirical_discovery_credit, 1);
-    assert.ok(empiricalTrial.orchestrator.verified_acquisition_record);
-    assert.equal(empiricalTrial.orchestrator.verified_acquisition_record.is_empirical_source, true);
-    assert.equal(empiricalTrial.orchestrator.verified_acquisition_record.is_authentic_external, true);
+    assert.equal(sigTrial.orchestrator.replication_status, 'AUTHENTICATED_SIGNATURE_VERIFIED_ZERO_EMPIRICAL_CREDIT');
+    assert.equal(sigTrial.orchestrator.empirical_replication_count, 0);
+    assert.equal(sigTrial.evaluation.outcome_class, 'TRUE_NEGATIVE_PREVENTION');
+    assert.equal(sigTrial.evaluation.offline_detection_credit, 1);
+    assert.equal(sigTrial.evaluation.empirical_discovery_credit, 0);
+    assert.ok(sigTrial.orchestrator.verified_acquisition_record);
+    assert.equal(sigTrial.orchestrator.verified_acquisition_record.verified, true);
+    assert.equal(sigTrial.orchestrator.verified_acquisition_record.signature_algorithm, 'ed25519');
+    assert.equal(sigTrial.orchestrator.verified_acquisition_record.is_authentic_external, true);
+    assert.equal(sigTrial.orchestrator.verified_acquisition_record.provenance_class, 'SIGNATURE_VERIFICATION_TEST');
   } finally {
     delete process.env.TD613_NEON_OBSERVATORY_PUBLIC_KEY;
   }

@@ -25,6 +25,8 @@ import { computeFadtFiberBounds } from './dollhouse-fadt-reparative-assistance.j
 import { auditServiceJourneyChronology } from './dollhouse-temporal-custodian.js';
 import { parsePublicKey } from './dollhouse-case-dossier.js';
 
+const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
+
 export const DOLLHOUSE_ABLATION_EXPERIMENT_SCHEMA = 'td613.dollhouse.ablation-experiment/v1.2';
 export const DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA = 'td613.dollhouse.acquisition-receipt/v0.3';
 
@@ -45,15 +47,73 @@ export const TRUSTED_ACQUISITION_REGISTRIES = Object.freeze({
   })
 });
 
+const VERIFIED_RECORD_SEAL = new WeakSet();
+const HARNESS_SEAL_SECRET = (function() {
+  const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
+  return crypto?.randomBytes?.(32)?.toString('hex') || 'harness-internal-seal-token-2026';
+})();
+
+/**
+ * Normalizes role observations once with deterministic canonical precedence
+ * and rejects conflicting role keys (e.g. divergence between case variants).
+ */
+export function normalizeRoleObservations(observations) {
+  if (!observations || typeof observations !== 'object') {
+    return Object.freeze({});
+  }
+  const normalized = {};
+  for (const role of FIVE_ROLES) {
+    const roleKey = role === 'TEMPORAL_CUSTODIAN' ? 'temporal' : role.toLowerCase();
+    const candidates = [];
+    if (Object.prototype.hasOwnProperty.call(observations, role)) {
+      candidates.push({ source: role, value: observations[role] });
+    }
+    if (Object.prototype.hasOwnProperty.call(observations, roleKey)) {
+      candidates.push({ source: roleKey, value: observations[roleKey] });
+    }
+    if (observations.domains && typeof observations.domains === 'object') {
+      if (Object.prototype.hasOwnProperty.call(observations.domains, role)) {
+        candidates.push({ source: `domains.${role}`, value: observations.domains[role] });
+      }
+      if (Object.prototype.hasOwnProperty.call(observations.domains, roleKey)) {
+        candidates.push({ source: `domains.${roleKey}`, value: observations.domains[roleKey] });
+      }
+    }
+
+    if (candidates.length > 0) {
+      const nonNullCandidates = candidates.filter(c => c.value !== null && c.value !== undefined);
+      if (nonNullCandidates.length > 1) {
+        const firstSerialized = JSON.stringify(nonNullCandidates[0].value);
+        for (let i = 1; i < nonNullCandidates.length; i++) {
+          if (JSON.stringify(nonNullCandidates[i].value) !== firstSerialized) {
+            const conflictErr = new Error(`DIVERGENT_ROLE_OBSERVATION_CONFLICT: Conflicting observations provided for ${role} between ${nonNullCandidates[0].source} and ${nonNullCandidates[i].source}`);
+            conflictErr.code = 'DIVERGENT_ROLE_OBSERVATION_CONFLICT';
+            conflictErr.role = role;
+            throw conflictErr;
+          }
+        }
+      }
+      if (nonNullCandidates.length > 0) {
+        normalized[role] = nonNullCandidates[0].value;
+      }
+    }
+  }
+  return Object.freeze(normalized);
+}
+
 export function computeAcquisitionPayloadDigest(observations) {
   const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
   if (!crypto || !observations || typeof observations !== 'object') return null;
+  let normalized;
+  try {
+    normalized = normalizeRoleObservations(observations);
+  } catch {
+    return null;
+  }
   const roleEntries = [];
   for (const r of FIVE_ROLES) {
-    const roleKey = r === 'TEMPORAL_CUSTODIAN' ? 'temporal' : r.toLowerCase();
-    const val = observations[r] ?? observations[roleKey] ?? (observations.domains ? observations.domains[r] : null);
-    if (val !== undefined && val !== null) {
-      roleEntries.push(`${r}:${JSON.stringify(val)}`);
+    if (r in normalized && normalized[r] !== undefined && normalized[r] !== null) {
+      roleEntries.push(`${r}:${JSON.stringify(normalized[r])}`);
     }
   }
   roleEntries.sort();
@@ -69,6 +129,7 @@ export function computeAcquisitionReceiptDigest(receipt) {
     receipt.acquisition_boundary,
     receipt.source_revision,
     receipt.episode_id,
+    receipt.provenance_class || 'SIGNATURE_VERIFICATION_TEST',
     receipt.observation_digest
   ].join('::');
   return crypto.createHash('sha256').update(canonical).digest('hex');
@@ -449,11 +510,40 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
     });
   }
 
+  let normalizedObservations = {};
+  let normalizationConflict = null;
+  try {
+    normalizedObservations = normalizeRoleObservations(observations);
+  } catch (err) {
+    if (err.code === 'DIVERGENT_ROLE_OBSERVATION_CONFLICT') {
+      normalizationConflict = err;
+    } else {
+      throw err;
+    }
+  }
+
+  if (normalizationConflict) {
+    return deepFreeze({
+      active_roles: [...activeSet],
+      findings_count: 0,
+      findings: [],
+      detected_infractions: ['DIVERGENT_ROLE_OBSERVATION_CONFLICT'],
+      decision: 'HELD',
+      consensus: 'NONE',
+      replication_status: 'DIVERGENT_OBSERVATION_REJECTED',
+      empirical_replication_count: 0,
+      verified_acquisition_record: null,
+      independent_replication: false,
+      release_authority: false,
+      deployment_authority: false,
+      human_closure_required: true
+    });
+  }
+
   for (const role of FIVE_ROLES) {
     if (activeSet.has(role)) {
-      const roleKey = role === 'TEMPORAL_CUSTODIAN' ? 'temporal' : role.toLowerCase();
       // Observations must not leak ground truth:
-      const domainInput = observations[role] || observations[roleKey] || (observations.domains ? observations.domains[role] : null);
+      const domainInput = normalizedObservations[role] ?? null;
       const evalResult = executeSpecialistRole(role, domainInput, options);
       gatheredFindings.push({
         role,
@@ -495,12 +585,13 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
 
   // Replication counting & provenance classification:
   // Caller passing acquisition_class: 'EMPIRICAL_ACQUISITION' alone does NOT earn empirical replication count.
-  // 1. Authenticated receipt verified against authentic external authority on empirical source -> count 1 (AUTHENTICATED_EMPIRICAL_ACQUISITION)
-  // 2. Authenticated receipt on synthetic fault injection -> count 0 (AUTHENTICATED_SYNTHETIC_TEST_ZERO_EMPIRICAL_CREDIT)
-  // 3. Synthetic test key receipt -> count 0 (SYNTHETIC_VERIFIED_RECEIPT_ZERO_EMPIRICAL_CREDIT)
-  // 4. Unauthenticated/tampered/untrusted receipt -> count 0 (UNAUTHENTICATED_RECEIPT_REJECTED)
-  // 5. Caller-declared empirical string without receipt -> count 0 (CALLER_DECLARED_UNAUTHENTICATED_EMPIRICAL)
-  // 6. Default synthetic offline fixture -> count 0 (SYNTHETIC_OFFLINE_FIXTURE)
+  // 1. Authenticated receipt verified against authentic external authority on live empirical source -> count 1 (AUTHENTICATED_EMPIRICAL_ACQUISITION)
+  // 2. Authenticated receipt on clean observations without live custody attestation -> count 0 (AUTHENTICATED_SIGNATURE_VERIFIED_ZERO_EMPIRICAL_CREDIT)
+  // 3. Authenticated receipt on synthetic fault injection -> count 0 (AUTHENTICATED_SYNTHETIC_TEST_ZERO_EMPIRICAL_CREDIT)
+  // 4. Synthetic test key receipt -> count 0 (SYNTHETIC_VERIFIED_RECEIPT_ZERO_EMPIRICAL_CREDIT)
+  // 5. Unauthenticated/tampered/untrusted receipt -> count 0 (UNAUTHENTICATED_RECEIPT_REJECTED)
+  // 6. Caller-declared empirical string without receipt -> count 0 (CALLER_DECLARED_UNAUTHENTICATED_EMPIRICAL)
+  // 7. Default synthetic offline fixture -> count 0 (SYNTHETIC_OFFLINE_FIXTURE)
   const receipt = observations.acquisition_receipt;
   let verificationResult = null;
   if (receipt && typeof receipt === 'object') {
@@ -508,13 +599,12 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
       expected_source_revision: options.expected_source_revision || observations.source_revision,
       ...options
     };
-    verificationResult = verifyAcquisitionReceipt(receipt, observations, verifyOpts);
+    verificationResult = verifyAcquisitionReceipt(receipt, normalizedObservations, verifyOpts);
   }
 
   const hasSyntheticInjection = (
     gatheredFindings.some(f => f.is_synthetic_injection || f.status === 'SYNTHETIC_FAULT_CONTAINED') ||
-    Object.values(observations).some(v => v && typeof v === 'object' && (v.fixture_class === 'SYNTHETIC_FAULT_INJECTION' || v.is_synthetic_injection)) ||
-    (observations.domains && Object.values(observations.domains).some(v => v && typeof v === 'object' && (v.fixture_class === 'SYNTHETIC_FAULT_INJECTION' || v.is_synthetic_injection)))
+    Object.values(normalizedObservations).some(v => v && typeof v === 'object' && (v.fixture_class === 'SYNTHETIC_FAULT_INJECTION' || v.is_synthetic_injection))
   );
   const isEmpiricalSource = !hasSyntheticInjection && observations.acquisition_class === 'EMPIRICAL_ACQUISITION';
 
@@ -524,14 +614,17 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
   if (verificationResult) {
     if (verificationResult.verified) {
       if (verificationResult.is_authentic_external) {
-        if (!isEmpiricalSource) {
+        if (hasSyntheticInjection) {
           empiricalReplicationCount = 0;
           replicationStatus = 'AUTHENTICATED_SYNTHETIC_TEST_ZERO_EMPIRICAL_CREDIT';
-        } else {
+        } else if (receipt.provenance_class === 'INDEPENDENT_LIVE_ACQUISITION' && options.live_custody_attested === true && observations.acquisition_class === 'EMPIRICAL_ACQUISITION') {
           empiricalReplicationCount = 1;
           replicationStatus = unanimousAllFive
             ? 'AUTHENTICATED_EMPIRICAL_ACQUISITION'
             : 'PARTIAL_ROLE_EMPIRICAL_CONSENSUS';
+        } else {
+          empiricalReplicationCount = 0;
+          replicationStatus = 'AUTHENTICATED_SIGNATURE_VERIFIED_ZERO_EMPIRICAL_CREDIT';
         }
       } else {
         empiricalReplicationCount = 0;
@@ -552,18 +645,27 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
     replicationStatus = 'SYNTHETIC_OFFLINE_FIXTURE';
   }
 
-  const verifiedAcquisitionRecord = (verificationResult && verificationResult.verified) ? Object.freeze({
-    verified: true,
-    authority_id: verificationResult.authority_id,
-    authority_class: verificationResult.authority_class,
-    signature_algorithm: verificationResult.signature_algorithm,
-    is_authentic_external: verificationResult.is_authentic_external,
-    is_empirical_source: isEmpiricalSource,
-    source_revision: receipt.source_revision,
-    episode_id: receipt.episode_id,
-    observation_digest: receipt.observation_digest,
-    verified_at: new Date().toISOString()
-  }) : null;
+  let verifiedAcquisitionRecord = null;
+  if (verificationResult && verificationResult.verified) {
+    const provenanceClass = receipt.provenance_class || 'SIGNATURE_VERIFICATION_TEST';
+    const sealData = `${receipt.source_revision}::${receipt.episode_id}::${receipt.observation_digest}::${isEmpiricalSource}::${provenanceClass}`;
+    const authenticitySeal = crypto ? crypto.createHmac('sha256', HARNESS_SEAL_SECRET).update(sealData).digest('hex') : null;
+    verifiedAcquisitionRecord = Object.freeze({
+      verified: true,
+      authority_id: verificationResult.authority_id,
+      authority_class: verificationResult.authority_class,
+      signature_algorithm: verificationResult.signature_algorithm,
+      is_authentic_external: verificationResult.is_authentic_external,
+      is_empirical_source: isEmpiricalSource,
+      provenance_class: provenanceClass,
+      source_revision: receipt.source_revision,
+      episode_id: receipt.episode_id,
+      observation_digest: receipt.observation_digest,
+      authenticity_seal: authenticitySeal,
+      verified_at: new Date().toISOString()
+    });
+    VERIFIED_RECORD_SEAL.add(verifiedAcquisitionRecord);
+  }
 
   return deepFreeze({
     active_roles: [...activeSet],
@@ -610,12 +712,24 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
   const activeRoles = orchestratorResult?.active_roles || [];
   const detectedInfractions = orchestratorResult?.detected_infractions || [];
   const decision = orchestratorResult?.decision;
+  const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
   const record = orchestratorResult?.verified_acquisition_record;
-  const isEmpiricallyAcquired = Boolean(
+  const isAuthenticRecord = Boolean(
     record &&
+    typeof record === 'object' &&
+    VERIFIED_RECORD_SEAL.has(record) &&
+    record.authenticity_seal &&
+    crypto &&
+    crypto.createHmac('sha256', HARNESS_SEAL_SECRET)
+      .update(`${record.source_revision}::${record.episode_id}::${record.observation_digest}::${record.is_empirical_source}::${record.provenance_class || 'SIGNATURE_VERIFICATION_TEST'}`)
+      .digest('hex') === record.authenticity_seal
+  );
+  const isEmpiricallyAcquired = Boolean(
+    isAuthenticRecord &&
     record.verified === true &&
     record.is_authentic_external === true &&
     record.is_empirical_source === true &&
+    record.provenance_class === 'INDEPENDENT_LIVE_ACQUISITION' &&
     typeof record.source_revision === 'string' &&
     typeof record.episode_id === 'string' &&
     orchestratorResult?.replication_status === 'AUTHENTICATED_EMPIRICAL_ACQUISITION'
