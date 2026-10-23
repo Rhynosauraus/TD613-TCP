@@ -27,6 +27,10 @@ test('canonical payload binds the current research edition bytes',()=>{
  const json=html.match(/<script id="canonical-audit-data" type="application\/json">([\s\S]*?)<\/script>/)[1];
  assert.equal(createHash('sha256').update(json).digest('hex'),'ff0c98f564c9157f22b8603a20ddefa3ca13d843b17bdfb7e2a495408a49b4c9');
 });
+test('cover source inventory follows the current source registry',()=>{
+ const f=fixture();
+ try{assert.equal(f.d.querySelector('.stat-btn[data-view="sources"] .stat-value').textContent,'92')}finally{f.close()}
+});
 for(const mobile of [false,true])test(`reading journey with ${mobile?'mobile':'desktop'} DOM branches`,async()=>{
  const f=fixture({mobile}),{d,w,click,change}=f;
  try{

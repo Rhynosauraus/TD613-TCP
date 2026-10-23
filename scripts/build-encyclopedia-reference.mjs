@@ -10,6 +10,7 @@ let html=original.replace(/<!-- TD613_REFERENCE_BEGIN -->[\s\S]*?<!-- TD613_REFE
 const raw=html.match(/<script id="canonical-audit-data" type="application\/json">([\s\S]*?)<\/script>/)[1];
 const audit=JSON.parse(raw),sha=value=>createHash('sha256').update(value).digest('hex');
 const editionVersion=audit.metadata.version;
+html=html.replace(/(<button class="stat-btn" data-view="sources"><span class="stat-value">)\d+/,(_,prefix)=>prefix+Object.keys(audit.sources).length);
 function literal(name){const begin=html.indexOf('const '+name+' = ');if(begin<0)throw new Error('Missing '+name);const end=html.indexOf('\n};',begin)+3;return vm.runInNewContext('('+html.slice(begin,end).replace(/^const \w+ = /,'').replace(/;$/,'')+')')}
 const formulas=literal('FORMULA_LATEX'),math=literal('GLOSSARY_MATH_CALLOUTS');
 const records=[];
