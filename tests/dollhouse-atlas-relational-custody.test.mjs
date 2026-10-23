@@ -8,6 +8,7 @@ import {
   classifyTypedDigest,
   computeTypedFnv1a32,
   auditPhasonCustodyDiff,
+  stableContentEquals,
   DOLLHOUSE_ATLAS_RELATION_IDENTITY_SCHEMA,
   DOLLHOUSE_ATLAS_HISTORY_PARITY_SCHEMA,
   DOLLHOUSE_TYPED_DIGEST_SCHEMA,
@@ -222,4 +223,56 @@ test('runAtlasAgent integrates relational custody and history parity audits when
   assert.equal(receipt.history_parity_audit.endpoints_equal, true);
   assert.equal(receipt.history_parity_audit.history_parity_equal, false);
   assert.equal(receipt.history_parity_audit.disposition, 'HOLD_DISTINCT_HISTORY_NOT_ERASED');
+});
+
+test('T-DIGEST-01: FNV-1a32 collision pair ("costarring" vs "liquid") triggers HOLD_CONTENT_COLLISION_DETECTED', () => {
+  const left = 'costarring';
+  const right = 'liquid';
+  const leftComputed = computeTypedFnv1a32(left);
+  const rightComputed = computeTypedFnv1a32(right);
+
+  // Both strings hash to 5e4daa9d in 32-bit FNV-1a
+  assert.equal(leftComputed.raw_hex, '5e4daa9d');
+  assert.equal(rightComputed.raw_hex, '5e4daa9d');
+  assert.equal(leftComputed.typed_digest, rightComputed.typed_digest);
+
+  const diff = auditPhasonCustodyDiff(
+    { artifact_id: 'art-left', payload: left, metadata: { raw_hash: leftComputed.typed_digest } },
+    { artifact_id: 'art-right', payload: right, metadata: { raw_hash: rightComputed.typed_digest }, projection: { mode: 'seam' } }
+  );
+
+  assert.equal(diff.status, 'HOLD_CONTENT_COLLISION_DETECTED');
+  assert.equal(diff.content_invariant, false);
+  assert.equal(diff.collision_detected, true);
+  assert.equal(diff.colliding_hash, '5e4daa9d');
+  assert.match(diff.reason, /identical short FNV hash/);
+});
+
+test('T-DIGEST-02: classifyTypedDigest correctly recognizes fnv32: prefix', () => {
+  const result = classifyTypedDigest('fnv32:811c9dc5');
+  assert.equal(result.valid, true);
+  assert.equal(result.algorithm, 'fnv32');
+  assert.equal(result.hex_length, 8);
+  assert.equal(result.is_historical_mislabeled, false);
+});
+
+test('T-DIGEST-03: stableContentEquals distinguishes object from JSON string', () => {
+  assert.equal(stableContentEquals({ a: 1 }, '{"a":1}'), false);
+  assert.equal(stableContentEquals('{"a":1}', { a: 1 }), false);
+  assert.equal(stableContentEquals({ a: 1, b: 2 }, { b: 2, a: 1 }), true);
+  assert.equal(stableContentEquals('plain string', 'plain string'), true);
+  assert.equal(stableContentEquals('left', 'right'), false);
+});
+
+test('T-HISTORY-01: auditAtlasHolonomyHistoryParity fails closed when endpoints or windings are missing', () => {
+  const missingEndpoint = auditAtlasHolonomyHistoryParity({}, {});
+  assert.equal(missingEndpoint.disposition, 'HOLD_MISSING_EXPLICIT_ENDPOINT');
+  assert.equal(missingEndpoint.held, true);
+
+  const missingWinding = auditAtlasHolonomyHistoryParity(
+    { endpoint: 'chamber-1' },
+    { endpoint: 'chamber-1' }
+  );
+  assert.equal(missingWinding.disposition, 'HOLD_MISSING_EXPLICIT_WINDING');
+  assert.equal(missingWinding.held, true);
 });

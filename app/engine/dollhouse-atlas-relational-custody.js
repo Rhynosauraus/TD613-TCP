@@ -44,7 +44,7 @@ function deepFreeze(value) {
   return value;
 }
 
-function stableStringify(value) {
+export function stableStringify(value) {
   if (value === null || typeof value !== 'object') {
     return JSON.stringify(value);
   }
@@ -53,6 +53,53 @@ function stableStringify(value) {
   }
   const keys = Object.keys(value).sort();
   return `{${keys.map(k => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`;
+}
+
+/**
+ * Evaluates typed content equality across declared snapshot domains.
+ * Rejects silent cross-type coercion, unsupported exotic objects, and reference-identity shortcuts.
+ */
+export function stableContentEquals(left, right) {
+  if (left === undefined || right === undefined) return false;
+  if (left === null || right === null) return left === right;
+
+  const typeL = typeof left;
+  const typeR = typeof right;
+  if (typeL !== typeR) return false;
+
+  if (typeL === 'string') {
+    return left === right;
+  }
+
+  if (typeL === 'number') {
+    return Number.isFinite(left) && Number.isFinite(right) && left === right;
+  }
+
+  if (typeL === 'boolean') {
+    return left === right;
+  }
+
+  if (left instanceof Uint8Array && right instanceof Uint8Array) {
+    if (left.byteLength !== right.byteLength) return false;
+    for (let i = 0; i < left.byteLength; i += 1) {
+      if (left[i] !== right[i]) return false;
+    }
+    return true;
+  }
+
+  if (typeL !== 'object') return false;
+  if (Array.isArray(left) !== Array.isArray(right)) return false;
+  if (left instanceof Uint8Array || right instanceof Uint8Array) return false;
+
+  const protoL = Object.getPrototypeOf(left);
+  const protoR = Object.getPrototypeOf(right);
+  if (!Array.isArray(left)) {
+    if ((protoL !== Object.prototype && protoL !== null) || (protoR !== Object.prototype && protoR !== null)) {
+      return false;
+    }
+  }
+
+  return stableStringify(left) === stableStringify(right);
 }
 
 export function samePath(a, b) {
@@ -168,15 +215,37 @@ export function auditAtlasHolonomyHistoryParity(trajectoryA = {}, trajectoryB = 
     throw new TypeError('trajectoryA and trajectoryB must be non-null objects');
   }
 
-  const endpointA = String(trajectoryA.endpoint ?? trajectoryA.end_state ?? trajectoryA.id ?? '');
-  const endpointB = String(trajectoryB.endpoint ?? trajectoryB.end_state ?? trajectoryB.id ?? '');
+  const rawEndpointA = trajectoryA.endpoint ?? trajectoryA.end_state ?? trajectoryA.id;
+  const rawEndpointB = trajectoryB.endpoint ?? trajectoryB.end_state ?? trajectoryB.id;
 
-  const windingA = Number(trajectoryA.winding_number ?? trajectoryA.loop_power ?? trajectoryA.winding ?? 0);
-  const windingB = Number(trajectoryB.winding_number ?? trajectoryB.loop_power ?? trajectoryB.winding ?? 0);
-
-  if (!Number.isInteger(windingA) || !Number.isInteger(windingB)) {
-    throw new TypeError('winding numbers must be integers');
+  if (typeof rawEndpointA !== 'string' || !rawEndpointA.trim() ||
+      typeof rawEndpointB !== 'string' || !rawEndpointB.trim()) {
+    return deepFreeze({
+      schema: DOLLHOUSE_ATLAS_HISTORY_PARITY_SCHEMA,
+      disposition: 'HOLD_MISSING_EXPLICIT_ENDPOINT',
+      held: true,
+      reason: 'both trajectories must declare explicit non-empty endpoint coordinates',
+      laws: ATLAS_RELATION_CUSTODY_LAWS
+    });
   }
+
+  const rawWindingA = trajectoryA.winding_number ?? trajectoryA.loop_power ?? trajectoryA.winding;
+  const rawWindingB = trajectoryB.winding_number ?? trajectoryB.loop_power ?? trajectoryB.winding;
+
+  if (!Number.isSafeInteger(rawWindingA) || !Number.isSafeInteger(rawWindingB)) {
+    return deepFreeze({
+      schema: DOLLHOUSE_ATLAS_HISTORY_PARITY_SCHEMA,
+      disposition: 'HOLD_MISSING_EXPLICIT_WINDING',
+      held: true,
+      reason: 'both trajectories must declare explicit integer winding numbers',
+      laws: ATLAS_RELATION_CUSTODY_LAWS
+    });
+  }
+
+  const endpointA = rawEndpointA.trim();
+  const endpointB = rawEndpointB.trim();
+  const windingA = rawWindingA;
+  const windingB = rawWindingB;
 
   const endpointsEqual = endpointA === endpointB;
   const windingDelta = windingA - windingB;
@@ -285,11 +354,32 @@ export function classifyTypedDigest(digestString) {
     });
   }
 
+  if (trimmed.startsWith('fnv32:')) {
+    const hex = trimmed.slice(6);
+    if (hex.length === 8 && /^[0-9a-fA-F]{8}$/.test(hex)) {
+      return deepFreeze({
+        schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
+        valid: true,
+        algorithm: 'fnv32',
+        hex_length: 8,
+        is_historical_mislabeled: false,
+        hex: hex.toLowerCase()
+      });
+    }
+    return deepFreeze({
+      schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
+      valid: false,
+      algorithm: 'fnv32',
+      hex_length: hex.length,
+      reason: `invalid fnv32 hex length: ${hex.length} (expected 8)`
+    });
+  }
+
   return deepFreeze({
     schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
     valid: false,
     algorithm: 'unknown',
-    reason: 'unrecognized digest prefix (expected sha256: or fnv1a32:)'
+    reason: 'unrecognized digest prefix (expected sha256:, fnv1a32:, or fnv32:)'
   });
 }
 
@@ -372,7 +462,25 @@ export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}
     });
   }
 
-  const contentInvariant = prevComputed.raw_hex === currComputed.raw_hex;
+  const hashMatches = prevComputed.raw_hex === currComputed.raw_hex;
+  const contentMatches = stableContentEquals(prevPayload, currPayload);
+
+  // Collision detection: short hashes match but typed contents differ
+  if (hashMatches && !contentMatches) {
+    return deepFreeze({
+      schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+      status: 'HOLD_CONTENT_COLLISION_DETECTED',
+      content_invariant: false,
+      collision_detected: true,
+      colliding_hash: prevComputed.raw_hex,
+      decision: 'fnv-hash-collision-rejected',
+      reason: 'distinct payload contents produced identical short FNV hash; content invariance refused',
+      claim_ceiling: 'caller-string-equality-does-not-establish-content-invariance',
+      laws: ATLAS_RELATION_CUSTODY_LAWS
+    });
+  }
+
+  const contentInvariant = hashMatches && contentMatches;
 
   // Projection comparison
   const prevProj = previous.projection || {};
@@ -384,6 +492,7 @@ export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}
     status: (contentInvariant && projectionChanged) ? 'SEAM_DETECTED' : 'OPEN',
     content_invariant: contentInvariant,
     projection_changed: projectionChanged,
+    collision_detected: false,
     decision: (contentInvariant && projectionChanged)
       ? 'content-invariant-custody-variable-projection-event'
       : 'custody-diff-recorded-without-external-enforcement',

@@ -26,6 +26,7 @@
 
 export const DOLLHOUSE_FADT_REPARATIVE_ASSISTANCE_SCHEMA = 'td613.dollhouse.fadt-reparative-assistance/v0.1';
 export const DOLLHOUSE_FADT_DISCREPANCY_IDENTITY_SCHEMA = 'td613.dollhouse.fadt-discrepancy-identity/v0.1';
+export const FADT_MAX_COORDINATE_EVALUATION_BUDGET = 10000;
 
 export const FADT_REPARATIVE_LAWS = Object.freeze({
   exact_finite_admissibility_descent: true,
@@ -43,13 +44,14 @@ function deepFreeze(value) {
   return value;
 }
 
-function normalizeSupportArray(arr) {
+export function normalizeSupportArray(arr) {
   if (!Array.isArray(arr)) return [];
   const set = new Set();
   for (const item of arr) {
-    if (item !== null && item !== undefined) {
-      set.add(String(item).trim());
+    if (typeof item !== 'string' || !item.trim()) {
+      throw new TypeError('Action support items must be non-empty strings');
     }
+    set.add(item.trim());
   }
   return [...set].sort();
 }
@@ -57,6 +59,8 @@ function normalizeSupportArray(arr) {
 /**
  * Computes intersection support (I_y), union support (U_y), and the irreducible gap (\Gamma_y)
  * for a declared preimage fiber.
+ *
+ * Fully supports occupied antecedent states with an explicit empty action support [].
  */
 export function computeFadtFiberBounds(fiberRows = []) {
   if (!Array.isArray(fiberRows) || fiberRows.length === 0) {
@@ -64,28 +68,31 @@ export function computeFadtFiberBounds(fiberRows = []) {
   }
 
   const supports = fiberRows.map((row, idx) => {
-    const s = normalizeSupportArray(row.support || row.actions || []);
-    if (s.length === 0) {
-      throw new TypeError(`fiberRows[${idx}] must contain a non-empty support array`);
+    const rawSupport = row.support ?? row.actions;
+    if (!Array.isArray(rawSupport)) {
+      throw new TypeError(`fiberRows[${idx}] must contain a support array`);
     }
-    return s;
+    return normalizeSupportArray(rawSupport);
   });
 
   const unionSet = new Set();
   supports.forEach(s => s.forEach(a => unionSet.add(a)));
   const unionSupport = [...unionSet].sort();
 
-  const intersectionSet = new Set(supports[0]);
-  for (let i = 1; i < supports.length; i++) {
-    for (const a of [...intersectionSet]) {
-      if (!supports[i].includes(a)) {
-        intersectionSet.delete(a);
+  let intersectionSupport = [];
+  if (supports.length > 0 && supports[0].length > 0) {
+    const intersectionSet = new Set(supports[0]);
+    for (let i = 1; i < supports.length; i++) {
+      for (const a of [...intersectionSet]) {
+        if (!supports[i].includes(a)) {
+          intersectionSet.delete(a);
+        }
       }
     }
+    intersectionSupport = [...intersectionSet].sort();
   }
-  const intersectionSupport = [...intersectionSet].sort();
 
-  const gapSet = new Set(unionSupport.filter(a => !intersectionSet.has(a)));
+  const gapSet = new Set(unionSupport.filter(a => !intersectionSupport.includes(a)));
   const irreducibleGap = [...gapSet].sort();
 
   const exact = irreducibleGap.length === 0;
@@ -142,6 +149,24 @@ export function evaluateFadtCoordinateRecovery(collidingFiberRows = [], candidat
       base_bounds: baseBounds,
       minimal_resolving_sets: [],
       best_extension: null,
+      laws: FADT_REPARATIVE_LAWS
+    });
+  }
+
+  const n = candidateCoordinates.length;
+
+  // Preflight work calculation: total non-empty subsets = 2^n - 1
+  // If n >= 14, 2^n - 1 >= 16383 > FADT_MAX_COORDINATE_EVALUATION_BUDGET (10000)
+  if (n >= 14) {
+    return deepFreeze({
+      schema: DOLLHOUSE_FADT_REPARATIVE_ASSISTANCE_SCHEMA,
+      status: 'UNSUPPORTED_SEARCH_SIZE',
+      held: true,
+      evaluations_run: 0,
+      candidate_coordinate_count: n,
+      budget_exceeded: true,
+      budget_limit: FADT_MAX_COORDINATE_EVALUATION_BUDGET,
+      reason: `Coordinate set size ${n} exceeds finite search budget (${FADT_MAX_COORDINATE_EVALUATION_BUDGET} evaluations). Search aborted without asserting mathematical nonexistence.`,
       laws: FADT_REPARATIVE_LAWS
     });
   }
@@ -315,7 +340,7 @@ export function compileFadtReparativePacket(options = {}) {
     operator_guidance: bounds.exact_descent_exists
       ? 'Exact finite admissibility descent holds; full support descends without loss.'
       : (bounds.universally_sound_available
-          ? `Immediate execution of universally sound support [${bounds.intersection_support.join(', ')}] is permitted without widening. Retain coordinate(s) [${coordinateRecovery?.best_extension?.join(', ') || 'N/A'}] to eliminate the irreducible gap.`
+          ? `The following actions remain supported across the declared occupied fibre, conditional on its valid and complete antecedents: [${bounds.intersection_support.join(', ')}]. Actual execution requires current custody-owner permission and any applicable human authorization. Retain coordinate(s) [${coordinateRecovery?.best_extension?.join(', ') || 'N/A'}] to eliminate the irreducible gap.`
           : 'Intersection support is empty. No universally sound action exists under this stage projection without coordinate retention.'),
     laws: FADT_REPARATIVE_LAWS
   });

@@ -286,12 +286,24 @@ test('redundant candidate probe adding zero rank and zero stability improvement 
   assert.equal(evaluation.candidates[0].recommendation, 'DO_NOT_MANUFACTURE_REDUNDANT_PROBE');
 });
 
-test('epistemic harms map bijectively to positive knowledge-survival capacities', () => {
+test('epistemic harms map as a set-valued relation to positive knowledge-survival capacities with surjective coverage', () => {
   assert.equal(EPISTEMIC_HARMS_TO_KNOWLEDGE_SURVIVAL.PREMATURE_ONTOLOGICAL_CLOSURE, 'interpretability');
   assert.equal(EPISTEMIC_HARMS_TO_KNOWLEDGE_SURVIVAL.UNIDENTIFIABLE_WIDENING, 'repairability');
   assert.equal(EPISTEMIC_HARMS_TO_KNOWLEDGE_SURVIVAL.FALSE_CONSENSUS_AMPLIFICATION, 'attributable_provenance');
   assert.equal(EPISTEMIC_HARMS_TO_KNOWLEDGE_SURVIVAL.IRREDUCIBLE_GAP_DENIAL, 'contestability');
   assert.deepEqual(EPISTEMIC_HARMS_TO_KNOWLEDGE_SURVIVAL.CHRONOLOGICAL_OBLIVION, ['retrievability', 'transmissibility']);
+
+  // Surjective coverage check: union of image targets covers all six capacities
+  const allTargetCapacities = new Set();
+  for (const target of Object.values(EPISTEMIC_HARMS_TO_KNOWLEDGE_SURVIVAL)) {
+    if (Array.isArray(target)) {
+      target.forEach(c => allTargetCapacities.add(c));
+    } else {
+      allTargetCapacities.add(target);
+    }
+  }
+  assert.equal(allTargetCapacities.size, 6);
+  assert.ok(['retrievability', 'attributable_provenance', 'interpretability', 'transmissibility', 'contestability', 'repairability'].every(c => allTargetCapacities.has(c)));
 
   const mapped = mapEpistemicHarmsToPositiveSurvival([
     'PREMATURE_ONTOLOGICAL_CLOSURE',

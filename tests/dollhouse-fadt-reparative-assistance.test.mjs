@@ -148,8 +148,69 @@ test('compileFadtReparativePacket provides child-legible operator guidance', () 
   assert.deepEqual(packet.immediate_sound_action_support, ['VENT']);
   assert.deepEqual(packet.coordinate_recovery.best_extension, ['phase']);
   assert.equal(packet.discrepancy_audit.universally_sound, true);
-  assert.match(packet.operator_guidance, /Immediate execution of universally sound support \[VENT\] is permitted without widening/);
+  assert.match(packet.operator_guidance, /The following actions remain supported across the declared occupied fibre, conditional on its valid and complete antecedents: \[VENT\]/);
+  assert.match(packet.operator_guidance, /Actual execution requires current custody-owner permission/);
   assert.match(packet.operator_guidance, /Retain coordinate\(s\) \[phase\]/);
+});
+
+test('T-FADT-01: Explicit empty support [] correctly computes bounds without crash', () => {
+  const emptySupportRows = [
+    { id: 'ant-1', support: [] },
+    { id: 'ant-2', support: ['REST'] }
+  ];
+  const bounds = computeFadtFiberBounds(emptySupportRows);
+  assert.equal(bounds.exact_descent_exists, false);
+  assert.deepEqual(bounds.intersection_support, []);
+  assert.deepEqual(bounds.union_support, ['REST']);
+  assert.deepEqual(bounds.irreducible_gap, ['REST']);
+  assert.equal(bounds.irreducible_gap_cardinality, 1);
+  assert.equal(bounds.universally_sound_available, false);
+  assert.equal(bounds.disposition, 'HOLD_IRREDUCIBLE_GAP');
+});
+
+test('T-FADT-02: normalizeSupportArray rejects non-string action objects with TypeError', () => {
+  const malformedRows = [
+    { id: 'ant-1', support: [{ action: 'SEND' }] }
+  ];
+  assert.throws(
+    () => computeFadtFiberBounds(malformedRows),
+    {
+      name: 'TypeError',
+      message: /Action support items must be non-empty strings/
+    }
+  );
+});
+
+test('T-FADT-03: Candidate coordinates exceeding budget returns UNSUPPORTED_SEARCH_SIZE with 0 evaluations and undefined exact_recovery_found', () => {
+  const fiberRows = [
+    { id: 'ant-1', coordinates: { c0: 1 }, support: ['ACTION_A'] },
+    { id: 'ant-2', coordinates: { c0: 2 }, support: ['ACTION_B'] }
+  ];
+  // 32 candidate coordinates => 2^32 - 1 subsets, far exceeding 10,000 budget
+  const largeCoordList = Array.from({ length: 32 }, (_, i) => `c${i}`);
+  const result = evaluateFadtCoordinateRecovery(fiberRows, largeCoordList);
+
+  assert.equal(result.status, 'UNSUPPORTED_SEARCH_SIZE');
+  assert.equal(result.evaluations_run, 0);
+  assert.equal(result.exact_recovery_found, undefined);
+  assert.equal(result.held, true);
+  assert.equal(result.budget_exceeded, true);
+  assert.match(result.reason, /exceeds finite search budget/);
+});
+
+test('T-FADT-04: Operator guidance emits conditional support language without claiming unconditional permission', () => {
+  const packet = compileFadtReparativePacket({
+    fiber_rows: [
+      { id: 'ant-1', coordinates: { room: 'atrium', phase: 'A' }, support: ['REST', 'VENT'] },
+      { id: 'ant-2', coordinates: { room: 'atrium', phase: 'B' }, support: ['VENT', 'COMPOST'] }
+    ],
+    candidate_coordinates: ['phase'],
+    candidate_rule: ['VENT']
+  });
+
+  assert.match(packet.operator_guidance, /conditional on its valid and complete antecedents/);
+  assert.match(packet.operator_guidance, /Actual execution requires current custody-owner permission/);
+  assert.doesNotMatch(packet.operator_guidance, /Immediate execution.*is permitted/);
 });
 
 test('runFadtAgent enriches reparative_assistance with coordinate recovery and discrepancy audit', () => {

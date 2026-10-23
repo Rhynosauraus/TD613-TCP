@@ -26,6 +26,14 @@ function integer(value, label) {
   return number;
 }
 
+/**
+ * Set-valued relation mapping 5 epistemic harms into the power set of 6 positive survival capacities:
+ * R: H -> P(C) \ {empty}.
+ * The union of its image covers all 6 capacities (surjective image-coverage); it is neither a single-valued
+ * function from harms directly into individual capacities nor an underlying bijection.
+ * Initial scores (1.0) and decrement steps (0.2) are explicit heuristic calibration parameters,
+ * not empirical or physical measurements.
+ */
 export const EPISTEMIC_HARMS_TO_KNOWLEDGE_SURVIVAL = deepFreeze({
   PREMATURE_ONTOLOGICAL_CLOSURE: 'interpretability',
   UNIDENTIFIABLE_WIDENING: 'repairability',
