@@ -1,0 +1,63 @@
+{
+  "task_scope": "FULL_FIVE_DOLL_PRE_MERGE_INSPECTION",
+  "evidence_class": "SYNTHETIC_TEST_FIXTURE",
+  "evidence_references": [
+    "app/engine/dollhouse-pedagogue-dromological.js",
+    "app/engine/aperture-v32-typed-epistemic-deficit.js",
+    "app/engine/dollhouse-atlas-relational-custody.js",
+    "app/engine/dollhouse-fadt-reparative-assistance.js",
+    "app/engine/dollhouse-temporal-custodian.js"
+  ],
+  "roles": [
+    "PEDAGOGUE",
+    "APERTURE",
+    "ATLAS",
+    "FADT",
+    "TEMPORAL_CUSTODIAN",
+    "ORCHESTRATOR"
+  ],
+  "domain_inputs": {
+    "PEDAGOGUE": {
+      "events": [
+        { "phase": "NOTICE", "at": 10 },
+        { "phase": "ACT", "at": 20 },
+        { "phase": "WORLD_ANSWERS", "at": 30 },
+        { "phase": "NAME", "at": 40 }
+      ]
+    },
+    "APERTURE": {
+      "current_operator": [
+        [1.0, 0.0],
+        [0.0, 1.0]
+      ],
+      "noise_covariance": [
+        [1.0, 0.0],
+        [0.0, 1.0]
+      ]
+    },
+    "ATLAS": {
+      "trajectoryA": {
+        "endpoint": "STAGE_PR984_PROJECTION",
+        "winding": 0
+      },
+      "trajectoryB": {
+        "endpoint": "STAGE_PR984_PROJECTION",
+        "winding": 0
+      }
+    },
+    "FADT": {
+      "fiberRows": [
+        { "support": ["READ", "VERIFY"], "condition": "SAFE" }
+      ],
+      "attempts_unconditioned_action": false
+    },
+    "TEMPORAL_CUSTODIAN": {
+      "phases": {
+        "INGRESS": { "status": "PASS", "entry_id": "entry-001" },
+        "EXECUTION": { "status": "PASS", "entry_id": "entry-002" },
+        "RELOCK": { "status": "PASS", "entry_id": "entry-003" }
+      },
+      "required_phases": ["INGRESS", "EXECUTION", "RELOCK"]
+    }
+  }
+}
