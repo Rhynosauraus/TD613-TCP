@@ -11,7 +11,9 @@ import {
   auditPhasonCustodyDiff,
   stableContentEquals,
   canonicalSerialize,
+  stableStringify,
   validateStructuredSnapshotDomain,
+  SNAPSHOT_DOMAIN_LIMITS,
   DOLLHOUSE_ATLAS_RELATION_IDENTITY_SCHEMA,
   DOLLHOUSE_ATLAS_HISTORY_PARITY_SCHEMA,
   DOLLHOUSE_TYPED_DIGEST_SCHEMA,
@@ -453,4 +455,159 @@ test('T-CROSS-04: Cross-instrument Phason custody diff verifies invariance betwe
   assert.equal(diff.content_invariant, true);
   assert.equal(diff.projection_changed, true);
   assert.equal(diff.collision_detected, false);
+});
+
+// =========================================================================
+// REQUIREMENT A & B ADVERSARIAL TESTS: Typed Collision Prevention & Safe Fallback
+// =========================================================================
+
+test('T-STRUCT-08: Negative fixture - {x: Uint8Array([1])} vs {x: {$bytes: "01"}} are distinct and do not collide', () => {
+  const A = { x: new Uint8Array([1]) };
+  const B = { x: { $bytes: '01' } };
+
+  const serA = canonicalSerialize(A);
+  const serB = canonicalSerialize(B);
+
+  // Serialized forms must be distinct under versioned injective encoding
+  assert.notEqual(serA, serB);
+  assert.equal(serA, 'v1:o:{"x":u:01}');
+  assert.equal(serB, 'v1:o:{"x":o:{"$bytes":s:"01"}}');
+
+  // Typed content equality must evaluate to false
+  assert.equal(stableContentEquals(A, B), false);
+  assert.equal(stableContentEquals(B, A), false);
+
+  // Hashes must be distinct
+  const hashA = computeTypedFnv1a32(A);
+  const hashB = computeTypedFnv1a32(B);
+  assert.notEqual(hashA.typed_digest, hashB.typed_digest);
+});
+
+test('T-STRUCT-09: Extra non-index array properties are rejected fail-closed', () => {
+  const arr = [1, 2];
+  arr.extra = 'malicious';
+
+  const check = validateStructuredSnapshotDomain(arr);
+  assert.equal(check.valid, false);
+  assert.match(check.reason, /Extra non-index array property detected/);
+
+  assert.throws(
+    () => canonicalSerialize(arr),
+    /Extra non-index array property detected/
+  );
+  assert.equal(stableContentEquals(arr, [1, 2]), false);
+});
+
+test('T-STRUCT-10: Bounded binary input length rejects oversized Uint8Array instances', () => {
+  // Uint8Array exceeding SNAPSHOT_DOMAIN_LIMITS.MAX_BINARY_LENGTH must fail closed
+  const oversized = new Uint8Array(SNAPSHOT_DOMAIN_LIMITS.MAX_BINARY_LENGTH + 1);
+  const check = validateStructuredSnapshotDomain(oversized);
+
+  assert.equal(check.valid, false);
+  assert.match(check.reason, /Binary length exceeded limit/);
+
+  assert.throws(
+    () => canonicalSerialize(oversized),
+    /Binary length exceeded limit/
+  );
+});
+
+test('T-STRUCT-11: Extra properties on Uint8Array are rejected fail-closed', () => {
+  const u = new Uint8Array([1, 2, 3]);
+  u.tampered = 'payload';
+
+  const check = validateStructuredSnapshotDomain(u);
+  assert.equal(check.valid, false);
+  assert.match(check.reason, /Extra property detected on Uint8Array/);
+
+  assert.throws(
+    () => canonicalSerialize(u),
+    /Extra property detected on Uint8Array/
+  );
+});
+
+test('T-STRUCT-12: Nested structures with typed binary, arrays, and objects serialize injectively', () => {
+  const nested = {
+    header: { version: 1, flag: true },
+    data: new Uint8Array([10, 11]),
+    records: [
+      { id: 'rec-1', count: 0 },
+      { id: 'rec-2', payload: null }
+    ]
+  };
+
+  const serialized = canonicalSerialize(nested);
+  assert.equal(
+    serialized,
+    'v1:o:{"data":u:0a0b,"header":o:{"flag":b:1,"version":n:1},"records":a:[o:{"count":n:0,"id":s:"rec-1"},o:{"id":s:"rec-2","payload":z}]}'
+  );
+
+  // Equal cloned object must produce exact same serialization
+  const clone = {
+    records: [
+      { id: 'rec-1', count: 0 },
+      { id: 'rec-2', payload: null }
+    ],
+    data: new Uint8Array([10, 11]),
+    header: { flag: true, version: 1 }
+  };
+  assert.equal(canonicalSerialize(clone), serialized);
+  assert.equal(stableContentEquals(nested, clone), true);
+});
+
+test('T-STRUCT-13: stableStringify throws on invalid input without falling back to JSON.stringify or executing getters', () => {
+  let getterExecuted = false;
+  const trapObject = {
+    get evil() {
+      getterExecuted = true;
+      return 'pwned';
+    }
+  };
+
+  // stableStringify must throw TypeError and NEVER call JSON.stringify fallback
+  assert.throws(
+    () => stableStringify(trapObject),
+    /Property accessor \(getter\/setter\) detected/
+  );
+  assert.equal(getterExecuted, false, 'Accessor getter must NEVER be executed by stableStringify');
+});
+
+test('T-STRUCT-14: Hostile projection object with getter triggers HOLD_INVALID_PROJECTION_DOMAIN without executing getter', () => {
+  let getterExecuted = false;
+  const hostileProjection = {
+    get injected() {
+      getterExecuted = true;
+      return 'exploit';
+    }
+  };
+
+  const payload = 'canonical-verified-payload';
+  const computed = computeTypedFnv1a32(payload);
+
+  const diff = auditPhasonCustodyDiff(
+    { artifact_id: 'art-1', payload, metadata: { raw_hash: computed.canonical_digest }, projection: hostileProjection },
+    { artifact_id: 'art-2', payload, metadata: { raw_hash: computed.canonical_digest }, projection: { mode: 'normal' } }
+  );
+
+  assert.equal(diff.status, 'HOLD_INVALID_PROJECTION_DOMAIN');
+  assert.equal(diff.content_invariant, true);
+  assert.equal(diff.projection_changed, false);
+  assert.equal(diff.invalid_projection_domain, true);
+  assert.equal(getterExecuted, false, 'Hostile getter in projection must NEVER be executed');
+  assert.match(diff.reason, /projection rejected by structured snapshot validator/);
+});
+
+test('T-STRUCT-15: Projection with out-of-domain {x: NaN} vs {x: null} triggers HOLD_INVALID_PROJECTION_DOMAIN', () => {
+  const payload = 'canonical-verified-payload';
+  const computed = computeTypedFnv1a32(payload);
+
+  const diff = auditPhasonCustodyDiff(
+    { artifact_id: 'art-1', payload, metadata: { raw_hash: computed.canonical_digest }, projection: { x: NaN } },
+    { artifact_id: 'art-2', payload, metadata: { raw_hash: computed.canonical_digest }, projection: { x: null } }
+  );
+
+  assert.equal(diff.status, 'HOLD_INVALID_PROJECTION_DOMAIN');
+  assert.equal(diff.invalid_projection_domain, true);
+  assert.equal(diff.projection_changed, false);
+  assert.match(diff.reason, /Non-finite number \(NaN\) is out of snapshot domain/);
 });

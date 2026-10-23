@@ -6,6 +6,8 @@ import {
   evaluateFadtCoordinateRecovery,
   evaluateFadtDiscrepancyIdentity,
   compileFadtReparativePacket,
+  encodeFadtCoordinateValue,
+  encodeFadtPartitionKey,
   DOLLHOUSE_FADT_REPARATIVE_ASSISTANCE_SCHEMA,
   DOLLHOUSE_FADT_DISCREPANCY_IDENTITY_SCHEMA,
   FADT_REPARATIVE_LAWS
@@ -243,4 +245,124 @@ test('runFadtAgent enriches reparative_assistance with coordinate recovery and d
   const disc = receipt.reparative_assistance.discrepancy_audit['colliding-fiber-1'];
   assert.equal(disc.universally_sound, true);
   assert.equal(disc.disposition, 'ACCEPT_UNIVERSALLY_SOUND');
+});
+
+// =========================================================================
+// REQUIREMENT C ADVERSARIAL TESTS: Unambiguous FADT Partition Key Encoding
+// =========================================================================
+
+test('T-FADT-05: Negative fixture - delimiter injection {x: "foo|y=bar", y: "baz"} vs {x: "foo", y: "bar|y=baz"} produces distinct partition keys and partitions', () => {
+  const rowA = {
+    id: 'row-a',
+    coordinates: { x: 'foo|y=bar', y: 'baz' },
+    support: ['ACTION_A']
+  };
+  const rowB = {
+    id: 'row-b',
+    coordinates: { x: 'foo', y: 'bar|y=baz' },
+    support: ['ACTION_B']
+  };
+
+  const subset = ['x', 'y'];
+  const keyA = encodeFadtPartitionKey(subset, rowA.coordinates);
+  const keyB = encodeFadtPartitionKey(subset, rowB.coordinates);
+
+  // Partition keys must be distinct
+  assert.notEqual(keyA, keyB);
+  assert.equal(keyA, '[["x","s:\\"foo|y=bar\\""],["y","s:\\"baz\\""]]');
+  assert.equal(keyB, '[["x","s:\\"foo\\""],["y","s:\\"bar|y=baz\\""]]');
+
+  // When evaluating coordinate recovery over both rows, subset ['x', 'y'] must partition into 2 subfibers
+  const recovery = evaluateFadtCoordinateRecovery([rowA, rowB], subset);
+  assert.equal(recovery.status, 'RESTORING_COORDINATE_EXTENSION_FOUND');
+  const evalXY = recovery.evaluations.find(e => e.size === 2);
+  assert.ok(evalXY, 'Evaluation for subset [x, y] must exist');
+  assert.equal(evalXY.partition_count, 2, 'Must create 2 separate subfibers rather than colliding into 1');
+  assert.equal(evalXY.resolves, true);
+});
+
+test('T-FADT-06: Coordinate types are strictly preserved without delimiter or type coercion', () => {
+  // Number vs String
+  const keyNum = encodeFadtPartitionKey(['x'], { x: 1 });
+  const keyStr = encodeFadtPartitionKey(['x'], { x: '1' });
+  assert.notEqual(keyNum, keyStr);
+  assert.equal(keyNum, '[["x","n:1"]]');
+  assert.equal(keyStr, '[["x","s:\\"1\\""]]');
+
+  // Boolean vs String
+  const keyBool = encodeFadtPartitionKey(['x'], { x: true });
+  const keyBoolStr = encodeFadtPartitionKey(['x'], { x: 'true' });
+  assert.notEqual(keyBool, keyBoolStr);
+  assert.equal(keyBool, '[["x","b:1"]]');
+  assert.equal(keyBoolStr, '[["x","s:\\"true\\""]]');
+
+  // Null vs String
+  const keyNull = encodeFadtPartitionKey(['x'], { x: null });
+  const keyNullStr = encodeFadtPartitionKey(['x'], { x: 'null' });
+  assert.notEqual(keyNull, keyNullStr);
+  assert.equal(keyNull, '[["x","z:null"]]');
+  assert.equal(keyNullStr, '[["x","s:\\"null\\""]]');
+});
+
+test('T-FADT-07: Missing coordinates are distinguished from present values (null, 0, false, "")', () => {
+  const keyMissing = encodeFadtPartitionKey(['x'], {});
+  const keyNull = encodeFadtPartitionKey(['x'], { x: null });
+  const keyZero = encodeFadtPartitionKey(['x'], { x: 0 });
+  const keyFalse = encodeFadtPartitionKey(['x'], { x: false });
+  const keyEmptyStr = encodeFadtPartitionKey(['x'], { x: '' });
+
+  assert.equal(keyMissing, '[["x","m:missing"]]');
+  assert.notEqual(keyMissing, keyNull);
+  assert.notEqual(keyMissing, keyZero);
+  assert.notEqual(keyMissing, keyFalse);
+  assert.notEqual(keyMissing, keyEmptyStr);
+});
+
+test('T-FADT-08: Unsupported coordinate data is rejected fail-closed with TypeError', () => {
+  // Non-finite number (NaN, Infinity)
+  assert.throws(
+    () => encodeFadtPartitionKey(['x'], { x: NaN }),
+    { name: 'TypeError', message: /Unsupported coordinate data: non-finite number/ }
+  );
+  assert.throws(
+    () => encodeFadtPartitionKey(['x'], { x: Infinity }),
+    { name: 'TypeError', message: /Unsupported coordinate data: non-finite number/ }
+  );
+
+  // Explicit undefined
+  assert.throws(
+    () => encodeFadtPartitionKey(['x'], { x: undefined }),
+    { name: 'TypeError', message: /Unsupported coordinate data: explicit undefined/ }
+  );
+
+  // Complex objects and functions
+  assert.throws(
+    () => encodeFadtPartitionKey(['x'], { x: { nested: true } }),
+    { name: 'TypeError', message: /Unsupported coordinate data: type "object"/ }
+  );
+  assert.throws(
+    () => encodeFadtPartitionKey(['x'], { x: () => {} }),
+    { name: 'TypeError', message: /Unsupported coordinate data: type "function"/ }
+  );
+  assert.throws(
+    () => encodeFadtPartitionKey(['x'], { x: Symbol('coord') }),
+    { name: 'TypeError', message: /Unsupported coordinate data: type "symbol"/ }
+  );
+});
+
+test('T-FADT-09: Exact-descent controls and 10,000 budget limits remain strictly preserved', () => {
+  // Verify FADT laws
+  assert.equal(FADT_REPARATIVE_LAWS.exact_finite_admissibility_descent, true);
+  assert.equal(FADT_REPARATIVE_LAWS.sharp_discrepancy_identity_holds_universally, true);
+  assert.equal(FADT_REPARATIVE_LAWS.universally_sound_support_never_widens_antecedents, true);
+
+  // Search budget limit of 10,000 evaluations
+  const manyCoords = Array.from({ length: 15 }, (_, i) => `c${i}`);
+  const result = evaluateFadtCoordinateRecovery(
+    [{ id: '1', coordinates: { c0: 1 }, support: ['ACT_A'] }, { id: '2', coordinates: { c0: 2 }, support: ['ACT_B'] }],
+    manyCoords
+  );
+  assert.equal(result.status, 'UNSUPPORTED_SEARCH_SIZE');
+  assert.equal(result.budget_limit, 10000);
+  assert.equal(result.budget_exceeded, true);
 });

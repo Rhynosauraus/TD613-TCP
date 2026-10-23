@@ -48,7 +48,8 @@ export const SNAPSHOT_DOMAIN_LIMITS = Object.freeze({
   MAX_DEPTH: 32,
   MAX_NODES: 5000,
   MAX_KEY_LENGTH: 256,
-  MAX_STRING_LENGTH: 1_000_000
+  MAX_STRING_LENGTH: 1_000_000,
+  MAX_BINARY_LENGTH: 1_000_000
 });
 
 /**
@@ -58,6 +59,9 @@ export const SNAPSHOT_DOMAIN_LIMITS = Object.freeze({
  * - undefined values (as standalone values, object property values, or array elements)
  * - unsupported primitive types (symbol, bigint, function)
  * - sparse arrays (e.g. new Array(1), [,,], or deleted indices)
+ * - extra non-index array properties or non-standard array keys
+ * - non-standard Uint8Array instances or extra properties on binary buffers
+ * - binary buffers exceeding MAX_BINARY_LENGTH (1,000,000 bytes)
  * - non-plain objects (custom prototypes, Date, RegExp, Map, Set, Promise, Error, etc.)
  * - property accessors (getters/setters, without evaluating getters)
  * - non-enumerable or symbol-keyed properties
@@ -118,6 +122,18 @@ export function validateStructuredSnapshotDomain(value, options = {}) {
     }
 
     if (current instanceof Uint8Array) {
+      if (Object.getPrototypeOf(current) !== Uint8Array.prototype) {
+        return { valid: false, reason: 'Non-standard Uint8Array prototype is out of snapshot domain', path };
+      }
+      if (current.byteLength > SNAPSHOT_DOMAIN_LIMITS.MAX_BINARY_LENGTH) {
+        return { valid: false, reason: `Binary length exceeded limit (${SNAPSHOT_DOMAIN_LIMITS.MAX_BINARY_LENGTH})`, path };
+      }
+      if (Object.keys(current).length !== current.length) {
+        return { valid: false, reason: 'Extra property detected on Uint8Array', path };
+      }
+      if (Object.getOwnPropertySymbols(current).length > 0) {
+        return { valid: false, reason: 'Symbol-keyed property detected on Uint8Array', path };
+      }
       return { valid: true };
     }
 
@@ -131,6 +147,25 @@ export function validateStructuredSnapshotDomain(value, options = {}) {
       for (let i = 0; i < len; i += 1) {
         if (!Object.prototype.hasOwnProperty.call(current, i)) {
           return { valid: false, reason: `Sparse array detected at index ${i}`, path: `${path}[${i}]` };
+        }
+      }
+      if (Object.keys(current).length !== len) {
+        return { valid: false, reason: 'Extra non-index array property detected', path };
+      }
+      if (Object.getOwnPropertyNames(current).length !== len + 1) {
+        return { valid: false, reason: 'Non-standard array property detected', path };
+      }
+      if (Object.getOwnPropertySymbols(current).length > 0) {
+        return { valid: false, reason: 'Symbol-keyed array property detected', path };
+      }
+      const descs = Object.getOwnPropertyDescriptors(current);
+      for (let i = 0; i < len; i += 1) {
+        const desc = descs[i];
+        if (desc.get !== undefined || desc.set !== undefined) {
+          return { valid: false, reason: `Property accessor (getter/setter) detected on array index ${i}`, path: `${path}[${i}]` };
+        }
+        if (!desc.enumerable) {
+          return { valid: false, reason: `Non-enumerable array index ${i}`, path: `${path}[${i}]` };
         }
         const itemRes = walk(current[i], depth + 1, `${path}[${i}]`);
         if (!itemRes.valid) return itemRes;
@@ -178,7 +213,7 @@ export function validateStructuredSnapshotDomain(value, options = {}) {
 }
 
 /**
- * Serializes a validated structured snapshot into a canonical deterministic string.
+ * Serializes a validated structured snapshot into a versioned, injective deterministic string.
  * Throws TypeError if the input is outside the accepted snapshot domain.
  */
 export function canonicalSerialize(value) {
@@ -187,39 +222,35 @@ export function canonicalSerialize(value) {
     throw new TypeError(`Cannot canonically serialize out-of-domain snapshot: ${check.reason} at ${check.path}`);
   }
 
-  function serialize(current) {
-    if (current === null) return 'null';
+  function serializeNode(current) {
+    if (current === null) return 'z';
     const t = typeof current;
-    if (t === 'boolean') return current ? 'true' : 'false';
+    if (t === 'boolean') return current ? 'b:1' : 'b:0';
     if (t === 'number') {
-      return Object.is(current, -0) ? '0' : String(current);
+      return `n:${Object.is(current, -0) ? '0' : String(current)}`;
     }
     if (t === 'string') {
-      return JSON.stringify(current);
+      return `s:${JSON.stringify(current)}`;
     }
     if (current instanceof Uint8Array) {
       let hex = '';
       for (let i = 0; i < current.length; i += 1) {
         hex += current[i].toString(16).padStart(2, '0');
       }
-      return `{"$bytes":"${hex}"}`;
+      return `u:${hex}`;
     }
     if (Array.isArray(current)) {
-      return `[${current.map(serialize).join(',')}]`;
+      return `a:[${current.map(serializeNode).join(',')}]`;
     }
     const keys = Object.keys(current).sort();
-    return `{${keys.map(k => `${JSON.stringify(k)}:${serialize(current[k])}`).join(',')}}`;
+    return `o:{${keys.map(k => `${JSON.stringify(k)}:${serializeNode(current[k])}`).join(',')}}`;
   }
 
-  return serialize(value);
+  return `v1:${serializeNode(value)}`;
 }
 
 export function stableStringify(value) {
-  try {
-    return canonicalSerialize(value);
-  } catch {
-    return JSON.stringify(value);
-  }
+  return canonicalSerialize(value);
 }
 
 /**
@@ -670,10 +701,27 @@ export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}
 
   const contentInvariant = hashMatches && contentMatches;
 
-  // Projection comparison
+  // Projection validation & comparison
   const prevProj = previous.projection || {};
   const currProj = current.projection || {};
-  const projectionChanged = stableStringify(prevProj) !== stableStringify(currProj);
+  const valPrevProj = validateStructuredSnapshotDomain(prevProj);
+  const valCurrProj = validateStructuredSnapshotDomain(currProj);
+
+  if (!valPrevProj.valid || !valCurrProj.valid) {
+    return deepFreeze({
+      schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+      status: 'HOLD_INVALID_PROJECTION_DOMAIN',
+      content_invariant: contentInvariant,
+      projection_changed: false,
+      invalid_projection_domain: true,
+      decision: 'invalid-projection-domain-refused',
+      reason: `projection rejected by structured snapshot validator: ${!valPrevProj.valid ? valPrevProj.reason : valCurrProj.reason}`,
+      claim_ceiling: 'caller-string-equality-does-not-establish-content-invariance',
+      laws: ATLAS_RELATION_CUSTODY_LAWS
+    });
+  }
+
+  const projectionChanged = canonicalSerialize(prevProj) !== canonicalSerialize(currProj);
 
   return deepFreeze({
     schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,

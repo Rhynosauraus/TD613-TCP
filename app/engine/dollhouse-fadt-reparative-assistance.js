@@ -128,6 +128,65 @@ function getSubsets(array) {
 }
 
 /**
+ * Encodes an individual coordinate value into an unambiguous typed token.
+ * Distinguishes:
+ * - missing: 'm:missing'
+ * - null: 'z:null'
+ * - boolean: 'b:1' / 'b:0'
+ * - number (finite): 'n:' + (Object.is(n, -0) ? '0' : String(n))
+ * - string: 's:' + JSON.stringify(s)
+ * Rejects unsupported coordinate data: non-finite numbers (NaN, Infinity),
+ * undefined, symbols, bigints, functions, objects, arrays.
+ */
+export function encodeFadtCoordinateValue(coords, coordinateName) {
+  if (coords == null || typeof coords !== 'object') {
+    return 'm:missing';
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(coords, coordinateName)) {
+    return 'm:missing';
+  }
+
+  const val = coords[coordinateName];
+
+  if (val === undefined) {
+    throw new TypeError(`Unsupported coordinate data: explicit undefined for coordinate "${coordinateName}"`);
+  }
+
+  if (val === null) {
+    return 'z:null';
+  }
+
+  const t = typeof val;
+
+  if (t === 'boolean') {
+    return val ? 'b:1' : 'b:0';
+  }
+
+  if (t === 'number') {
+    if (!Number.isFinite(val)) {
+      throw new TypeError(`Unsupported coordinate data: non-finite number (${val}) for coordinate "${coordinateName}"`);
+    }
+    return `n:${Object.is(val, -0) ? '0' : String(val)}`;
+  }
+
+  if (t === 'string') {
+    return `s:${JSON.stringify(val)}`;
+  }
+
+  throw new TypeError(`Unsupported coordinate data: type "${t}" for coordinate "${coordinateName}"`);
+}
+
+/**
+ * Encodes an ordered coordinate subset tuple into an unambiguous partition key.
+ * Format: JSON array of [coordinateName, typedValueToken] pairs.
+ */
+export function encodeFadtPartitionKey(subset, coords) {
+  const tuple = subset.map(c => [c, encodeFadtCoordinateValue(coords, c)]);
+  return JSON.stringify(tuple);
+}
+
+/**
  * Evaluates candidate conditioning coordinates to find the minimal coordinate extension
  * that partitions a colliding fiber into subfibers with constant action support (\Gamma = \emptyset).
  *
@@ -180,7 +239,7 @@ export function evaluateFadtCoordinateRecovery(collidingFiberRows = [], candidat
     const groups = new Map();
     for (const row of collidingFiberRows) {
       const coords = row.coordinates || row.antecedent || row;
-      const key = subset.map(c => `${c}=${coords[c]}`).join('|');
+      const key = encodeFadtPartitionKey(subset, coords);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(row);
     }
