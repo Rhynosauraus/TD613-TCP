@@ -16,9 +16,10 @@ import {
 } from '../app/dome-world/holonomy-loom/semantic-field.js';
 
 assert.equal(DOLLHOUSE_AGENT_REGISTRY.schema, 'td613.dollhouse.agent-registry/v0.1');
-assert.deepEqual(listDollhouseAgents().map(agent => agent.id), ['PEDAGOGUE', 'APERTURE', 'ATLAS', 'FADT']);
+assert.deepEqual(listDollhouseAgents().map(agent => agent.id), ['PEDAGOGUE', 'APERTURE', 'ATLAS', 'FADT', 'TEMPORAL_CUSTODIAN']);
 assert.equal(getDollhouseAgent('atlas').kind, 'OPERATIONAL_AGENT_ADAPTER');
 assert.equal(getDollhouseAgent('fadt').kind, 'OPERATIONAL_AGENT_ADAPTER');
+assert.equal(getDollhouseAgent('temporal_custodian').kind, 'OPERATIONAL_AGENT_ADAPTER');
 assert.equal(DOLLHOUSE_AGENT_REGISTRY.shared_authority.human_closure_required, true);
 assert.equal(DOLLHOUSE_AGENT_REGISTRY.shared_authority.deployment_authority, false);
 
@@ -61,6 +62,9 @@ assert.equal(fadtPositive.fibres[0].verdict, 'AUTHORIZED');
 assert.deepEqual(fadtPositive.fibres[0].union, ['REST', 'RETURN']);
 assert.deepEqual(fadtPositive.fibres[0].intersection, ['REST', 'RETURN']);
 assert.deepEqual(fadtPositive.fibres[0].irreducible_gap, []);
+assert.equal(fadtPositive.reparative_assistance.reparative_action_available, true);
+assert.deepEqual(fadtPositive.reparative_assistance.actionable_sound_support['constant-fibre'], ['REST', 'RETURN']);
+assert.deepEqual(fadtPositive.reparative_assistance.irreducible_gaps, {});
 
 const fadtHostile = runFadtAgent({
   fibres: [{
@@ -77,6 +81,9 @@ assert.deepEqual(fadtHostile.fibres[0].union, ['GREEN', 'RED']);
 assert.deepEqual(fadtHostile.fibres[0].intersection, []);
 assert.deepEqual(fadtHostile.fibres[0].irreducible_gap, ['GREEN', 'RED']);
 assert.equal(fadtHostile.fibres[0].gap_size, 2);
+assert.equal(fadtHostile.reparative_assistance.reparative_action_available, false);
+assert.deepEqual(fadtHostile.reparative_assistance.actionable_sound_support['incompatible-fibre'], []);
+assert.deepEqual(fadtHostile.reparative_assistance.irreducible_gaps['incompatible-fibre'], ['GREEN', 'RED']);
 
 const contradictionScene = compileLoomDemoScene(5, { sourceRevision: 'working-tree' });
 const loomFadt = runFadtAgent(loomComparedSurfacesToFadt(contradictionScene));

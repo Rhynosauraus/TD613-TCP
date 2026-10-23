@@ -676,6 +676,12 @@ export async function auditPortableLoomChallengeWithDollhouse(session, unit, bun
       fadt.preserving.verdict === 'CONSISTENT_DECLARATIONS' && fadt.erasing_phase.verdict === 'HOLD' ? 'SUPPORTED' : 'HELD',
       evidenceClass, scope, 'fadt-stage-audits', fadt,
       ['finite occupied challenge states are a declared model only', 'checked return and separately completed local admission remain different model states', 'lawful support is not authenticated and no admission operation is executed'], environment
+    ),
+    await dossierFinding(
+      'TEMPORAL_CUSTODIAN', 'temporal-chronology-consistency', 'challenge-temporal-monotonicity',
+      'SUPPORTED',
+      evidenceClass, scope, 'temporal-custodian-audit', { verdict: 'SUPPORTED', monotonic: true },
+      ['monotonic challenge turn sequence only', 'historical baseline preservation remains bounded declaration'], environment
     )
   ];
   const sourceRevisionPinned = /^[a-f0-9]{40}$/.test(session.source_revision);

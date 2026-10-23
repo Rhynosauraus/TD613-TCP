@@ -1,6 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createDollhouseCaseDossier, DOLLHOUSE_CASE_DOSSIER_SCHEMA } from '../app/engine/dollhouse-case-dossier.js';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import {
+  createDollhouseCaseDossier,
+  DOLLHOUSE_CASE_DOSSIER_SCHEMA,
+  DOLLHOUSE_WITNESS_RECEIPT_SCHEMA,
+  TRUSTED_WITNESS_REGISTRY,
+  computeWitnessReceiptDigest,
+  verifyWitnessReceipt
+} from '../app/engine/dollhouse-case-dossier.js';
+
+const amariKeyPair = crypto.generateKeyPairSync('ed25519');
+const amariPublicKeyPem = amariKeyPair.publicKey.export({ type: 'spki', format: 'pem' });
+const amariPrivateKey = amariKeyPair.privateKey;
+
+const operatorKeyPair = crypto.generateKeyPairSync('ed25519');
+const operatorPublicKeyPem = operatorKeyPair.publicKey.export({ type: 'spki', format: 'pem' });
+const operatorPrivateKey = operatorKeyPair.privateKey;
+
 const copy = value => structuredClone(value);
 function fixture(case_id = 'fictional-portable-boundary') {
   const make = (agent, verdict, evidence_class, id) => ({
@@ -12,6 +30,47 @@ function fixture(case_id = 'fictional-portable-boundary') {
     make('PEDAGOGUE', 'SUPPORTED', 'DECLARATION', 'p'), make('ATLAS', 'HELD', 'OFFLINE_TEST', 'a'),
     make('FADT', 'SUPPORTED', 'OFFLINE_TEST', 'f'), make('APERTURE', 'UNKNOWN', 'DECLARATION', 'o')
   ] };
+}
+
+function makeWitnessReceipt(overrides = {}) {
+  const beforeSha = crypto.createHash('sha256').update(fs.readFileSync('tests/fixtures/dollhouse/repair-before-held.json')).digest('hex');
+  const afterSha = crypto.createHash('sha256').update(fs.readFileSync('tests/fixtures/dollhouse/repair-after-supported.json')).digest('hex');
+
+  const receipt = {
+    schema: DOLLHOUSE_WITNESS_RECEIPT_SCHEMA,
+    witness_identity: 'AMARI_ADJUDICATION_AUTHORITY',
+    issuer_authority: 'AMARI_INDEPENDENT_ADJUDICATOR',
+    source_revision: 'b'.repeat(40),
+    episode_id: 'ep-repair-witness-001',
+    before_artifact: {
+      path: 'tests/fixtures/dollhouse/repair-before-held.json',
+      sha256: beforeSha,
+      verdict: 'HELD',
+      defect_class: 'NUMERICAL_STABILITY_DEFICIT'
+    },
+    after_artifact: {
+      path: 'tests/fixtures/dollhouse/repair-after-supported.json',
+      sha256: afterSha,
+      verdict: 'SUPPORTED',
+      predecessor_sha256: beforeSha
+    },
+    transition_claim: 'Numerical stability deficit repaired via one-sided Jacobi SVD with fail-closed rank thresholding.',
+    ...overrides
+  };
+
+  const digest = computeWitnessReceiptDigest(receipt);
+  receipt.verification_digest = digest;
+
+  const authority = TRUSTED_WITNESS_REGISTRY[receipt.witness_identity];
+  if (authority?.signature_algorithm === 'ed25519') {
+    const privKey = overrides.signing_key || (receipt.witness_identity === 'OPERATOR_DIRECT_WITNESS' ? operatorPrivateKey : amariPrivateKey);
+    receipt.signature = crypto.sign(null, Buffer.from(digest, 'utf8'), privKey).toString('hex');
+  } else {
+    const key = overrides.signing_key || authority?.verification_key || 'test-key';
+    receipt.signature = crypto.createHmac('sha256', key).update(digest).digest('hex');
+  }
+  delete receipt.signing_key;
+  return receipt;
 }
 test('dossier preserves distinct role disagreement and evidence classes without a majority verdict', () => {
   const input = fixture(), snapshot = copy(input), dossier = createDollhouseCaseDossier(input);
@@ -73,4 +132,262 @@ test('malformed, sparse, duplicate, unbounded, unscoped and authority-bearing do
     value => { value.findings[0].release = true; }
   ];
   for (const mutate of mutations) { const value = fixture(); mutate(value); assert.throws(() => createDollhouseCaseDossier(value), TypeError); }
+});
+
+test('repair demonstration is validated by explicit before/after task recovery rather than keyword matching', () => {
+  // 1. Without repair_demonstration, repairability is UNMEASURED (score 0.0)
+  const unmeasured = fixture();
+  const resUnmeasured = createDollhouseCaseDossier(unmeasured);
+  assert.equal(resUnmeasured.evidence_posture.knowledge_survival.repairability, 0.0);
+  assert.equal(resUnmeasured.evidence_posture.knowledge_survival.capacities.repairability.status, 'UNMEASURED');
+
+  // 2. Independently authenticated witness receipt with provisioned env trust anchor -> DEMONSTRATED (score 1.0)
+  process.env.TD613_AMARI_WITNESS_PUBLIC_KEY = amariPublicKeyPem;
+  try {
+    const demonstrated = fixture();
+    demonstrated.repair_demonstration = {
+      initial_verdict: 'HELD',
+      reparative_action: 'Applied least-restrictive lawful action support under stage erasure',
+      post_repair_verdict: 'SUPPORTED',
+      verified: true,
+      verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+      witness_receipt: makeWitnessReceipt({
+        witness_identity: 'AMARI_ADJUDICATION_AUTHORITY',
+        source_revision: demonstrated.source_revision
+      })
+    };
+    const resDemonstrated = createDollhouseCaseDossier(demonstrated);
+    assert.equal(resDemonstrated.evidence_posture.knowledge_survival.repairability, 1.0);
+    assert.equal(resDemonstrated.evidence_posture.knowledge_survival.capacities.repairability.status, 'DEMONSTRATED');
+
+    // 2b. Missing episode_id fails fail-closed
+    const missingEpisodeReceipt = makeWitnessReceipt({ source_revision: demonstrated.source_revision });
+    delete missingEpisodeReceipt.episode_id;
+    const missingEpisodeResult = verifyWitnessReceipt(missingEpisodeReceipt, {
+      expected_source_revision: demonstrated.source_revision
+    });
+    assert.equal(missingEpisodeResult.verified, false);
+    assert.equal(missingEpisodeResult.failure_reason, 'EPISODE_ID_REQUIRED');
+  } finally {
+    delete process.env.TD613_AMARI_WITNESS_PUBLIC_KEY;
+  }
+
+  // 3. Contemporaneous operator-direct witness receipt with provisioned env trust anchor -> DEMONSTRATED (score 1.0)
+  process.env.TD613_OPERATOR_WITNESS_PUBLIC_KEY = operatorPublicKeyPem;
+  try {
+    const operatorDirect = fixture();
+    operatorDirect.repair_demonstration = {
+      initial_verdict: 'HELD',
+      reparative_action: 'Applied least-restrictive lawful action support',
+      post_repair_verdict: 'SUPPORTED',
+      verified: true,
+      verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+      witness_receipt: makeWitnessReceipt({
+        witness_identity: 'OPERATOR_DIRECT_WITNESS',
+        issuer_authority: 'CONTEMPORANEOUS_OPERATOR_DIRECT',
+        source_revision: operatorDirect.source_revision
+      })
+    };
+    const resOperator = createDollhouseCaseDossier(operatorDirect);
+    assert.equal(resOperator.evidence_posture.knowledge_survival.repairability, 1.0);
+    assert.equal(resOperator.evidence_posture.knowledge_survival.capacities.repairability.status, 'DEMONSTRATED');
+  } finally {
+    delete process.env.TD613_OPERATOR_WITNESS_PUBLIC_KEY;
+  }
+
+  // 3b. When external trust anchor is NOT provisioned -> fails closed as EXTERNAL_WITNESS_ANCHOR_UNAVAILABLE_HELD (score 0.5)
+  delete process.env.TD613_AMARI_WITNESS_PUBLIC_KEY;
+  const unprovisioned = fixture();
+  unprovisioned.repair_demonstration = {
+    initial_verdict: 'HELD',
+    reparative_action: 'Applied least-restrictive lawful action support under stage erasure',
+    post_repair_verdict: 'SUPPORTED',
+    verified: true,
+    verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+    witness_receipt: makeWitnessReceipt({
+      witness_identity: 'AMARI_ADJUDICATION_AUTHORITY',
+      source_revision: unprovisioned.source_revision
+    })
+  };
+  const resUnprovisioned = createDollhouseCaseDossier(unprovisioned);
+  assert.equal(resUnprovisioned.evidence_posture.knowledge_survival.repairability, 0.5);
+  assert.equal(resUnprovisioned.evidence_posture.knowledge_survival.capacities.repairability.status, 'EXTERNAL_WITNESS_ANCHOR_UNAVAILABLE_HELD');
+  assert.ok(resUnprovisioned.evidence_posture.knowledge_survival.capacities.repairability.limitations.includes('External public verification key not provisioned'));
+
+  // 3c. Caller cannot replace sealed trust registry via options.trusted_registry
+  const forgedRegistry = {
+    AMARI_ADJUDICATION_AUTHORITY: {
+      witness_identity: 'AMARI_ADJUDICATION_AUTHORITY',
+      authority_class: 'FORGED_AUTHORITY',
+      verification_key: 'caller-injected-backdoor-key',
+      is_independent: true
+    }
+  };
+  const callerInjectedReceipt = makeWitnessReceipt({
+    witness_identity: 'AMARI_ADJUDICATION_AUTHORITY',
+    signing_key: amariPrivateKey
+  });
+  const injectedResult = verifyWitnessReceipt(callerInjectedReceipt, {
+    expected_source_revision: callerInjectedReceipt.source_revision,
+    trusted_registry: forgedRegistry
+  });
+  assert.equal(injectedResult.verified, false);
+  assert.equal(injectedResult.failure_reason, 'EXTERNAL_TRUST_ANCHOR_NOT_PROVISIONED');
+
+  // 4. Synthetic offline test authority receipt -> SYNTHETIC_VERIFIED_RECOVERY (score 1.0 for verifier tests, zero external credit)
+  const synthetic = fixture();
+  synthetic.repair_demonstration = {
+    initial_verdict: 'HELD',
+    reparative_action: 'Applied least-restrictive lawful action support',
+    post_repair_verdict: 'SUPPORTED',
+    verified: true,
+    verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+    witness_receipt: makeWitnessReceipt({
+      witness_identity: 'SYNTHETIC_TEST_AUTHORITY',
+      issuer_authority: 'SYNTHETIC_TEST_FIXTURE',
+      source_revision: synthetic.source_revision
+    })
+  };
+  const resSynthetic = createDollhouseCaseDossier(synthetic);
+  assert.equal(resSynthetic.evidence_posture.knowledge_survival.repairability, 1.0);
+  assert.equal(resSynthetic.evidence_posture.knowledge_survival.capacities.repairability.status, 'SYNTHETIC_VERIFIED_RECOVERY');
+
+  // 5. Forged witness identity -> falls back to CALLER_DECLARED_RECOVERY (score 0.5)
+  const forged = fixture();
+  forged.repair_demonstration = {
+    initial_verdict: 'HELD',
+    reparative_action: 'Applied least-restrictive lawful action support',
+    post_repair_verdict: 'SUPPORTED',
+    verified: true,
+    verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+    witness_receipt: makeWitnessReceipt({
+      witness_identity: 'AMARI_INDEPENDENT_ADJUDICATOR', // Not in trusted registry
+      source_revision: forged.source_revision
+    })
+  };
+  const resForged = createDollhouseCaseDossier(forged);
+  assert.equal(resForged.evidence_posture.knowledge_survival.repairability, 0.5);
+  assert.equal(resForged.evidence_posture.knowledge_survival.capacities.repairability.status, 'CALLER_DECLARED_RECOVERY');
+
+  // 6. Unrelated files (package.json + README.md) -> rejected as FALSE_REPAIR_TRANSITION (score 0.5)
+  const pkgSha = crypto.createHash('sha256').update(fs.readFileSync('package.json')).digest('hex');
+  const readmeSha = crypto.createHash('sha256').update(fs.readFileSync('README.md')).digest('hex');
+  const unrelated = fixture();
+  unrelated.repair_demonstration = {
+    initial_verdict: 'HELD',
+    reparative_action: 'Applied least-restrictive lawful action support',
+    post_repair_verdict: 'SUPPORTED',
+    verified: true,
+    verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+    witness_receipt: makeWitnessReceipt({
+      source_revision: unrelated.source_revision,
+      before_artifact: { path: 'package.json', sha256: pkgSha, verdict: 'HELD', defect_class: 'ANY' },
+      after_artifact: { path: 'README.md', sha256: readmeSha, verdict: 'SUPPORTED', predecessor_sha256: pkgSha }
+    })
+  };
+  const resUnrelated = createDollhouseCaseDossier(unrelated);
+  assert.equal(resUnrelated.evidence_posture.knowledge_survival.repairability, 0.5);
+  assert.equal(resUnrelated.evidence_posture.knowledge_survival.capacities.repairability.status, 'CALLER_DECLARED_RECOVERY');
+
+  // 7. Corrupted signature -> fails verification (score 0.5)
+  process.env.TD613_AMARI_WITNESS_PUBLIC_KEY = amariPublicKeyPem;
+  try {
+    const corrupted = fixture();
+    const corruptedReceipt = makeWitnessReceipt({ source_revision: corrupted.source_revision });
+    corruptedReceipt.signature = '0'.repeat(128);
+    corrupted.repair_demonstration = {
+      initial_verdict: 'HELD',
+      reparative_action: 'Applied least-restrictive lawful action support',
+      post_repair_verdict: 'SUPPORTED',
+      verified: true,
+      verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+      witness_receipt: corruptedReceipt
+    };
+    const resCorrupted = createDollhouseCaseDossier(corrupted);
+    assert.equal(resCorrupted.evidence_posture.knowledge_survival.repairability, 0.5);
+    assert.equal(resCorrupted.evidence_posture.knowledge_survival.capacities.repairability.status, 'CALLER_DECLARED_RECOVERY');
+
+    // 8. Untrusted signing key -> fails verification (score 0.5)
+    const untrustedKeyPair = crypto.generateKeyPairSync('ed25519');
+    const untrustedKey = fixture();
+    untrustedKey.repair_demonstration = {
+      initial_verdict: 'HELD',
+      reparative_action: 'Applied least-restrictive lawful action support',
+      post_repair_verdict: 'SUPPORTED',
+      verified: true,
+      verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+      witness_receipt: makeWitnessReceipt({
+        source_revision: untrustedKey.source_revision,
+        signing_key: untrustedKeyPair.privateKey
+      })
+    };
+    const resUntrustedKey = createDollhouseCaseDossier(untrustedKey);
+    assert.equal(resUntrustedKey.evidence_posture.knowledge_survival.repairability, 0.5);
+    assert.equal(resUntrustedKey.evidence_posture.knowledge_survival.capacities.repairability.status, 'CALLER_DECLARED_RECOVERY');
+
+    // 9. Stale source revision -> fails verification (score 0.5)
+    const stale = fixture();
+    stale.repair_demonstration = {
+      initial_verdict: 'HELD',
+      reparative_action: 'Applied least-restrictive lawful action support',
+      post_repair_verdict: 'SUPPORTED',
+      verified: true,
+      verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+      witness_receipt: makeWitnessReceipt({
+        source_revision: 'c'.repeat(40) // Mismatch
+      })
+    };
+    const resStale = createDollhouseCaseDossier(stale);
+    assert.equal(resStale.evidence_posture.knowledge_survival.repairability, 0.5);
+    assert.equal(resStale.evidence_posture.knowledge_survival.capacities.repairability.status, 'CALLER_DECLARED_RECOVERY');
+  } finally {
+    delete process.env.TD613_AMARI_WITNESS_PUBLIC_KEY;
+  }
+
+  // 10. When caller declares INDEPENDENT_AUDIT_WITNESS but supplies NO witness receipt, score is 0.5 (CALLER_DECLARED_RECOVERY)
+  const selfAttested = fixture();
+  selfAttested.repair_demonstration = {
+    initial_verdict: 'HELD',
+    reparative_action: 'Applied least-restrictive lawful action support under stage erasure',
+    post_repair_verdict: 'SUPPORTED',
+    verified: true,
+    verification_mode: 'INDEPENDENT_AUDIT_WITNESS'
+  };
+  const resSelfAttested = createDollhouseCaseDossier(selfAttested);
+  assert.equal(resSelfAttested.evidence_posture.knowledge_survival.repairability, 0.5);
+  assert.equal(resSelfAttested.evidence_posture.knowledge_survival.capacities.repairability.status, 'CALLER_DECLARED_RECOVERY');
+
+  // 11. Caller declared without audit witness -> CALLER_DECLARED_RECOVERY (score 0.5)
+  const callerDeclared = fixture();
+  callerDeclared.repair_demonstration = {
+    initial_verdict: 'HELD',
+    reparative_action: 'Applied least-restrictive lawful action support under stage erasure',
+    post_repair_verdict: 'SUPPORTED',
+    verified: true,
+    verification_mode: 'CALLER_DECLARED'
+  };
+  const resCaller = createDollhouseCaseDossier(callerDeclared);
+  assert.equal(resCaller.evidence_posture.knowledge_survival.repairability, 0.5);
+  assert.equal(resCaller.evidence_posture.knowledge_survival.capacities.repairability.status, 'CALLER_DECLARED_RECOVERY');
+
+  // 12. Malformed repair demonstration throws TypeError
+  const invalidMutations = [
+    d => { d.repair_demonstration.initial_verdict = ''; },
+    d => { d.repair_demonstration.verified = 'true'; },
+    d => { d.repair_demonstration.verification_mode = 'UNVERIFIED_SELF_CLAIM'; },
+    d => { d.repair_demonstration.extra = 1; },
+    d => { d.repair_demonstration.witness_receipt = { schema: 'wrong' }; }
+  ];
+  for (const mut of invalidMutations) {
+    const bad = fixture();
+    bad.repair_demonstration = {
+      initial_verdict: 'HELD',
+      reparative_action: 'Action',
+      post_repair_verdict: 'SUPPORTED',
+      verified: true,
+      verification_mode: 'INDEPENDENT_AUDIT_WITNESS'
+    };
+    mut(bad);
+    assert.throws(() => createDollhouseCaseDossier(bad), TypeError);
+  }
 });

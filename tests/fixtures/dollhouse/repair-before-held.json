@@ -1,0 +1,8 @@
+{
+  "schema": "td613.dollhouse.repair-fixture/v0.1",
+  "fixture_id": "repair-fixture-001",
+  "verdict": "HELD",
+  "defect_class": "NUMERICAL_STABILITY_DEFICIT",
+  "observation": "Direct condition number kappa(A) = 1.0e16 exceeds allowable stability bound 1.0e12.",
+  "timestamp": "2026-10-22T20:00:00Z"
+}

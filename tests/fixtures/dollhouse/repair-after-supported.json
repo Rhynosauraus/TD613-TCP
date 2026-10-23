@@ -1,0 +1,9 @@
+{
+  "schema": "td613.dollhouse.repair-fixture/v0.1",
+  "fixture_id": "repair-fixture-001",
+  "verdict": "SUPPORTED",
+  "predecessor_sha256": "893cef81e4b0b97ec298d1f79b2f3243d3f90e526d6dceeb44fa87e81882d32c",
+  "reparative_action": "Applied direct one-sided Jacobi SVD with fail-closed rank thresholding and covariance whitening.",
+  "post_repair_condition": "Direct condition number kappa(A) = 1.414 < 1.0e12 bound. Numerical stability restored.",
+  "timestamp": "2026-10-22T20:10:00Z"
+}

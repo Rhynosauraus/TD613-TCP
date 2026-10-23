@@ -1,7 +1,13 @@
+import {
+  auditTypedEpistemicDeficit,
+  evaluateCandidateProbeStability,
+  mapEpistemicHarmsToPositiveSurvival
+} from './aperture-v32-typed-epistemic-deficit.js';
+
 /**
  * A declaration-only Aperture companion: audit a bounded witness/falsifier plan.
- * This adapter performs no observations, authenticates no artifacts, and does
- * not alter the installed Aperture release or its numerical deficit audit.
+ * This adapter performs no observations, authenticates no artifacts, and connects
+ * to the Aperture v3.2 typed epistemic deficit engine.
  */
 export const DOLLHOUSE_WITNESS_PLAN_SCHEMA = 'td613.dollhouse.witness-plan/v0.1';
 export const DOLLHOUSE_WITNESS_PLAN_RECEIPT_SCHEMA = 'td613.dollhouse.witness-plan-receipt/v0.1';
@@ -11,7 +17,9 @@ export const DOLLHOUSE_WITNESS_CLAIM_CLASSES = Object.freeze([
   'SIGNED_PREDECESSOR_CONTINUITY',
   'SCOPED_BEHAVIOR',
   'SCOPED_POLICY_ENFORCEMENT',
-  'EMPIRICAL_EPISODE_OBSERVATION'
+  'EMPIRICAL_EPISODE_OBSERVATION',
+  'NUMERICAL_STABILITY_AUDIT',
+  'INVERSE_MEASUREMENT_DESIGN'
 ]);
 
 export const DOLLHOUSE_WITNESS_EVIDENCE_CLASSES = Object.freeze([
@@ -24,7 +32,9 @@ const ceilings = Object.freeze({
   OFFLINE_TEST: 'A finite offline fixture witnesses only its tested inputs and harness; live behavior and external origin remain unmeasured.',
   BROWSER_WITNESS: 'A declared browser observation covers the inspected surface and actions; provider semantics and external origin require their own evidence.',
   PROVIDER_RESPONSE: 'Returned provider text supplies a response sample; policy enforcement and empirical external origin remain separate claims.',
-  EMPIRICAL_ACQUISITION: 'An empirical acquisition reference requires independent qualification of episode, instrument, custody and comparison frame; this plan authenticates none of them.'
+  EMPIRICAL_ACQUISITION: 'An empirical acquisition reference requires independent qualification of episode, instrument, custody and comparison frame; this plan authenticates none of them.',
+  NUMERICAL_STABILITY_AUDIT: 'Matrix SVD and condition number audit verifies numerical stability; physical sensor behavior requires independent empirical calibration.',
+  INVERSE_MEASUREMENT_DESIGN: 'Inverse measurement candidate ranking identifies stable rank-lifting probes; physical measurement requires independent observation.'
 });
 
 const imposedAlternatives = Object.freeze({
@@ -41,6 +51,12 @@ const imposedAlternatives = Object.freeze({
   ]),
   EMPIRICAL_EPISODE_OBSERVATION: Object.freeze([
     'EXTERNAL_ORIGIN_UNVERIFIED', 'EPISODE_AND_CUSTODY_QUALIFICATION_UNVERIFIED'
+  ]),
+  NUMERICAL_STABILITY_AUDIT: Object.freeze([
+    'NOISE_AMPLIFICATION_UNRESOLVED', 'CONDITION_NUMBER_CEILING_UNVERIFIED'
+  ]),
+  INVERSE_MEASUREMENT_DESIGN: Object.freeze([
+    'COLLINEAR_PROBE_ILL_CONDITIONING_UNRESOLVED', 'CORRELATED_NOISE_BLINDNESS_UNRESOLVED'
   ])
 });
 
@@ -59,6 +75,10 @@ function declarativeClone(value, budget = { nodes: 0, characters: 0 }, depth = 0
   if (typeof value === 'string') {
     budget.characters += value.length;
     if (value.length > 4000 || budget.characters > 64000) throw new TypeError('Declaration exceeds text bounds.');
+    return value;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new TypeError('Declaration numbers must be finite.');
     return value;
   }
   if (value === null || typeof value === 'boolean') return value;
@@ -140,11 +160,15 @@ function witness(value, label) {
 
 function validateClaim(claim, index) {
   const label = `claims[${index}]`;
-  exact(claim, [
+  const allowedKeys = [
     'id', 'claim_class', 'statement', 'extent', 'observation_scope', 'instrument',
     'evidence_class', 'positive_witness', 'hostile_counterexample',
     'unresolved_alternatives', 'required_next_observation'
-  ], label);
+  ];
+  if (Object.hasOwn(claim, 'numerical_deficit_input')) {
+    allowedKeys.push('numerical_deficit_input');
+  }
+  exact(claim, allowedKeys, label);
   text(claim.id, `${label}.id`);
   text(claim.statement, `${label}.statement`);
   if (!DOLLHOUSE_WITNESS_CLAIM_CLASSES.includes(claim.claim_class)) throw new TypeError(`${label}.claim_class is unsupported.`);
@@ -192,7 +216,37 @@ function auditClaim(claim) {
   const sparseWitness = !claim.positive_witness.artifact_refs.length || !claim.hostile_counterexample.artifact_refs.length;
   let disposition;
   let basis;
-  if (next !== null) {
+  let numericalDeficitReceipt = null;
+  let epistemicHarms = null;
+
+  if (claim.numerical_deficit_input) {
+    numericalDeficitReceipt = auditTypedEpistemicDeficit(claim.numerical_deficit_input);
+    epistemicHarms = mapEpistemicHarmsToPositiveSurvival(claim.unresolved_alternatives);
+    if (numericalDeficitReceipt.disposition === 'REJECT') {
+      disposition = 'REJECT';
+      basis = [`NUMERICAL_DEFICIT_${numericalDeficitReceipt.deficit_class}`, numericalDeficitReceipt.reason];
+    } else if (numericalDeficitReceipt.disposition === 'ABSTAIN') {
+      disposition = 'ABSTAIN';
+      basis = [`NUMERICAL_DEFICIT_${numericalDeficitReceipt.deficit_class}`, numericalDeficitReceipt.reason];
+    } else if (numericalDeficitReceipt.disposition === 'PROPOSE') {
+      if (numericalDeficitReceipt.candidate_probe_evaluation) {
+        const evalResult = numericalDeficitReceipt.candidate_probe_evaluation;
+        if (evalResult.disposition === 'PROPOSE' && evalResult.best_candidate) {
+          disposition = 'PROPOSE';
+          basis = [evalResult.best_candidate.recommendation, `CONDITION_NUMBER_${evalResult.best_candidate.condition_number}`];
+        } else {
+          disposition = 'ABSTAIN';
+          basis = ['ALL_CANDIDATE_PROBES_FAIL_STABILITY_OR_RANK_CRITERIA'];
+        }
+      } else {
+        disposition = 'PROPOSE';
+        basis = [numericalDeficitReceipt.admissible_question_criterion];
+      }
+    } else {
+      disposition = 'ASK_NOTHING';
+      basis = ['NO_DECLARED_LOCAL_IDENTIFIABILITY_DEFICIT'];
+    }
+  } else if (next !== null) {
     disposition = 'PROPOSE';
     basis = ['DECLARED_DISCRIMINATING_OBSERVATION_REQUIRES_SEPARATE_HUMAN_APPROVAL'];
   } else if (claim.unresolved_alternatives.length || sparseWitness) {
@@ -202,6 +256,7 @@ function auditClaim(claim) {
     disposition = 'ASK_NOTHING';
     basis = ['NO_DECLARED_NEXT_QUESTION_IN_THIS_BOUNDED_PLAN', 'PLAN_COMPLETENESS_IS_NOT_CLAIM_VERIFICATION'];
   }
+
   return {
     claim_id: claim.id,
     claim_class: claim.claim_class,
@@ -209,10 +264,12 @@ function auditClaim(claim) {
     basis,
     declaration: claim,
     evidence_class: claim.evidence_class,
-    evidence_ceiling: ceilings[claim.evidence_class],
-    next_evidence_ceiling: next === null ? null : ceilings[next.evidence_class],
+    evidence_ceiling: ceilings[claim.evidence_class] || ceilings.DECLARATION,
+    next_evidence_ceiling: next === null ? null : (ceilings[next.evidence_class] || ceilings.DECLARATION),
     declared_target_alternatives: [...claim.unresolved_alternatives],
-    unresolved_beyond_claim_scope: [...imposedAlternatives[claim.claim_class]],
+    unresolved_beyond_claim_scope: [...(imposedAlternatives[claim.claim_class] || [])],
+    numerical_deficit_receipt: numericalDeficitReceipt,
+    epistemic_harm_mappings: epistemicHarms,
     observation_performed: false,
     artifact_references_authenticated: false,
     claim_verified: false,
@@ -249,7 +306,8 @@ export function auditDollhouseWitnessPlan(input) {
   }
   const claims = plan.claims.map(auditClaim);
   // Precedence reports required attention; it is not a score or a role vote.
-  const disposition = claims.some(claim => claim.disposition === 'ABSTAIN') ? 'ABSTAIN'
+  const disposition = claims.some(claim => claim.disposition === 'REJECT') ? 'REJECT'
+    : claims.some(claim => claim.disposition === 'ABSTAIN') ? 'ABSTAIN'
     : claims.some(claim => claim.disposition === 'PROPOSE') ? 'PROPOSE' : 'ASK_NOTHING';
   return freeze({
     schema: DOLLHOUSE_WITNESS_PLAN_RECEIPT_SCHEMA,
@@ -263,4 +321,8 @@ export function auditDollhouseWitnessPlan(input) {
     claim_verified: false,
     claims, authority: authority()
   });
+}
+
+export function auditDollhouseNumericalWitnessPlan(input) {
+  return auditDollhouseWitnessPlan(input);
 }

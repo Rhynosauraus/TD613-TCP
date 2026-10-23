@@ -1,7 +1,7 @@
 {
   "$schema": "td613.dollhouse.divergence-map/v1.0",
   "coordinate": "return_state_divergence_and_held_c2",
-  "roles_participating": ["PEDAGOGUE", "APERTURE", "ATLAS", "FADT"],
+  "roles_participating": ["PEDAGOGUE", "APERTURE", "ATLAS", "FADT", "TEMPORAL_CUSTODIAN"],
   "divergence": {
     "PEDAGOGUE": {
       "unique_to_role": "Human consequence order, broken promise experience, route burden, child-legible guidance.",
@@ -30,10 +30,17 @@
       "contradicted_by_role": "Challenged Pedagogue's initial interactive proposal to ensure support remains empty until admission.",
       "outside_jurisdiction": "Visual aesthetics, network transport protocol, human comprehension latency.",
       "survives_cross_exam": true
+    },
+    "TEMPORAL_CUSTODIAN": {
+      "unique_to_role": "Chronological monotonicity, phase completeness in sequence, right-censored gap detection, and explicit predecessor citation on retry.",
+      "shared_with_role": "Agrees with Atlas and FADT that unlinked returns must be held; asserts whole-route veto.",
+      "contradicted_by_role": "None. Temporal Custodian verification that phase 3 lacks phase 2 parent citation is definitive.",
+      "outside_jurisdiction": "Loom UI layout, receiver projection parity, matrix condition numbers.",
+      "survives_cross_exam": true
     }
   },
   "orchestrator_synthesis": {
     "verdict": "HELD",
-    "rationale": "Four distinct epistemic instruments independently arrived at the same operational ruling (HELD) through four completely disjoint analytical paths, proving that PEDAGOGUE != APERTURE != ATLAS != FADT."
+    "rationale": "Five distinct epistemic instruments independently arrived at the same operational ruling (HELD) through five completely disjoint analytical paths, proving that PEDAGOGUE != APERTURE != ATLAS != FADT != TEMPORAL_CUSTODIAN."
   }
 }
