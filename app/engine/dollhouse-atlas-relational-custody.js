@@ -641,10 +641,23 @@ export function classifyTypedDigest(digestString) {
  * Emits canonical fnv32: prefix aligned with Dome-World runtime and modern TD613 standard,
  * preserving fnv1a32: as recognized compatibility alias and sha256: as historical mislabeled alias.
  * Default profile is 'atlas-v1' (injective versioned).
+ * - Under 'atlas-v1', every admitted value (including top-level strings) is canonically serialized
+ *   using its complete versioned typed serialization ('v1:...'), ensuring injective preimages
+ *   and preventing collisions between numbers, strings, and structured values (e.g. 1 vs "v1:n:1").
+ * - Under 'dome-v0', historical direct-string hashing and sorted-key JSON serialization are
+ *   preserved exactly, matching Dome-World runtime seeds and event logs.
  */
 export function computeTypedFnv1a32(value, options = {}) {
   const profile = options.profile || options.serialization_profile || SERIALIZATION_PROFILES.ATLAS_V1;
-  const s = typeof value === 'string' ? value : serializeWithProfile(value, profile);
+  let s;
+  if (profile === SERIALIZATION_PROFILES.ATLAS_V1) {
+    s = serializeWithProfile(value, SERIALIZATION_PROFILES.ATLAS_V1);
+  } else if (profile === SERIALIZATION_PROFILES.DOME_V0) {
+    s = typeof value === 'string' ? value : serializeWithProfile(value, SERIALIZATION_PROFILES.DOME_V0);
+  } else {
+    throw new TypeError(`Unrecognized serialization profile: "${profile}" (expected "atlas-v1" or "dome-v0")`);
+  }
+
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i += 1) {
     h ^= s.charCodeAt(i);
@@ -659,7 +672,8 @@ export function computeTypedFnv1a32(value, options = {}) {
     serialization_profile: profile,
     profile_qualified_digest: `fnv32:${profile}:${hex}`,
     compatibility_alias: `fnv1a32:${hex}`,
-    legacy_mislabeled: `sha256:${hex}`
+    legacy_mislabeled: `sha256:${hex}`,
+    preimage: s
   });
 }
 
@@ -678,6 +692,8 @@ export function assertProfilesInterchangeable(profileA, profileB) {
  * Verifies a cross-instrument serialization bridge between Dome-World (dome-v0) and Atlas (atlas-v1).
  * Consumes structured payload and declared digest, verifies authenticity under source profile,
  * and derives the corresponding target profile digest while enforcing that raw digests are NOT interchangeable.
+ * Note: bridge calculation is strictly an offline local calculation; it carries no independent authorization,
+ * provenance, or external-enforcement authority.
  */
 export function bridgeCrossInstrumentDigest(payload, declaredDigest, options = {}) {
   const sourceProfile = options.source_profile || SERIALIZATION_PROFILES.DOME_V0;
@@ -754,6 +770,13 @@ export function bridgeCrossInstrumentDigest(payload, declaredDigest, options = {
 
 /**
  * Audits a Phason custody diff, failing closed against caller-declared string equality.
+ * @param {Object} [previous={}]
+ * @param {Object} [current={}]
+ * @param {Object} [options={}]
+ * @param {boolean} [options.allow_cross_instrument_bridge] Permits an offline local calculation
+ *   to bridge Dome-World (dome-v0) and Atlas (atlas-v1) digests when payload identity is proven invariant.
+ *   This flag permits an offline local calculation only; it carries no independent authorization,
+ *   provenance, or external-enforcement authority.
  */
 export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}) {
   const prevMeta = previous.metadata || previous;
@@ -825,6 +848,7 @@ export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}
       schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
       status: 'HOLD_DIGEST_PAYLOAD_MISMATCH',
       content_invariant: false,
+      raw_interchangeable: false,
       decision: 'digest-payload-mismatch-rejected',
       reason: 'declared digest does not match computed payload digest',
       claim_ceiling: 'caller-string-equality-does-not-establish-content-invariance',
@@ -872,18 +896,54 @@ export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}
       target_profile: currProfile
     });
 
+    const bridgeVerified = Boolean(
+      bridge &&
+      bridge.valid === true &&
+      bridge.bridge_verified === true &&
+      bridge.source_profile === prevProfile &&
+      bridge.target_profile === currProfile &&
+      (bridge.target_digest === currComputed.canonical_digest || bridge.target_digest.endsWith(`:${currComputed.raw_hex}`)) &&
+      (bridge.source_digest === prevComputed.canonical_digest || bridge.source_digest.endsWith(`:${prevComputed.raw_hex}`)) &&
+      (bridge.payload_content_invariant === true)
+    );
+
+    if (!bridgeVerified) {
+      return deepFreeze({
+        schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+        status: 'HOLD_CROSS_INSTRUMENT_BRIDGE_FAILED',
+        content_invariant: false,
+        bridge_verified: false,
+        raw_interchangeable: false,
+        cross_profile_bridge: bridge,
+        source_profile: prevProfile,
+        target_profile: currProfile,
+        decision: 'cross-instrument-bridge-verification-refused',
+        reason: bridge?.reason || 'cross-instrument bridge verification failed: source/target digest or profile relationships unverified',
+        claim_ceiling: 'offline-local-bridge-calculation-only-no-independent-authorization-or-external-enforcement-authority',
+        offline_local_calculation: true,
+        external_enforcement_authority: false,
+        independent_authorization: false,
+        laws: ATLAS_RELATION_CUSTODY_LAWS
+      });
+    }
+
     return deepFreeze({
       schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
       status: 'PASS_CROSS_INSTRUMENT_BRIDGE_VERIFIED',
       content_invariant: true,
-      bridge_verified: bridge.bridge_verified,
+      bridge_verified: true,
       raw_interchangeable: false,
       cross_profile_bridge: bridge,
       source_profile: prevProfile,
       target_profile: currProfile,
+      source_digest: prevComputed.canonical_digest,
+      target_digest: currComputed.canonical_digest,
       decision: 'cross-instrument-bridge-verified',
       reason: 'payload identity verified across distinct serialization profiles; digests differ lawfully under versioned encodings',
-      claim_ceiling: 'verified-cross-instrument-bridge-not-raw-interchange',
+      claim_ceiling: 'offline-local-bridge-calculation-only-no-independent-authorization-or-external-enforcement-authority',
+      offline_local_calculation: true,
+      external_enforcement_authority: false,
+      independent_authorization: false,
       laws: ATLAS_RELATION_CUSTODY_LAWS
     });
   }

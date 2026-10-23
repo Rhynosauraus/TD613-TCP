@@ -247,20 +247,25 @@ test('runAtlasAgent integrates relational custody and history parity audits when
   assert.equal(receipt.history_parity_audit.disposition, 'HOLD_DISTINCT_HISTORY_NOT_ERASED');
 });
 
-test('T-DIGEST-01: FNV-1a32 collision pair ("costarring" vs "liquid") triggers HOLD_CONTENT_COLLISION_DETECTED', () => {
+test('T-DIGEST-01: FNV-1a32 collision pair ("costarring" vs "liquid") in legacy domain triggers HOLD_CONTENT_COLLISION_DETECTED', () => {
   const left = 'costarring';
   const right = 'liquid';
-  const leftComputed = computeTypedFnv1a32(left);
-  const rightComputed = computeTypedFnv1a32(right);
 
-  // Both strings hash to 5e4daa9d in 32-bit FNV-1a
-  assert.equal(leftComputed.raw_hex, '5e4daa9d');
-  assert.equal(rightComputed.raw_hex, '5e4daa9d');
-  assert.equal(leftComputed.typed_digest, rightComputed.typed_digest);
+  // In the legacy/historical Dome-World hashing domain (dome-v0), raw strings are hashed directly
+  const leftLegacy = computeTypedFnv1a32(left, { profile: SERIALIZATION_PROFILES.DOME_V0 });
+  const rightLegacy = computeTypedFnv1a32(right, { profile: SERIALIZATION_PROFILES.DOME_V0 });
 
+  // Both strings hash to 5e4daa9d in 32-bit FNV-1a under the legacy dome-v0 hashing domain
+  assert.equal(leftLegacy.raw_hex, '5e4daa9d');
+  assert.equal(rightLegacy.raw_hex, '5e4daa9d');
+  assert.equal(leftLegacy.typed_digest, rightLegacy.typed_digest);
+  assert.equal(leftLegacy.profile, 'dome-v0');
+
+  // auditPhasonCustodyDiff in dome-v0 profile detects collision between distinct string payloads
   const diff = auditPhasonCustodyDiff(
-    { artifact_id: 'art-left', payload: left, metadata: { raw_hash: leftComputed.typed_digest } },
-    { artifact_id: 'art-right', payload: right, metadata: { raw_hash: rightComputed.typed_digest }, projection: { mode: 'seam' } }
+    { artifact_id: 'art-left', payload: left, metadata: { raw_hash: leftLegacy.typed_digest, profile: SERIALIZATION_PROFILES.DOME_V0 } },
+    { artifact_id: 'art-right', payload: right, metadata: { raw_hash: rightLegacy.typed_digest, profile: SERIALIZATION_PROFILES.DOME_V0 }, projection: { mode: 'seam' } },
+    { profile: SERIALIZATION_PROFILES.DOME_V0 }
   );
 
   assert.equal(diff.status, 'HOLD_CONTENT_COLLISION_DETECTED');
@@ -268,6 +273,13 @@ test('T-DIGEST-01: FNV-1a32 collision pair ("costarring" vs "liquid") triggers H
   assert.equal(diff.collision_detected, true);
   assert.equal(diff.colliding_hash, '5e4daa9d');
   assert.match(diff.reason, /identical short FNV hash/);
+
+  // In contrast, under modern injective atlas-v1, top-level strings serialize injectively with v1:s: prefix
+  const leftAtlas = computeTypedFnv1a32(left, { profile: SERIALIZATION_PROFILES.ATLAS_V1 });
+  const rightAtlas = computeTypedFnv1a32(right, { profile: SERIALIZATION_PROFILES.ATLAS_V1 });
+  assert.equal(leftAtlas.preimage, 'v1:s:"costarring"');
+  assert.equal(rightAtlas.preimage, 'v1:s:"liquid"');
+  assert.notEqual(leftAtlas.raw_hex, rightAtlas.raw_hex);
 });
 
 test('T-DIGEST-02: classifyTypedDigest correctly recognizes fnv32: prefix', () => {
@@ -620,6 +632,36 @@ test('T-STRUCT-15: Projection with out-of-domain {x: NaN} vs {x: null} triggers 
   assert.match(diff.reason, /Non-finite number \(NaN\) is out of snapshot domain/);
 });
 
+test('T-STRUCT-16: Injective typed-v1 preimages: number 1 vs string "v1:n:1" remain distinct and do not collide', () => {
+  const numVal = 1;
+  const strVal = 'v1:n:1';
+
+  // Injective serializations under atlas-v1 must be distinct
+  const numSer = serializeWithProfile(numVal, SERIALIZATION_PROFILES.ATLAS_V1);
+  const strSer = serializeWithProfile(strVal, SERIALIZATION_PROFILES.ATLAS_V1);
+  assert.equal(numSer, 'v1:n:1');
+  assert.equal(strSer, 'v1:s:"v1:n:1"');
+  assert.notEqual(numSer, strSer);
+
+  // Computed typed-v1 digests must not share preimages or collide
+  const numDigest = computeTypedFnv1a32(numVal, { profile: SERIALIZATION_PROFILES.ATLAS_V1 });
+  const strDigest = computeTypedFnv1a32(strVal, { profile: SERIALIZATION_PROFILES.ATLAS_V1 });
+  assert.equal(numDigest.preimage, 'v1:n:1');
+  assert.equal(strDigest.preimage, 'v1:s:"v1:n:1"');
+  assert.notEqual(numDigest.raw_hex, strDigest.raw_hex);
+  assert.notEqual(numDigest.canonical_digest, strDigest.canonical_digest);
+
+  // Content equality must recognize them as distinct
+  assert.equal(stableContentEquals(numVal, strVal), false);
+
+  // Phason diff between them must detect content mismatch / digest mismatch
+  const diff = auditPhasonCustodyDiff(
+    { artifact_id: 'art-num', payload: numVal, metadata: { raw_hash: numDigest.canonical_digest, profile: SERIALIZATION_PROFILES.ATLAS_V1 } },
+    { artifact_id: 'art-str', payload: strVal, metadata: { raw_hash: strDigest.canonical_digest, profile: SERIALIZATION_PROFILES.ATLAS_V1 } }
+  );
+  assert.equal(diff.content_invariant, false);
+});
+
 // =========================================================================
 // CROSS-INSTRUMENT SERIALIZATION PROFILE INTEROPERABILITY & BRIDGE TESTS
 // =========================================================================
@@ -740,8 +782,14 @@ test('T-CROSS-09: auditPhasonCustodyDiff with allow_cross_instrument_bridge veri
   assert.equal(diff.content_invariant, true);
   assert.equal(diff.bridge_verified, true);
   assert.equal(diff.raw_interchangeable, false);
+  assert.equal(diff.source_digest, domeDigest);
+  assert.equal(diff.target_digest, atlasDigest);
   assert.equal(diff.cross_profile_bridge.source_digest, domeDigest);
   assert.equal(diff.cross_profile_bridge.target_digest, atlasDigest);
+  assert.equal(diff.claim_ceiling, 'offline-local-bridge-calculation-only-no-independent-authorization-or-external-enforcement-authority');
+  assert.equal(diff.offline_local_calculation, true);
+  assert.equal(diff.external_enforcement_authority, false);
+  assert.equal(diff.independent_authorization, false);
 
   // Divergent payloads across bridge trigger HOLD_CONTENT_DIVERGENCE_DETECTED
   const divergentDiff = auditPhasonCustodyDiff(
@@ -752,4 +800,39 @@ test('T-CROSS-09: auditPhasonCustodyDiff with allow_cross_instrument_bridge veri
   assert.equal(divergentDiff.status, 'HOLD_CONTENT_DIVERGENCE_DETECTED');
   assert.equal(divergentDiff.content_invariant, false);
   assert.equal(divergentDiff.drift_detected, true);
+});
+
+test('T-CROSS-10: Strict bridge admission fails closed when target digest or profile relationships are unverified', () => {
+  const payload = { fold: 4, weather_phase: 'cyclonic' };
+  const domeDigest = 'fnv32:88f4e316';
+
+  // Case A: Declared target digest does NOT match verified bridge result
+  const tamperedTargetDigest = 'fnv32:99999999';
+  const diffTampered = auditPhasonCustodyDiff(
+    { artifact_id: 'dome-rec', payload, metadata: { raw_hash: domeDigest, profile: SERIALIZATION_PROFILES.DOME_V0 } },
+    { artifact_id: 'atlas-rec', payload, metadata: { raw_hash: tamperedTargetDigest, profile: SERIALIZATION_PROFILES.ATLAS_V1 } },
+    { allow_cross_instrument_bridge: true }
+  );
+  // Fails closed before or during bridge due to digest-payload mismatch
+  assert.equal(diffTampered.content_invariant, false);
+  assert.ok(diffTampered.status === 'HOLD_DIGEST_PAYLOAD_MISMATCH' || diffTampered.status === 'HOLD_CROSS_INSTRUMENT_BRIDGE_FAILED');
+  assert.equal(diffTampered.raw_interchangeable, false);
+
+  // Case B: Declared source digest does NOT match source payload
+  const tamperedSourceDigest = 'fnv32:11111111';
+  const diffTamperedSource = auditPhasonCustodyDiff(
+    { artifact_id: 'dome-rec', payload, metadata: { raw_hash: tamperedSourceDigest, profile: SERIALIZATION_PROFILES.DOME_V0 } },
+    { artifact_id: 'atlas-rec', payload, metadata: { raw_hash: 'fnv32:22f3e8eb', profile: SERIALIZATION_PROFILES.ATLAS_V1 } },
+    { allow_cross_instrument_bridge: true }
+  );
+  assert.equal(diffTamperedSource.content_invariant, false);
+  assert.equal(diffTamperedSource.status, 'HOLD_DIGEST_PAYLOAD_MISMATCH');
+
+  // Case C: Bridge calculation returns unverified when payload is outside snapshot domain
+  const unverifiedBridge = bridgeCrossInstrumentDigest({ x: NaN }, domeDigest, {
+    source_profile: SERIALIZATION_PROFILES.DOME_V0,
+    target_profile: SERIALIZATION_PROFILES.ATLAS_V1
+  });
+  assert.equal(unverifiedBridge.bridge_verified, false);
+  assert.equal(unverifiedBridge.valid, false);
 });
