@@ -4,7 +4,7 @@
   "edition_version": "1.4",
   "review_base_commit": "338642a0ee4c7bf2416af65d001c1508aba8ed85",
   "canonical_payload_sha256": "ff0c98f564c9157f22b8603a20ddefa3ca13d843b17bdfb7e2a495408a49b4c9",
-  "retrieval_records_sha256": "c308ee9bd446e64419e05c66549875d3d35460bf8d97089e2b3d489f7d1ab22b",
+  "retrieval_records_sha256": "f47d53b3de722f9cae36aa92450573aa806b6ce26143e048887ef122683e4e25",
   "record_count": 843,
   "facets": {
     "kind": {
@@ -3556,7 +3556,7 @@
     "admit": "node scripts/admit-encyclopedia-record.cjs proposal.json --human-review-ref exact-review-reference",
     "semantics": "Preparation is read-only and PROPOSED. Source-index accession requires separately declared human review. Public merge/deployment and scientific adjudication retain their own authority. Private input cannot enter public accession output."
   },
-  "artifact_html_sha256": "64fa79c6c4c05f393a6703c0ae5fd06f994fa5a3c9a714900049a7b8aab2b819",
+  "artifact_html_sha256": "482d5903062e84dcf86fbeb54e8a10e905e105c8114df51206ebc20333a3b2e5",
   "paths": {
     "directory": "reference/directory.json",
     "graph": "reference/graph.json",
@@ -3622,7 +3622,7 @@
     "62": {
       "path": "reference/terms/62.json",
       "terms": 127,
-      "sha256": "f49834abe0c01e28d134ada3836067cad5552fd488e9583d9d5d6d6cbc448e30"
+      "sha256": "595d9005085e45301a037c846e0638b355b245b5350b29694999ade595811705"
     },
     "63": {
       "path": "reference/terms/63.json",
@@ -3657,7 +3657,7 @@
     "69": {
       "path": "reference/terms/69.json",
       "terms": 269,
-      "sha256": "531c230a145c8338a0e758fc2a6320d96146f18e149813fd14ccaa308ee2ee50"
+      "sha256": "ba0d923d44ab5029834818114dcb25321f6ebd7f5bb41d9eaa1f0f835939245d"
     },
     "70": {
       "path": "reference/terms/70.json",
@@ -3677,7 +3677,7 @@
     "73": {
       "path": "reference/terms/73.json",
       "terms": 586,
-      "sha256": "cd0f6a185a63590784a32fe84619c7bfd7367c7229176f95be7e8f025d79134b"
+      "sha256": "778257a1132103688b75a99bde0ca77e5204d7ae47643cd972fd6ea8b052f143"
     },
     "74": {
       "path": "reference/terms/74.json",
