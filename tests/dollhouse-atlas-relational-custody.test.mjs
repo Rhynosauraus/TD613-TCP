@@ -7,8 +7,11 @@ import {
   auditAtlasHolonomyHistoryParity,
   classifyTypedDigest,
   computeTypedFnv1a32,
+  computeTypedFnv32,
   auditPhasonCustodyDiff,
   stableContentEquals,
+  canonicalSerialize,
+  validateStructuredSnapshotDomain,
   DOLLHOUSE_ATLAS_RELATION_IDENTITY_SCHEMA,
   DOLLHOUSE_ATLAS_HISTORY_PARITY_SCHEMA,
   DOLLHOUSE_TYPED_DIGEST_SCHEMA,
@@ -148,10 +151,10 @@ test('classifyTypedDigest correctly identifies valid sha256, valid fnv1a32, and 
   // R1 Defect: 32-bit FNV-1a hash mislabeled with sha256: prefix (8 hex characters)
   const mislabeled = classifyTypedDigest('sha256:811c9dc5');
   assert.equal(mislabeled.valid, false);
-  assert.equal(mislabeled.algorithm, 'fnv1a32');
+  assert.equal(mislabeled.algorithm, 'fnv32');
   assert.equal(mislabeled.is_historical_mislabeled, true);
   assert.equal(mislabeled.classification, 'HISTORICAL_FNV1A_LABELED_AS_SHA256');
-  assert.equal(mislabeled.migration_recommendation, 'fnv1a32:811c9dc5');
+  assert.equal(mislabeled.migration_recommendation, 'fnv32:811c9dc5');
 
   // Corrupted / invalid digests
   assert.equal(classifyTypedDigest('sha256:too-short').valid, false);
@@ -172,7 +175,7 @@ test('auditPhasonCustodyDiff rejects unverified caller-declared string equality'
   assert.equal(callerDeclaredWithoutPayload.unverified_caller_string_equality, true);
   assert.match(callerDeclaredWithoutPayload.reason, /caller-supplied digest equality cannot establish content invariance/);
 
-  // Case B: Caller provides payloads with verified matching typed digests
+  // Case B: Caller provides payloads with verified matching typed digests (canonical fnv32: emission)
   const textPayload = 'td613-reparative-payload-test';
   const computed = computeTypedFnv1a32(textPayload);
 
@@ -183,7 +186,16 @@ test('auditPhasonCustodyDiff rejects unverified caller-declared string equality'
   assert.equal(verifiedDiff.status, 'SEAM_DETECTED');
   assert.equal(verifiedDiff.content_invariant, true);
   assert.equal(verifiedDiff.projection_changed, true);
-  assert.equal(verifiedDiff.verified_algorithm, 'fnv1a32');
+  assert.equal(verifiedDiff.verified_algorithm, 'fnv32');
+
+  // Case B2: Compatibility alias fnv1a32: is also accepted
+  const compatDiff = auditPhasonCustodyDiff(
+    { artifact_id: 'art-1', payload: textPayload, metadata: { raw_hash: computed.compatibility_alias } },
+    { artifact_id: 'art-2', payload: textPayload, metadata: { raw_hash: computed.compatibility_alias }, projection: { mode: 'seam' } }
+  );
+  assert.equal(compatDiff.status, 'SEAM_DETECTED');
+  assert.equal(compatDiff.content_invariant, true);
+  assert.equal(compatDiff.verified_algorithm, 'fnv1a32');
 
   // Case C: Mislabeled legacy hash is rejected under strict modern posture
   const strictDisallowMislabeled = auditPhasonCustodyDiff(
@@ -275,4 +287,170 @@ test('T-HISTORY-01: auditAtlasHolonomyHistoryParity fails closed when endpoints 
   );
   assert.equal(missingWinding.disposition, 'HOLD_MISSING_EXPLICIT_WINDING');
   assert.equal(missingWinding.held, true);
+});
+
+// =========================================================================
+// REQUIREMENT 1 ADVERSARIAL TESTS: Structured Snapshot Domain Hardening
+// =========================================================================
+
+test('T-STRUCT-01: Counterexample 1 - {x: NaN} vs {x: null} rejects false equality', () => {
+  // Unrepaired serializers coerce NaN to null in JSON.stringify, creating a false match.
+  // Repaired domain validator must reject NaN as an out-of-domain non-finite number.
+  const nanInput = { x: NaN };
+  const nullInput = { x: null };
+
+  const check = validateStructuredSnapshotDomain(nanInput);
+  assert.equal(check.valid, false);
+  assert.match(check.reason, /Non-finite number \(NaN\) is out of snapshot domain/);
+
+  assert.equal(stableContentEquals(nanInput, nullInput), false);
+  assert.equal(stableContentEquals(nullInput, nanInput), false);
+  assert.throws(() => canonicalSerialize(nanInput), /Cannot canonically serialize out-of-domain snapshot/);
+});
+
+test('T-STRUCT-02: Counterexample 2 - [undefined] vs [] rejects false equality', () => {
+  // Unrepaired serializers map undefined to null or omit it, creating a false match.
+  // Repaired domain validator must strictly reject undefined values.
+  const undefArray = [undefined];
+  const emptyArray = [];
+
+  const check = validateStructuredSnapshotDomain(undefArray);
+  assert.equal(check.valid, false);
+  assert.match(check.reason, /Undefined values are out of snapshot domain/);
+
+  assert.equal(stableContentEquals(undefArray, emptyArray), false);
+  assert.equal(stableContentEquals(emptyArray, undefArray), false);
+  assert.throws(() => canonicalSerialize(undefArray), /Undefined values are out of snapshot domain/);
+});
+
+test('T-STRUCT-03: Counterexample 3 - sparse one-slot array vs [] rejects false equality', () => {
+  // Unrepaired serializers skip unallocated slots in sparse arrays, creating a false match.
+  // Repaired domain validator must detect missing own properties along array length.
+  const sparseArray = new Array(1); // Length 1, slot 0 unallocated
+  const emptyArray = [];
+
+  const check = validateStructuredSnapshotDomain(sparseArray);
+  assert.equal(check.valid, false);
+  assert.match(check.reason, /Sparse array detected at index 0/);
+
+  assert.equal(stableContentEquals(sparseArray, emptyArray), false);
+  assert.equal(stableContentEquals(emptyArray, sparseArray), false);
+  assert.throws(() => canonicalSerialize(sparseArray), /Sparse array detected at index 0/);
+});
+
+test('T-STRUCT-04: Property accessors (getters) are detected and rejected without executing getter code', () => {
+  let getterExecuted = false;
+  const trapObject = {
+    get dangerous() {
+      getterExecuted = true;
+      return 'exploit';
+    }
+  };
+
+  const check = validateStructuredSnapshotDomain(trapObject);
+  assert.equal(check.valid, false);
+  assert.match(check.reason, /Property accessor \(getter\/setter\) detected on key "dangerous"/);
+  assert.equal(getterExecuted, false, 'Accessor getter must NEVER be executed during domain inspection');
+  assert.equal(stableContentEquals(trapObject, { dangerous: 'exploit' }), false);
+});
+
+test('T-STRUCT-05: Circular references (cycles) are rejected fail-closed without recursion crash', () => {
+  const circularA = { id: 'cycle-1' };
+  circularA.self = circularA;
+
+  const circularB = { id: 'cycle-2' };
+  circularB.self = circularB;
+
+  const check = validateStructuredSnapshotDomain(circularA);
+  assert.equal(check.valid, false);
+  assert.match(check.reason, /Circular references \(cycles\) are out of snapshot domain/);
+  assert.equal(stableContentEquals(circularA, circularB), false);
+  assert.throws(() => canonicalSerialize(circularA), /Circular references \(cycles\) are out of snapshot domain/);
+});
+
+test('T-STRUCT-06: Exotic prototypes and non-plain objects are rejected fail-closed', () => {
+  const dateObj = { date: new Date() };
+  const mapObj = { map: new Map() };
+  const regObj = { reg: /pattern/ };
+
+  assert.equal(validateStructuredSnapshotDomain(dateObj).valid, false);
+  assert.equal(validateStructuredSnapshotDomain(mapObj).valid, false);
+  assert.equal(validateStructuredSnapshotDomain(regObj).valid, false);
+
+  assert.equal(stableContentEquals(dateObj, { date: {} }), false);
+});
+
+test('T-STRUCT-07: Out-of-domain payloads trigger HOLD_INVALID_STRUCTURED_PAYLOAD_DOMAIN in auditPhasonCustodyDiff', () => {
+  const badPayload = { x: NaN };
+  const goodPayload = { x: 1 };
+  const computedGood = computeTypedFnv1a32(goodPayload);
+
+  const diff = auditPhasonCustodyDiff(
+    { artifact_id: 'art-1', payload: badPayload, metadata: { raw_hash: computedGood.typed_digest } },
+    { artifact_id: 'art-2', payload: goodPayload, metadata: { raw_hash: computedGood.typed_digest }, projection: { mode: 'seam' } }
+  );
+
+  assert.equal(diff.status, 'HOLD_INVALID_STRUCTURED_PAYLOAD_DOMAIN');
+  assert.equal(diff.content_invariant, false);
+  assert.equal(diff.invalid_snapshot_domain, true);
+  assert.match(diff.reason, /payload rejected by structured snapshot validator/);
+});
+
+// =========================================================================
+// REQUIREMENT 2 CROSS-INSTRUMENT TESTS: Digest Emission & Classification
+// =========================================================================
+
+test('T-CROSS-01: Modern canonical short-hash emission standard is fnv32: across instruments', () => {
+  const text = 'dome-world-weather-seed-alpha';
+  const computed = computeTypedFnv1a32(text);
+
+  // Canonical modern emission uses fnv32: prefix aligned with Dome-World runtime
+  assert.match(computed.canonical_digest, /^fnv32:[0-9a-f]{8}$/);
+  assert.equal(computed.typed_digest, computed.canonical_digest);
+  assert.equal(computed.compatibility_alias, `fnv1a32:${computed.raw_hex}`);
+  assert.equal(computed.legacy_mislabeled, `sha256:${computed.raw_hex}`);
+
+  // Alias computeTypedFnv32 behaves identically
+  const computedAlias = computeTypedFnv32(text);
+  assert.equal(computedAlias.canonical_digest, computed.canonical_digest);
+});
+
+test('T-CROSS-02: Actual Dome-World weather digest fnv32:811c9dc5 is recognized by Atlas as canonical', () => {
+  const domeDigest = 'fnv32:811c9dc5';
+  const classified = classifyTypedDigest(domeDigest);
+
+  assert.equal(classified.valid, true);
+  assert.equal(classified.algorithm, 'fnv32');
+  assert.equal(classified.is_canonical, true);
+  assert.equal(classified.canonical_form, 'fnv32:811c9dc5');
+  assert.equal(classified.is_historical_mislabeled, false);
+  assert.equal(classified.hex, '811c9dc5');
+});
+
+test('T-CROSS-03: Compatibility alias fnv1a32:811c9dc5 is recognized and mapped to canonical form', () => {
+  const compatDigest = 'fnv1a32:811c9dc5';
+  const classified = classifyTypedDigest(compatDigest);
+
+  assert.equal(classified.valid, true);
+  assert.equal(classified.algorithm, 'fnv1a32');
+  assert.equal(classified.is_canonical, false);
+  assert.equal(classified.canonical_form, 'fnv32:811c9dc5');
+  assert.equal(classified.hex, '811c9dc5');
+});
+
+test('T-CROSS-04: Cross-instrument Phason custody diff verifies invariance between fnv32: and fnv1a32: under identical payload', () => {
+  const payload = { weather_phase: 'cyclonic', fold: 4 };
+  const computed = computeTypedFnv1a32(payload);
+
+  // Left artifact carries modern Dome-World fnv32: digest
+  // Right artifact carries compatibility fnv1a32: digest
+  const diff = auditPhasonCustodyDiff(
+    { artifact_id: 'dome-art', payload, metadata: { raw_hash: computed.canonical_digest } },
+    { artifact_id: 'atlas-art', payload, metadata: { raw_hash: computed.compatibility_alias }, projection: { mode: 'seam' } }
+  );
+
+  assert.equal(diff.status, 'SEAM_DETECTED');
+  assert.equal(diff.content_invariant, true);
+  assert.equal(diff.projection_changed, true);
+  assert.equal(diff.collision_detected, false);
 });

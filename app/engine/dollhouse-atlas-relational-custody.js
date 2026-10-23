@@ -44,38 +44,206 @@ function deepFreeze(value) {
   return value;
 }
 
+export const SNAPSHOT_DOMAIN_LIMITS = Object.freeze({
+  MAX_DEPTH: 32,
+  MAX_NODES: 5000,
+  MAX_KEY_LENGTH: 256,
+  MAX_STRING_LENGTH: 1_000_000
+});
+
+/**
+ * Validates that an input belongs strictly to the accepted structured snapshot domain.
+ * Rejects:
+ * - non-finite numbers (NaN, Infinity, -Infinity)
+ * - undefined values (as standalone values, object property values, or array elements)
+ * - unsupported primitive types (symbol, bigint, function)
+ * - sparse arrays (e.g. new Array(1), [,,], or deleted indices)
+ * - non-plain objects (custom prototypes, Date, RegExp, Map, Set, Promise, Error, etc.)
+ * - property accessors (getters/setters, without evaluating getters)
+ * - non-enumerable or symbol-keyed properties
+ * - circular references (cycles)
+ * - structures exceeding depth (32) or node count (5000) limits
+ *
+ * Returns deepFreeze({ valid: true }) or deepFreeze({ valid: false, reason: string, path: string }).
+ */
+export function validateStructuredSnapshotDomain(value, options = {}) {
+  const maxDepth = options.maxDepth ?? SNAPSHOT_DOMAIN_LIMITS.MAX_DEPTH;
+  const maxNodes = options.maxNodes ?? SNAPSHOT_DOMAIN_LIMITS.MAX_NODES;
+  const seen = new WeakSet();
+  let nodeCount = 0;
+
+  function walk(current, depth, path) {
+    nodeCount += 1;
+    if (nodeCount > maxNodes) {
+      return { valid: false, reason: `Node count exceeded limit (${maxNodes})`, path };
+    }
+    if (depth > maxDepth) {
+      return { valid: false, reason: `Nesting depth exceeded limit (${maxDepth})`, path };
+    }
+
+    if (current === undefined) {
+      return { valid: false, reason: 'Undefined values are out of snapshot domain', path };
+    }
+
+    if (current === null) {
+      return { valid: true };
+    }
+
+    const t = typeof current;
+
+    if (t === 'string') {
+      if (current.length > SNAPSHOT_DOMAIN_LIMITS.MAX_STRING_LENGTH) {
+        return { valid: false, reason: `String length exceeded limit (${SNAPSHOT_DOMAIN_LIMITS.MAX_STRING_LENGTH})`, path };
+      }
+      return { valid: true };
+    }
+
+    if (t === 'number') {
+      if (!Number.isFinite(current)) {
+        return { valid: false, reason: `Non-finite number (${current}) is out of snapshot domain`, path };
+      }
+      return { valid: true };
+    }
+
+    if (t === 'boolean') {
+      return { valid: true };
+    }
+
+    if (t === 'symbol' || t === 'bigint' || t === 'function') {
+      return { valid: false, reason: `Unsupported type (${t}) is out of snapshot domain`, path };
+    }
+
+    if (t !== 'object') {
+      return { valid: false, reason: `Unknown type (${t}) is out of snapshot domain`, path };
+    }
+
+    if (current instanceof Uint8Array) {
+      return { valid: true };
+    }
+
+    if (seen.has(current)) {
+      return { valid: false, reason: 'Circular references (cycles) are out of snapshot domain', path };
+    }
+    seen.add(current);
+
+    if (Array.isArray(current)) {
+      const len = current.length;
+      for (let i = 0; i < len; i += 1) {
+        if (!Object.prototype.hasOwnProperty.call(current, i)) {
+          return { valid: false, reason: `Sparse array detected at index ${i}`, path: `${path}[${i}]` };
+        }
+        const itemRes = walk(current[i], depth + 1, `${path}[${i}]`);
+        if (!itemRes.valid) return itemRes;
+      }
+      return { valid: true };
+    }
+
+    // Plain object validation
+    const proto = Object.getPrototypeOf(current);
+    if (proto !== Object.prototype && proto !== null) {
+      return { valid: false, reason: `Non-plain object with prototype (${proto?.constructor?.name || 'exotic'}) is out of snapshot domain`, path };
+    }
+
+    if (Object.getOwnPropertySymbols(current).length > 0) {
+      return { valid: false, reason: 'Symbol-keyed properties are out of snapshot domain', path };
+    }
+
+    const descs = Object.getOwnPropertyDescriptors(current);
+    const keys = Object.keys(descs);
+
+    for (let i = 0; i < keys.length; i += 1) {
+      const k = keys[i];
+      const desc = descs[k];
+
+      if (k.length > SNAPSHOT_DOMAIN_LIMITS.MAX_KEY_LENGTH) {
+        return { valid: false, reason: `Key length exceeded limit (${SNAPSHOT_DOMAIN_LIMITS.MAX_KEY_LENGTH})`, path: `${path}.${k}` };
+      }
+
+      if (desc.get !== undefined || desc.set !== undefined) {
+        return { valid: false, reason: `Property accessor (getter/setter) detected on key "${k}"`, path: `${path}.${k}` };
+      }
+
+      if (!desc.enumerable) {
+        return { valid: false, reason: `Non-enumerable property detected on key "${k}"`, path: `${path}.${k}` };
+      }
+
+      const propRes = walk(desc.value, depth + 1, path ? `${path}.${k}` : k);
+      if (!propRes.valid) return propRes;
+    }
+
+    return { valid: true };
+  }
+
+  return deepFreeze(walk(value, 0, '$'));
+}
+
+/**
+ * Serializes a validated structured snapshot into a canonical deterministic string.
+ * Throws TypeError if the input is outside the accepted snapshot domain.
+ */
+export function canonicalSerialize(value) {
+  const check = validateStructuredSnapshotDomain(value);
+  if (!check.valid) {
+    throw new TypeError(`Cannot canonically serialize out-of-domain snapshot: ${check.reason} at ${check.path}`);
+  }
+
+  function serialize(current) {
+    if (current === null) return 'null';
+    const t = typeof current;
+    if (t === 'boolean') return current ? 'true' : 'false';
+    if (t === 'number') {
+      return Object.is(current, -0) ? '0' : String(current);
+    }
+    if (t === 'string') {
+      return JSON.stringify(current);
+    }
+    if (current instanceof Uint8Array) {
+      let hex = '';
+      for (let i = 0; i < current.length; i += 1) {
+        hex += current[i].toString(16).padStart(2, '0');
+      }
+      return `{"$bytes":"${hex}"}`;
+    }
+    if (Array.isArray(current)) {
+      return `[${current.map(serialize).join(',')}]`;
+    }
+    const keys = Object.keys(current).sort();
+    return `{${keys.map(k => `${JSON.stringify(k)}:${serialize(current[k])}`).join(',')}}`;
+  }
+
+  return serialize(value);
+}
+
 export function stableStringify(value) {
-  if (value === null || typeof value !== 'object') {
+  try {
+    return canonicalSerialize(value);
+  } catch {
     return JSON.stringify(value);
   }
-  if (Array.isArray(value)) {
-    return `[${value.map(stableStringify).join(',')}]`;
-  }
-  const keys = Object.keys(value).sort();
-  return `{${keys.map(k => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`;
 }
 
 /**
  * Evaluates typed content equality across declared snapshot domains.
- * Rejects silent cross-type coercion, unsupported exotic objects, and reference-identity shortcuts.
+ * First validates that both left and right belong strictly to the accepted snapshot domain.
+ * Rejects non-finite numbers ({x: NaN} vs {x: null}), undefined values ([undefined] vs []),
+ * sparse arrays (new Array(1) vs []), property accessors, circular references, and custom prototypes.
+ * Returns false whenever either input is out-of-domain.
  */
 export function stableContentEquals(left, right) {
   if (left === undefined || right === undefined) return false;
   if (left === null || right === null) return left === right;
 
+  const validLeft = validateStructuredSnapshotDomain(left);
+  const validRight = validateStructuredSnapshotDomain(right);
+  if (!validLeft.valid || !validRight.valid) {
+    return false;
+  }
+
   const typeL = typeof left;
   const typeR = typeof right;
   if (typeL !== typeR) return false;
 
-  if (typeL === 'string') {
-    return left === right;
-  }
-
-  if (typeL === 'number') {
-    return Number.isFinite(left) && Number.isFinite(right) && left === right;
-  }
-
-  if (typeL === 'boolean') {
+  if (typeL === 'string' || typeL === 'boolean' || typeL === 'number') {
     return left === right;
   }
 
@@ -91,15 +259,7 @@ export function stableContentEquals(left, right) {
   if (Array.isArray(left) !== Array.isArray(right)) return false;
   if (left instanceof Uint8Array || right instanceof Uint8Array) return false;
 
-  const protoL = Object.getPrototypeOf(left);
-  const protoR = Object.getPrototypeOf(right);
-  if (!Array.isArray(left)) {
-    if ((protoL !== Object.prototype && protoL !== null) || (protoR !== Object.prototype && protoR !== null)) {
-      return false;
-    }
-  }
-
-  return stableStringify(left) === stableStringify(right);
+  return canonicalSerialize(left) === canonicalSerialize(right);
 }
 
 export function samePath(a, b) {
@@ -315,13 +475,13 @@ export function classifyTypedDigest(digestString) {
       return deepFreeze({
         schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
         valid: false,
-        algorithm: 'fnv1a32',
+        algorithm: 'fnv32',
         hex_length: 8,
         is_historical_mislabeled: true,
         classification: 'HISTORICAL_FNV1A_LABELED_AS_SHA256',
         reason: '32-bit FNV-1a digest mislabeled with sha256 prefix',
         hex: hex.toLowerCase(),
-        migration_recommendation: `fnv1a32:${hex.toLowerCase()}`
+        migration_recommendation: `fnv32:${hex.toLowerCase()}`
       });
     }
     return deepFreeze({
@@ -340,6 +500,8 @@ export function classifyTypedDigest(digestString) {
         schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
         valid: true,
         algorithm: 'fnv1a32',
+        is_canonical: false,
+        canonical_form: `fnv32:${hex.toLowerCase()}`,
         hex_length: 8,
         is_historical_mislabeled: false,
         hex: hex.toLowerCase()
@@ -349,6 +511,7 @@ export function classifyTypedDigest(digestString) {
       schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
       valid: false,
       algorithm: 'fnv1a32',
+      is_canonical: false,
       hex_length: hex.length,
       reason: `invalid fnv1a32 hex length: ${hex.length} (expected 8)`
     });
@@ -361,6 +524,8 @@ export function classifyTypedDigest(digestString) {
         schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
         valid: true,
         algorithm: 'fnv32',
+        is_canonical: true,
+        canonical_form: `fnv32:${hex.toLowerCase()}`,
         hex_length: 8,
         is_historical_mislabeled: false,
         hex: hex.toLowerCase()
@@ -370,6 +535,7 @@ export function classifyTypedDigest(digestString) {
       schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
       valid: false,
       algorithm: 'fnv32',
+      is_canonical: false,
       hex_length: hex.length,
       reason: `invalid fnv32 hex length: ${hex.length} (expected 8)`
     });
@@ -385,9 +551,11 @@ export function classifyTypedDigest(digestString) {
 
 /**
  * Computes 32-bit FNV-1a hash over canonical serialized value.
+ * Emits canonical fnv32: prefix aligned with Dome-World runtime and modern TD613 standard,
+ * preserving fnv1a32: as recognized compatibility alias and sha256: as historical mislabeled alias.
  */
 export function computeTypedFnv1a32(value) {
-  const s = typeof value === 'string' ? value : stableStringify(value);
+  const s = typeof value === 'string' ? value : canonicalSerialize(value);
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i += 1) {
     h ^= s.charCodeAt(i);
@@ -396,10 +564,14 @@ export function computeTypedFnv1a32(value) {
   const hex = h.toString(16).padStart(8, '0');
   return deepFreeze({
     raw_hex: hex,
-    typed_digest: `fnv1a32:${hex}`,
+    canonical_digest: `fnv32:${hex}`,
+    typed_digest: `fnv32:${hex}`,
+    compatibility_alias: `fnv1a32:${hex}`,
     legacy_mislabeled: `sha256:${hex}`
   });
 }
+
+export const computeTypedFnv32 = computeTypedFnv1a32;
 
 /**
  * Audits a Phason custody diff, failing closed against caller-declared string equality.
@@ -428,6 +600,22 @@ export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}
     });
   }
 
+  // Structured snapshot domain validation
+  const valPrev = validateStructuredSnapshotDomain(prevPayload);
+  const valCurr = validateStructuredSnapshotDomain(currPayload);
+  if (!valPrev.valid || !valCurr.valid) {
+    return deepFreeze({
+      schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+      status: 'HOLD_INVALID_STRUCTURED_PAYLOAD_DOMAIN',
+      content_invariant: false,
+      invalid_snapshot_domain: true,
+      decision: 'invalid-structured-payload-domain-refused',
+      reason: `payload rejected by structured snapshot validator: ${!valPrev.valid ? valPrev.reason : valCurr.reason}`,
+      claim_ceiling: 'caller-string-equality-does-not-establish-content-invariance',
+      laws: ATLAS_RELATION_CUSTODY_LAWS
+    });
+  }
+
   const prevClass = classifyTypedDigest(prevDigest);
   const currClass = classifyTypedDigest(currDigest);
 
@@ -437,7 +625,7 @@ export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}
       status: 'HOLD_MISLABELED_HISTORICAL_DIGEST',
       content_invariant: false,
       decision: 'mislabeled-fnv1a32-digest-rejected',
-      reason: '32-bit FNV-1a hash must use fnv1a32: prefix in modern custody pipelines',
+      reason: '32-bit FNV-1a hash must use fnv32: or fnv1a32: prefix in modern custody pipelines',
       claim_ceiling: 'caller-string-equality-does-not-establish-content-invariance',
       laws: ATLAS_RELATION_CUSTODY_LAWS
     });
