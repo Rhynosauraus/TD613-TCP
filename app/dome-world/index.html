@@ -898,6 +898,8 @@ function computeAshSignature(input={}){
     content_exported: false,
     raw_content_retained: false,
     content_hash: 'salted:' + hash(salt + '|' + text),
+    content_hash_algorithm: 'fnv32-noncryptographic-surrogate',
+    content_hash_limitation: 'Produced via 32-bit FNV-1a; does not guarantee collision resistance or prevent dictionary reconstruction of low-entropy text.',
     visual_seed: seed,
     artifact_class,
     mode,
@@ -953,7 +955,11 @@ function computeRepoWeather(world, opts={}){
   const ashCount = world.ash?.items?.length || 0;
   const q = world.stewardship?.quarantined_count || 0;
   const antiEvents = (world.event_log || []).reduce((n,e)=> n + ((e.anti_equivalence||[]).length ? 1 : 0),0);
-  const pressure = clamp((weather.fold_density === 'high' ? .72 : weather.fold_density === 'moderate' ? .46 : .22) + q*.08 + antiEvents*.03 + ashCount*.025);
+  const rawFd = weather?.fold_density;
+  const foldBucket = (typeof rawFd === 'number' && Number.isFinite(rawFd))
+    ? (rawFd > .66 ? 'high' : rawFd > .33 ? 'moderate' : 'low')
+    : (rawFd === 'high' || rawFd === 'moderate' || rawFd === 'low' ? rawFd : 'low');
+  const pressure = clamp((foldBucket === 'high' ? .72 : foldBucket === 'moderate' ? .46 : .22) + q*.08 + antiEvents*.03 + ashCount*.025);
   return {
     schema: 'td613.repo-weather/v0.4',
     repo_weather: pressure > .72 ? 'pressure rising' : pressure > .42 ? 'partial clearing' : 'settled with watchfulness',
@@ -978,7 +984,7 @@ function applyFlowEvent(world, event={}){
   else if(type === 'hydrate') { a.humidity = clamp(a.humidity + .14); a.visibility = clamp(a.visibility + .05); }
   else if(type === 'vent') { a.pressure = clamp(a.pressure - .06); a.torsion = clamp(a.torsion - .03); a.visibility = clamp(a.visibility + .06); }
   else if(type === 'compost') { a.pattern_flow = clamp(a.pattern_flow + .10); a.humidity = clamp(a.humidity + .04); }
-  else if(type === 'transmission') { a.pattern_flow = clamp(a.pattern_flow + .12); a.humidity = clamp(a.humidity + .06); a.torsion = clamp(a.torsion + .04); const h = hash(payload.text || payload); w.loom.seeds.push({ raw_hash:'fnv1a32:'+h, legacy_sha256_alias:'sha256:'+h, room, age:0, resonance:.22, privacy_class:'room-scoped' }); }
+  else if(type === 'transmission') { a.pattern_flow = clamp(a.pattern_flow + .12); a.humidity = clamp(a.humidity + .06); a.torsion = clamp(a.torsion + .04); w.loom.seeds.push({ raw_hash:'fnv32:'+hash(payload.text || payload), room, age:0, resonance:.22, privacy_class:'room-scoped' }); }
   else if(type === 'stewardship-check') { const gate = stewardshipGate(payload); w.stewardship.gates.push(gate); if(gate.stewardship_status === 'quarantined'){ w.stewardship.quarantined_count += 1; a.torsion = clamp(a.torsion + .16); a.visibility = clamp(a.visibility - .12); a.pressure = clamp(a.pressure + .07); } else if(gate.stewardship_status === 'verified' || gate.stewardship_status === 'community-guided'){ w.stewardship.verified_count += 1; a.visibility = clamp(a.visibility + .10); a.torsion = clamp(a.torsion - .05); } event.gate = gate; }
   else if(type === 'ash-document') { const receipt = generateAshReceipt(w, payload); w.ash = w.ash || {items:[], latest:null, local_salt:'salt_'+hash(w.world_id+':ash')}; w.ash.items.push(receipt); w.ash.latest = receipt; a.torsion = clamp(a.torsion + receipt.ash.ambiance_signature.fold_density*.18); a.pressure = clamp(a.pressure + receipt.ash.ambiance_signature.fold_density*.12); a.visibility = clamp(a.visibility - (receipt.ash.public_export ? .01 : .06)); event.ash = receipt; }
   else { a.pressure = clamp(a.pressure + .01); }
@@ -994,13 +1000,12 @@ function applyFlowEvent(world, event={}){
   w.loom.holonomies.push(holonomy);
   w.day += 1;
   w.event_log.push({
-    schema: 'flowcore.ambiance.event/v0.3',
+    schema: 'flowcore.ambiance.event/v0.4',
     event_id: event.event_id || ('evt_' + hash({event, day:w.day, n:w.event_log.length})),
     day: w.day,
     room,
     operator: type,
-    payload_hash: 'fnv1a32:' + hash(payload),
-    legacy_payload_hash: 'sha256:' + hash(payload),
+    payload_hash: 'fnv32:' + hash(payload),
     anti_equivalence: anti.triggered,
     holonomy_delta: holonomy.curvature_delta,
     gate: event.gate || null,
@@ -1102,14 +1107,22 @@ function generateLiveLatticeSeed(world, opts={}){
 
 function quantizeWeather(weather){
   const w = weather.weather || weather;
+  const rawFd = w.fold_density;
+  const rawSr = w.storm_risk;
+  const foldBucket = (typeof rawFd === 'number' && Number.isFinite(rawFd))
+    ? (rawFd > .66 ? 'high' : rawFd > .33 ? 'moderate' : 'low')
+    : (rawFd === 'high' || rawFd === 'moderate' || rawFd === 'low' ? rawFd : 'low');
+  const stormBucket = (typeof rawSr === 'number' && Number.isFinite(rawSr))
+    ? (rawSr > .66 ? 'high' : rawSr > .33 ? 'moderate' : 'low')
+    : (rawSr === 'high' || rawSr === 'moderate' || rawSr === 'low' ? rawSr : 'low');
   return {
     schema: 'domeworld.public-ambiance-weather/v0.3',
     pressure: w.pressure,
     humidity: w.humidity,
     visibility: w.visibility,
     dominant_front: w.dominant_front,
-    fold_density: w.fold_density > .66 ? 'high' : w.fold_density > .33 ? 'moderate' : 'low',
-    storm_risk: w.storm_risk > .66 ? 'high' : w.storm_risk > .33 ? 'moderate' : 'low',
+    fold_density: foldBucket,
+    storm_risk: stormBucket,
     recommended_tending: w.recommended_tending,
     claim_ceiling: CLAIM_CEILINGS.public
   };
@@ -1145,7 +1158,69 @@ function generateWitnessReceipt(world){
 }
 
 
-return {ENGINE_VERSION,CLAIM_CEILINGS,AMBIANCE_MATH,ANTI_EQUIVALENCES,ROOM_AMBIANCES,clamp,round,stableStringify,hash,clone,createLocalSection,computeLocalState,computeFieldCell,createWorld,restrictSection,computeGluingObstruction,recomputeFolds,senseFold,readTendency,computeFlowVector,readRoomWeather,computeAmbianceWeather,computeWeather,detectAntiEquivalence,stewardshipGate,computeHolonomy,applyFlowEvent,tend,runAccidentAssay,quantizeWeather,generateWitnessReceipt,computeGradientMisfit,computeHeterostratigraphicPotential,computeRepoWeather,generateLiveLatticeSeed};
+function parseAmbianceHash(raw){
+  const s = String(raw || '');
+  if(s.startsWith('fnv32:')){
+    const h = s.slice(6);
+    const valid = /^[0-9a-f]{8}$/i.test(h);
+    return {
+      algorithm: 'fnv32',
+      hash: valid ? h.toLowerCase() : h,
+      format_recognized: valid,
+      cryptographic_attestation: false,
+      cryptographic: false,
+      recomputed_integrity_verified: false,
+      legacy: false
+    };
+  }
+  if(s.startsWith('sha256:')){
+    const h = s.slice(7);
+    if(/^[0-9a-f]{8}$/i.test(h)){
+      return {
+        algorithm: 'fnv32',
+        hash: h.toLowerCase(),
+        format_recognized: true,
+        cryptographic_attestation: false,
+        cryptographic: false,
+        recomputed_integrity_verified: false,
+        legacy: true,
+        note: 'historical non-cryptographic surrogate'
+      };
+    }
+    if(/^[0-9a-f]{64}$/i.test(h)){
+      return {
+        algorithm: 'sha256',
+        hash: h.toLowerCase(),
+        format_recognized: true,
+        cryptographic_attestation: false,
+        cryptographic: false,
+        recomputed_integrity_verified: false,
+        legacy: false,
+        note: 'format recognized only; content not independently recomputed or verified'
+      };
+    }
+    return {
+      algorithm: 'sha256',
+      hash: h,
+      format_recognized: false,
+      cryptographic_attestation: false,
+      cryptographic: false,
+      recomputed_integrity_verified: false,
+      legacy: false
+    };
+  }
+  return {
+    algorithm: 'unknown',
+    hash: s,
+    format_recognized: false,
+    cryptographic_attestation: false,
+    cryptographic: false,
+    recomputed_integrity_verified: false,
+    legacy: false
+  };
+}
+
+return {ENGINE_VERSION,CLAIM_CEILINGS,AMBIANCE_MATH,ANTI_EQUIVALENCES,ROOM_AMBIANCES,clamp,round,stableStringify,hash,clone,createLocalSection,computeLocalState,computeFieldCell,createWorld,restrictSection,computeGluingObstruction,recomputeFolds,senseFold,readTendency,computeFlowVector,readRoomWeather,computeAmbianceWeather,computeWeather,detectAntiEquivalence,stewardshipGate,computeHolonomy,computeAshSignature,generateAshReceipt,applyFlowEvent,tend,runAccidentAssay,quantizeWeather,generateWitnessReceipt,computeGradientMisfit,computeHeterostratigraphicPotential,computeRepoWeather,generateLiveLatticeSeed,parseAmbianceHash};
 })();
 
 const C = DomeCore;

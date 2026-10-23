@@ -195,6 +195,8 @@ jobs:
         run: npm run test:dollhouse:audits
       - name: Validate Loom Instrument Lab, held gates, advisory minimization, and declared service resolution
         run: npm run test:loom:instrument
+      - name: Validate Dome-World runtime weather and hash regression
+        run: node --test tests/dome-world-runtime-weather-hash-regression.test.mjs
       - name: Verify native-prosody permission, focused relay API and editorial contracts, and offline atlas
         run: |
           node --check server/khonapolit-quality.js

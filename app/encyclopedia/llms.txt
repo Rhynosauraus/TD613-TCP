@@ -4,7 +4,7 @@ Entry: /encyclopedia/reference/manifest.json
 Repository entry: app/encyclopedia/reference/manifest.json
 Standalone entry: script#td613-reference-manifest, then script#td613-reference-directory and script#td613-reference-records (inert NDJSON).
 
-This is a generated retrieval mirror of Research Edition 1.3, not new scientific evidence.
+This is a generated retrieval mirror of Research Edition 1.4, not new scientific evidence.
 
 1. Resolve the current Git SHA or deployment receipt independently. Read manifest.json for edition identity, corpus hash, facets, typed-edge semantics and unresolved references.
 2. For an ID, fetch reference/records/{ID}.json directly. Source IDs use SRC-{original source key}. Every record retains its original object, canonical JSON pointer, explicit aliases, sources, evidence class and claim ceiling. Absent fields stay null.
@@ -14,6 +14,7 @@ This is a generated retrieval mirror of Research Edition 1.3, not new scientific
 6. The browser/standalone read-only API window.TD613Reference supports weighted lexical/BM25 search with filters, phrases, exclusions and pagination, get, cite, neighbors, citedBy, route, context, facets, verify and export. Scores rank relevance rather than scientific quality.
 7. Browser human route: /encyclopedia/#record=G-101 (example). Independent agents may obtain identical bytes yet still share one acquisition; retain evidence distinctions.
 
-835 generated records; source payload SHA-256 771c081d857300dda64c9bcd30ddc565c8a2f3a26694dab7a2415d1c0032432d.
+1141 generated records; source payload SHA-256 ff0c98f564c9157f22b8603a20ddefa3ca13d843b17bdfb7e2a495408a49b4c9.
 Source records can point to private Library artifacts or missing measurements; a locator alone grants no access or observation credit.
+Research accession provenance: /encyclopedia/research/2026-10-23-proposal-and-rest-addendum.json. The staged source notes and 279 linked classifications are INTEGRATED into this ordinary retrieval index; the historical addendum is a custody receipt, not a separate reader ontology. Unreviewed stages and experimental holds remain explicitly marked.
 Rebuild/check: node scripts/build-encyclopedia-reference.mjs [--check]

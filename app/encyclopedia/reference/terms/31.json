@@ -9,7 +9,6 @@
     "G-072",
     "G-077",
     "G-080",
-    "G-083",
     "G-102",
     "G-105",
     "G-106",
@@ -17,7 +16,6 @@
     "G-110",
     "G-114",
     "G-164",
-    "G-190",
     "G-205",
     "G-209",
     "G-225",
@@ -50,11 +48,21 @@
     "SRC-P1REPORT",
     "SRC-ER2013",
     "SRC-AP32_USER",
+    "SRC-AIA_SPEC",
+    "SRC-EPI_CUSTODIAL_PDF",
+    "SRC-EPI_POSTWEB_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF",
     "APT-04",
     "APT-07",
     "APT-08",
     "LINEAGE-06",
-    "EDITION"
+    "LINEAGE-11",
+    "EDITION",
+    "R-DOME-AMBIANCE-20261023",
+    "R-DOLLHOUSE-REST-EXIT-20261023",
+    "R-ENCYCLOPEDIA-LAB-279-20261023",
+    "ASSESS-G-291",
+    "ASSESS-G-340"
   ],
   "10": [
     "LAB-12",
@@ -69,9 +77,15 @@
     "SRC-ER_REPEC",
     "SRC-SR_P3_TEXT",
     "SRC-SR_P2_PDF",
+    "SRC-EPI_CUSTODIAL_PDF",
+    "SRC-EPI_POSTWEB_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF",
     "APT-01",
     "APT-34",
     "PDF-SR_P2_PDF",
+    "PDF-EPI_CUSTODIAL_PDF",
+    "PDF-EPI_POSTWEB_PDF",
+    "PDF-EPI_DIAGNOSTICS_PDF",
     "EDITION"
   ],
   "11": [
@@ -113,7 +127,8 @@
   "16": [
     "G-215",
     "LAB-18",
-    "APT-11"
+    "APT-11",
+    "R-ENCYCLOPEDIA-LAB-279-20261023"
   ],
   "17": [
     "SRC-CLASSIC"
@@ -134,6 +149,9 @@
   ],
   "133": [
     "SRC-EX_COLD"
+  ],
+  "165": [
+    "R-ENCYCLOPEDIA-LAB-279-20261023"
   ],
   "192": [
     "G-397",
@@ -183,6 +201,9 @@
     "G-234",
     "LAB-21",
     "SRC-CLASSIC"
+  ],
+  "1583": [
+    "R-DOLLHOUSE-REST-EXIT-20261023"
   ],
   "1588": [
     "APT-30"
@@ -235,8 +256,17 @@
   "184672": [
     "PDF-SR_P2_PDF"
   ],
-  "10-wave": [
-    "G-081"
+  "18816198": [
+    "SRC-EPI_CUSTODIAL_PDF",
+    "PDF-EPI_CUSTODIAL_PDF"
+  ],
+  "18817067": [
+    "SRC-EPI_POSTWEB_PDF",
+    "PDF-EPI_POSTWEB_PDF"
+  ],
+  "18817184": [
+    "SRC-EPI_DIAGNOSTICS_PDF",
+    "PDF-EPI_DIAGNOSTICS_PDF"
   ],
   "1003-1005": [
     "G-203",
@@ -277,5 +307,23 @@
   ],
   "1d6962c7604d6d9a226792cd5813f36bafcbae853420af5dd065aea80afd6567": [
     "APT-40"
+  ],
+  "16-program": [
+    "PROGRAM-P01",
+    "PROGRAM-P02",
+    "PROGRAM-P03",
+    "PROGRAM-P04",
+    "PROGRAM-P05",
+    "PROGRAM-P06",
+    "PROGRAM-P07",
+    "PROGRAM-P08",
+    "PROGRAM-P09",
+    "PROGRAM-P10",
+    "PROGRAM-P11",
+    "PROGRAM-P12",
+    "PROGRAM-P13",
+    "PROGRAM-P14",
+    "PROGRAM-P15",
+    "PROGRAM-P16"
   ]
 }

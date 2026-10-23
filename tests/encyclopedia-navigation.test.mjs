@@ -23,22 +23,26 @@ function fixture({mobile=false,url='https://td613.test/encyclopedia/',state=null
  const change=async(id,value,type='change')=>{const e=d.getElementById(id);e.value=value;e.dispatchEvent(new w.Event(type,{bubbles:true}));await pause(200)};
  return {dom,w,d,errors,click,change,close(){assert.deepEqual(errors,[]);w.close()}};
 }
-test('canonical payload retains its original bytes',()=>{
+test('canonical payload binds the current research edition bytes',()=>{
  const json=html.match(/<script id="canonical-audit-data" type="application\/json">([\s\S]*?)<\/script>/)[1];
- assert.equal(createHash('sha256').update(json).digest('hex'),'771c081d857300dda64c9bcd30ddc565c8a2f3a26694dab7a2415d1c0032432d');
+ assert.equal(createHash('sha256').update(json).digest('hex'),'ff0c98f564c9157f22b8603a20ddefa3ca13d843b17bdfb7e2a495408a49b4c9');
+});
+test('cover source inventory follows the current source registry',()=>{
+ const f=fixture();
+ try{assert.equal(f.d.querySelector('.stat-btn[data-view="sources"] .stat-value').textContent,'92')}finally{f.close()}
 });
 for(const mobile of [false,true])test(`reading journey with ${mobile?'mobile':'desktop'} DOM branches`,async()=>{
  const f=fixture({mobile}),{d,w,click,change}=f;
  try{
   await click('.main-nav [data-view="lexicon"]');
   assert.equal(d.querySelectorAll('[data-select-term]').length,100);
-  assert.match(d.getElementById('lexiconPaginationTop').textContent,/1–100 of 532/);
-  assert.match(d.getElementById('lexiconPagination').textContent,/1–100 of 532/);
+  assert.match(d.getElementById('lexiconPaginationTop').textContent,/1–100 of 533/);
+  assert.match(d.getElementById('lexiconPagination').textContent,/1–100 of 533/);
   await click('#lexiconPaginationTop [data-page-number="2"]');
   assert.equal(d.querySelector('[data-select-term]').dataset.selectTerm,'G-101');
   await change('lexiconPageSize','50');
   assert.equal(d.querySelectorAll('[data-select-term]').length,50);
-  assert.match(d.getElementById('lexiconPagination').textContent,/101–150 of 532/);
+  assert.match(d.getElementById('lexiconPagination').textContent,/101–150 of 533/);
   await change('lexiconPageSize','100');
   w.scrollTo({top:2400});
   await click('[data-select-term="G-150"]');
@@ -117,9 +121,9 @@ test('retained instruments, evidence inventories and collection still execute',a
   const before=f.d.getElementById('engineResults').textContent;await f.click('[data-fadt-row="0"][data-fadt-bit="2"]');
   assert.notEqual(f.d.getElementById('engineResults').textContent,before);
   await f.click('[data-formula-filter="bridged"]');assert.match(f.d.getElementById('formulaSummary').textContent,/21 entries/);
-  await f.click('[data-view="evidence"]');await f.click('[data-evidence-kind="labs"]');assert.match(f.d.getElementById('evidenceSummary').textContent,/46 of 46/);
+  await f.click('[data-view="evidence"]');await f.click('[data-evidence-kind="labs"]');assert.match(f.d.getElementById('evidenceSummary').textContent,/343 of 343/);
   await f.click('[data-evidence-kind="burdens"]');assert.match(f.d.getElementById('evidenceSummary').textContent,/37 of 37/);
-  await f.click('[data-view="sources"]');await f.click('[data-source-kind="pdf"]');assert.match(f.d.getElementById('sourceSummary').textContent,/4 of 4/);
+  await f.click('[data-view="sources"]');await f.click('[data-source-kind="pdf"]');assert.match(f.d.getElementById('sourceSummary').textContent,/7 of 7/);
   await f.click('[data-source-kind="contract"]');assert.match(f.d.getElementById('sourceSummary').textContent,/40 of 40/);
  }finally{f.close()}
 });
