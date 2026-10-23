@@ -7,13 +7,13 @@ export const TRUSTED_WITNESS_REGISTRY = Object.freeze({
   OPERATOR_DIRECT_WITNESS: Object.freeze({
     witness_identity: 'OPERATOR_DIRECT_WITNESS',
     authority_class: 'CONTEMPORANEOUS_OPERATOR_DIRECT',
-    verification_key: 'td613-operator-direct-witness-key-2026',
+    env_key_var: 'TD613_OPERATOR_WITNESS_PUBLIC_KEY',
     is_independent: true
   }),
   AMARI_ADJUDICATION_AUTHORITY: Object.freeze({
     witness_identity: 'AMARI_ADJUDICATION_AUTHORITY',
     authority_class: 'INDEPENDENT_EXTERNAL_ADJUDICATOR',
-    verification_key: 'amari-ed25519-public-adjudication-witness-key-2026',
+    env_key_var: 'TD613_AMARI_WITNESS_PUBLIC_KEY',
     is_independent: true
   }),
   SYNTHETIC_TEST_AUTHORITY: Object.freeze({
@@ -119,10 +119,27 @@ export function verifyWitnessReceipt(receipt, options = {}) {
   }
 
   // 3. Layer 3: Witness Identity & Receipt Authenticity (Cryptographic Verification)
-  const registry = options.trusted_registry || TRUSTED_WITNESS_REGISTRY;
-  const authority = registry[receipt.witness_identity];
+  // Verifier uses ONLY the verifier-sealed TRUSTED_WITNESS_REGISTRY.
+  // Caller-supplied options.trusted_registry is strictly rejected/ignored to prevent replacing trust anchors.
+  const authority = TRUSTED_WITNESS_REGISTRY[receipt.witness_identity];
   if (!authority) {
     return { verified: false, failure_reason: 'UNTRUSTED_WITNESS_AUTHORITY' };
+  }
+
+  let verificationKey;
+  if (authority.is_independent) {
+    verificationKey = globalThis.process?.env?.[authority.env_key_var];
+    if (!verificationKey || typeof verificationKey !== 'string' || !verificationKey.trim()) {
+      return {
+        verified: false,
+        failure_reason: 'EXTERNAL_TRUST_ANCHOR_NOT_PROVISIONED',
+        witness_identity: receipt.witness_identity,
+        authority_class: authority.authority_class,
+        is_independent: true
+      };
+    }
+  } else {
+    verificationKey = authority.verification_key;
   }
 
   const expectedDigest = computeWitnessReceiptDigest(receipt);
@@ -130,7 +147,7 @@ export function verifyWitnessReceipt(receipt, options = {}) {
     return { verified: false, failure_reason: 'VERIFICATION_DIGEST_MISMATCH' };
   }
 
-  const expectedSignature = crypto.createHmac('sha256', authority.verification_key).update(expectedDigest).digest('hex');
+  const expectedSignature = crypto.createHmac('sha256', verificationKey).update(expectedDigest).digest('hex');
   if (!receipt.signature || receipt.signature !== expectedSignature) {
     return { verified: false, failure_reason: 'INVALID_SIGNATURE' };
   }
@@ -270,6 +287,9 @@ export function createDollhouseCaseDossier(input) {
       if (witnessResult.verified) {
         witnessVerified = true;
         witnessDetails = witnessResult;
+      } else {
+        witnessVerified = false;
+        witnessDetails = witnessResult;
       }
     }
 
@@ -285,6 +305,11 @@ export function createDollhouseCaseDossier(input) {
         repairEvidenceText = `Synthetic offline test authority verified before/after artifact transition under ${witnessDetails.witness_identity} (${witnessDetails.verification_digest.slice(0, 12)}...). Zero independent empirical evidence credit.`;
         repairLimitations = 'Verified by synthetic offline test authority only; external independent witness remains unverified.';
       }
+    } else if (witnessDetails && witnessDetails.failure_reason === 'EXTERNAL_TRUST_ANCHOR_NOT_PROVISIONED') {
+      repairScore = 0.5;
+      repairStatus = 'EXTERNAL_WITNESS_ANCHOR_UNAVAILABLE_HELD';
+      repairEvidenceText = `Witness receipt declared external authority ${witnessDetails.witness_identity}, but external trust anchor (${TRUSTED_WITNESS_REGISTRY[witnessDetails.witness_identity]?.env_key_var || 'TD613_*_PUBLIC_KEY'}) is not provisioned in runtime environment. Boundary honestly held.`;
+      repairLimitations = 'External signing key not provisioned in environment; cannot manufacture independent verification.';
     } else if (validInitial && validPost && isVerified) {
       repairScore = 0.5;
       repairStatus = 'CALLER_DECLARED_RECOVERY';

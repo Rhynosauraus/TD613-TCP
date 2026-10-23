@@ -223,8 +223,9 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
       },
       transition_claim: 'Operator adopted canonical cadence, well-conditioned aperture probe, zero-winding atlas path, and largest sound FADT support'
     };
+    process.env.TD613_AMARI_WITNESS_PUBLIC_KEY = 'amari-synthetic-workflow-key-2026';
     witnessReceipt.verification_digest = computeWitnessReceiptDigest(witnessReceipt);
-    witnessReceipt.signature = signWitnessReceipt(witnessReceipt, TRUSTED_WITNESS_REGISTRY.AMARI_ADJUDICATION_AUTHORITY.verification_key);
+    witnessReceipt.signature = signWitnessReceipt(witnessReceipt, process.env.TD613_AMARI_WITNESS_PUBLIC_KEY);
 
     // 2F. Orchestrator Synthesis: Unified 5-Doll Case Dossier
     const unifiedDossier = createDollhouseCaseDossier({
@@ -320,6 +321,7 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
     assert.equal(unifiedDossier.authority.human_closure_required, true);
     assert.equal(unifiedDossier.authority.release, false);
     assert.equal(unifiedDossier.authority.merge, false);
+    delete process.env.TD613_AMARI_WITNESS_PUBLIC_KEY;
   });
 
   // =========================================================================
