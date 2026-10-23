@@ -23,9 +23,9 @@ function fixture({mobile=false,url='https://td613.test/encyclopedia/',state=null
  const change=async(id,value,type='change')=>{const e=d.getElementById(id);e.value=value;e.dispatchEvent(new w.Event(type,{bubbles:true}));await pause(200)};
  return {dom,w,d,errors,click,change,close(){assert.deepEqual(errors,[]);w.close()}};
 }
-test('canonical payload retains its original bytes',()=>{
+test('canonical payload binds the current research edition bytes',()=>{
  const json=html.match(/<script id="canonical-audit-data" type="application\/json">([\s\S]*?)<\/script>/)[1];
- assert.equal(createHash('sha256').update(json).digest('hex'),'771c081d857300dda64c9bcd30ddc565c8a2f3a26694dab7a2415d1c0032432d');
+ assert.equal(createHash('sha256').update(json).digest('hex'),'ff0c98f564c9157f22b8603a20ddefa3ca13d843b17bdfb7e2a495408a49b4c9');
 });
 for(const mobile of [false,true])test(`reading journey with ${mobile?'mobile':'desktop'} DOM branches`,async()=>{
  const f=fixture({mobile}),{d,w,click,change}=f;
@@ -119,7 +119,7 @@ test('retained instruments, evidence inventories and collection still execute',a
   await f.click('[data-formula-filter="bridged"]');assert.match(f.d.getElementById('formulaSummary').textContent,/21 entries/);
   await f.click('[data-view="evidence"]');await f.click('[data-evidence-kind="labs"]');assert.match(f.d.getElementById('evidenceSummary').textContent,/46 of 46/);
   await f.click('[data-evidence-kind="burdens"]');assert.match(f.d.getElementById('evidenceSummary').textContent,/37 of 37/);
-  await f.click('[data-view="sources"]');await f.click('[data-source-kind="pdf"]');assert.match(f.d.getElementById('sourceSummary').textContent,/4 of 4/);
+  await f.click('[data-view="sources"]');await f.click('[data-source-kind="pdf"]');assert.match(f.d.getElementById('sourceSummary').textContent,/7 of 7/);
   await f.click('[data-source-kind="contract"]');assert.match(f.d.getElementById('sourceSummary').textContent,/40 of 40/);
  }finally{f.close()}
 });

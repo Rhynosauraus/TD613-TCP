@@ -9,7 +9,6 @@
     "G-072",
     "G-077",
     "G-080",
-    "G-083",
     "G-102",
     "G-105",
     "G-106",
@@ -17,7 +16,6 @@
     "G-110",
     "G-114",
     "G-164",
-    "G-190",
     "G-205",
     "G-209",
     "G-225",
@@ -50,10 +48,15 @@
     "SRC-P1REPORT",
     "SRC-ER2013",
     "SRC-AP32_USER",
+    "SRC-AIA_SPEC",
+    "SRC-EPI_CUSTODIAL_PDF",
+    "SRC-EPI_POSTWEB_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF",
     "APT-04",
     "APT-07",
     "APT-08",
     "LINEAGE-06",
+    "LINEAGE-11",
     "EDITION"
   ],
   "10": [
@@ -69,9 +72,15 @@
     "SRC-ER_REPEC",
     "SRC-SR_P3_TEXT",
     "SRC-SR_P2_PDF",
+    "SRC-EPI_CUSTODIAL_PDF",
+    "SRC-EPI_POSTWEB_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF",
     "APT-01",
     "APT-34",
     "PDF-SR_P2_PDF",
+    "PDF-EPI_CUSTODIAL_PDF",
+    "PDF-EPI_POSTWEB_PDF",
+    "PDF-EPI_DIAGNOSTICS_PDF",
     "EDITION"
   ],
   "11": [
@@ -235,8 +244,17 @@
   "184672": [
     "PDF-SR_P2_PDF"
   ],
-  "10-wave": [
-    "G-081"
+  "18816198": [
+    "SRC-EPI_CUSTODIAL_PDF",
+    "PDF-EPI_CUSTODIAL_PDF"
+  ],
+  "18817067": [
+    "SRC-EPI_POSTWEB_PDF",
+    "PDF-EPI_POSTWEB_PDF"
+  ],
+  "18817184": [
+    "SRC-EPI_DIAGNOSTICS_PDF",
+    "PDF-EPI_DIAGNOSTICS_PDF"
   ],
   "1003-1005": [
     "G-203",

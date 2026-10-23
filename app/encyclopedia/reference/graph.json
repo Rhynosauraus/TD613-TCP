@@ -531,11 +531,6 @@
       "target": "M-04"
     },
     {
-      "source": "G-047",
-      "type": "mentions_record",
-      "target": "M-06"
-    },
-    {
       "source": "G-048",
       "type": "cites_source",
       "target": "SRC-ASH_TOMO"
@@ -741,11 +736,6 @@
       "target": "M-04"
     },
     {
-      "source": "G-068",
-      "type": "mentions_record",
-      "target": "M-16"
-    },
-    {
       "source": "G-069",
       "type": "cites_source",
       "target": "SRC-APERTURE"
@@ -877,7 +867,7 @@
     },
     {
       "source": "G-079",
-      "type": "mentions_record",
+      "type": "explicit_alias_cross_reference",
       "target": "G-080"
     },
     {
@@ -1574,6 +1564,11 @@
       "source": "G-144",
       "type": "cites_source",
       "target": "SRC-ROUND"
+    },
+    {
+      "source": "G-144",
+      "type": "cites_source",
+      "target": "SRC-AIA_SPEC"
     },
     {
       "source": "G-145",
@@ -3706,6 +3701,11 @@
       "target": "SRC-AP32_EPI"
     },
     {
+      "source": "G-370",
+      "type": "cites_source",
+      "target": "SRC-EPI_CUSTODIAL_PDF"
+    },
+    {
       "source": "G-371",
       "type": "cites_source",
       "target": "SRC-AP32_ER"
@@ -3721,14 +3721,29 @@
       "target": "SRC-AP32_EPI"
     },
     {
+      "source": "G-373",
+      "type": "cites_source",
+      "target": "SRC-EPI_CUSTODIAL_PDF"
+    },
+    {
       "source": "G-374",
+      "type": "cites_source",
+      "target": "SRC-AP32_EPI"
+    },
+    {
+      "source": "G-374",
+      "type": "cites_source",
+      "target": "SRC-EPI_DIAGNOSTICS_PDF"
+    },
+    {
+      "source": "G-375",
       "type": "cites_source",
       "target": "SRC-AP32_EPI"
     },
     {
       "source": "G-375",
       "type": "cites_source",
-      "target": "SRC-AP32_EPI"
+      "target": "SRC-EPI_POSTWEB_PDF"
     },
     {
       "source": "G-376",
@@ -3751,9 +3766,29 @@
       "target": "SRC-AP32_EPI"
     },
     {
+      "source": "G-379",
+      "type": "cites_source",
+      "target": "SRC-EPI_DIAGNOSTICS_PDF"
+    },
+    {
+      "source": "G-379",
+      "type": "cites_source",
+      "target": "SRC-EPI_POSTWEB_PDF"
+    },
+    {
       "source": "G-380",
       "type": "cites_source",
       "target": "SRC-AP32_EPI"
+    },
+    {
+      "source": "G-380",
+      "type": "cites_source",
+      "target": "SRC-EPI_DIAGNOSTICS_PDF"
+    },
+    {
+      "source": "G-380",
+      "type": "cites_source",
+      "target": "SRC-EPI_POSTWEB_PDF"
     },
     {
       "source": "G-381",
@@ -3761,9 +3796,29 @@
       "target": "SRC-AP32_EPI"
     },
     {
+      "source": "G-381",
+      "type": "cites_source",
+      "target": "SRC-EPI_DIAGNOSTICS_PDF"
+    },
+    {
+      "source": "G-381",
+      "type": "cites_source",
+      "target": "SRC-EPI_POSTWEB_PDF"
+    },
+    {
       "source": "G-382",
       "type": "cites_source",
       "target": "SRC-AP32_EPI"
+    },
+    {
+      "source": "G-382",
+      "type": "cites_source",
+      "target": "SRC-EPI_DIAGNOSTICS_PDF"
+    },
+    {
+      "source": "G-382",
+      "type": "cites_source",
+      "target": "SRC-EPI_POSTWEB_PDF"
     },
     {
       "source": "G-383",
@@ -3771,14 +3826,44 @@
       "target": "SRC-AP32_EPI"
     },
     {
+      "source": "G-383",
+      "type": "cites_source",
+      "target": "SRC-EPI_DIAGNOSTICS_PDF"
+    },
+    {
+      "source": "G-383",
+      "type": "cites_source",
+      "target": "SRC-EPI_POSTWEB_PDF"
+    },
+    {
       "source": "G-384",
+      "type": "cites_source",
+      "target": "SRC-AP32_EPI"
+    },
+    {
+      "source": "G-384",
+      "type": "cites_source",
+      "target": "SRC-EPI_DIAGNOSTICS_PDF"
+    },
+    {
+      "source": "G-384",
+      "type": "cites_source",
+      "target": "SRC-EPI_POSTWEB_PDF"
+    },
+    {
+      "source": "G-385",
       "type": "cites_source",
       "target": "SRC-AP32_EPI"
     },
     {
       "source": "G-385",
       "type": "cites_source",
-      "target": "SRC-AP32_EPI"
+      "target": "SRC-EPI_DIAGNOSTICS_PDF"
+    },
+    {
+      "source": "G-385",
+      "type": "cites_source",
+      "target": "SRC-EPI_POSTWEB_PDF"
     },
     {
       "source": "G-386",
@@ -6394,7 +6479,7 @@
     "G-080": [
       {
         "source": "G-079",
-        "type": "mentions_record"
+        "type": "explicit_alias_cross_reference"
       }
     ],
     "G-081": [],
@@ -7091,10 +7176,6 @@
     ],
     "M-06": [
       {
-        "source": "G-047",
-        "type": "mentions_record"
-      },
-      {
         "source": "G-053",
         "type": "mentions_record"
       }
@@ -7206,10 +7287,6 @@
       }
     ],
     "M-16": [
-      {
-        "source": "G-068",
-        "type": "mentions_record"
-      },
       {
         "source": "G-089",
         "type": "mentions_record"
@@ -12188,6 +12265,90 @@
         "type": "cites_source"
       }
     ],
+    "SRC-AIA_SPEC": [
+      {
+        "source": "G-144",
+        "type": "cites_source"
+      }
+    ],
+    "SRC-EPI_CUSTODIAL_PDF": [
+      {
+        "source": "G-370",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-373",
+        "type": "cites_source"
+      }
+    ],
+    "SRC-EPI_POSTWEB_PDF": [
+      {
+        "source": "G-375",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-379",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-380",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-381",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-382",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-383",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-384",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-385",
+        "type": "cites_source"
+      }
+    ],
+    "SRC-EPI_DIAGNOSTICS_PDF": [
+      {
+        "source": "G-374",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-379",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-380",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-381",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-382",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-383",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-384",
+        "type": "cites_source"
+      },
+      {
+        "source": "G-385",
+        "type": "cites_source"
+      }
+    ],
     "APT-01": [],
     "APT-02": [],
     "APT-03": [],
@@ -12232,6 +12393,9 @@
     "PDF-SR_P2_PDF": [],
     "PDF-SR_P3_PDF": [],
     "PDF-SR_UF_PDF": [],
+    "PDF-EPI_CUSTODIAL_PDF": [],
+    "PDF-EPI_POSTWEB_PDF": [],
+    "PDF-EPI_DIAGNOSTICS_PDF": [],
     "LINEAGE-01": [],
     "LINEAGE-02": [],
     "LINEAGE-03": [],
@@ -12242,6 +12406,7 @@
     "LINEAGE-08": [],
     "LINEAGE-09": [],
     "LINEAGE-10": [],
+    "LINEAGE-11": [],
     "EDITION": []
   },
   "unresolved": [],

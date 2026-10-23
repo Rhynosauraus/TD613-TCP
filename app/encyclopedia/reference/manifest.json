@@ -1,9 +1,11 @@
 {
   "schema": "td613.encyclopedia.reference/v1",
   "edition_source_commit": "78c7ea6b974e176611fb2ed4d0c59649ebf05f62",
-  "canonical_payload_sha256": "771c081d857300dda64c9bcd30ddc565c8a2f3a26694dab7a2415d1c0032432d",
-  "retrieval_records_sha256": "cd19ba073e7677d65857bfe08007bb87a527fdf9a0e800bd5a98a843808ec4bd",
-  "record_count": 835,
+  "edition_version": "1.4",
+  "review_base_commit": "338642a0ee4c7bf2416af65d001c1508aba8ed85",
+  "canonical_payload_sha256": "ff0c98f564c9157f22b8603a20ddefa3ca13d843b17bdfb7e2a495408a49b4c9",
+  "retrieval_records_sha256": "f47d53b3de722f9cae36aa92450573aa806b6ce26143e048887ef122683e4e25",
+  "record_count": 843,
   "facets": {
     "kind": {
       "glossary": [
@@ -796,7 +798,11 @@
         "SRC-SR_P1_PDF",
         "SRC-SR_P2_PDF",
         "SRC-SR_P3_PDF",
-        "SRC-SR_UF_PDF"
+        "SRC-SR_UF_PDF",
+        "SRC-AIA_SPEC",
+        "SRC-EPI_CUSTODIAL_PDF",
+        "SRC-EPI_POSTWEB_PDF",
+        "SRC-EPI_DIAGNOSTICS_PDF"
       ],
       "contract": [
         "APT-01",
@@ -844,7 +850,10 @@
         "PDF-SR_P1_PDF",
         "PDF-SR_P2_PDF",
         "PDF-SR_P3_PDF",
-        "PDF-SR_UF_PDF"
+        "PDF-SR_UF_PDF",
+        "PDF-EPI_CUSTODIAL_PDF",
+        "PDF-EPI_POSTWEB_PDF",
+        "PDF-EPI_DIAGNOSTICS_PDF"
       ],
       "lineage_note": [
         "LINEAGE-01",
@@ -856,7 +865,8 @@
         "LINEAGE-07",
         "LINEAGE-08",
         "LINEAGE-09",
-        "LINEAGE-10"
+        "LINEAGE-10",
+        "LINEAGE-11"
       ],
       "edition": [
         "EDITION"
@@ -2160,6 +2170,11 @@
       ],
       "Independent metadata and text-source comparison": [
         "LAB-46"
+      ],
+      "DIRECT_PRIMARY_DOCUMENT_INSPECTION": [
+        "SRC-EPI_CUSTODIAL_PDF",
+        "SRC-EPI_POSTWEB_PDF",
+        "SRC-EPI_DIAGNOSTICS_PDF"
       ]
     },
     "source": {
@@ -2842,6 +2857,9 @@
         "G-146",
         "LAB-10"
       ],
+      "AIA_SPEC": [
+        "G-144"
+      ],
       "OBSERV": [
         "G-162",
         "G-168",
@@ -3082,6 +3100,30 @@
         "M-30",
         "LAB-30",
         "LAB-31"
+      ],
+      "EPI_CUSTODIAL_PDF": [
+        "G-370",
+        "G-373"
+      ],
+      "EPI_DIAGNOSTICS_PDF": [
+        "G-374",
+        "G-379",
+        "G-380",
+        "G-381",
+        "G-382",
+        "G-383",
+        "G-384",
+        "G-385"
+      ],
+      "EPI_POSTWEB_PDF": [
+        "G-375",
+        "G-379",
+        "G-380",
+        "G-381",
+        "G-382",
+        "G-383",
+        "G-384",
+        "G-385"
       ],
       "AP32_DEFICIT": [
         "G-403",
@@ -3496,7 +3538,7 @@
     "verify": "verify() recalculates each retrieval record SHA-256; integrity supplies no independent scientific or external-origin evidence",
     "export": "export() returns the complete manifest, directory and records"
   },
-  "static_access": "All records below are inert NDJSON, one complete record per line. Parse with ordinary text/HTML tools; no browser or JavaScript required. Use the directory html_line to request a finite GitHub source range. IDs also open the human dossier via #record=ID. Byte-preserved canonical JSON remains the scientific edition authority; this index is a generated mirror.",
+  "static_access": "All records below are inert NDJSON, one complete record per line. Parse with ordinary text/HTML tools; no browser or JavaScript required. Use the directory html_line to request a finite GitHub source range. IDs also open the human dossier via #record=ID. Canonical JSON describes the current research edition and its source lineage; this index is a generated mirror.",
   "claim_limits": [
     "Undeclared evidence/status/ceiling fields remain null; consult original prose and source notes.",
     "Graph paths represent bibliography and explicit textual references, never automatic mathematical implication.",
@@ -3504,8 +3546,8 @@
     "Resolve current Git/deployment identity externally; the original edition SHA labels research content, not this interface release."
   ],
   "record_lines": {
-    "first": 846,
-    "last": 1680
+    "first": 854,
+    "last": 1696
   },
   "intake": {
     "schema": "reference/intake-schema.json",
@@ -3514,7 +3556,7 @@
     "admit": "node scripts/admit-encyclopedia-record.cjs proposal.json --human-review-ref exact-review-reference",
     "semantics": "Preparation is read-only and PROPOSED. Source-index accession requires separately declared human review. Public merge/deployment and scientific adjudication retain their own authority. Private input cannot enter public accession output."
   },
-  "artifact_html_sha256": "570a51d2db1bf7e76a8dc6e16486bf454096731d08f77bef1138d552e0a87c75",
+  "artifact_html_sha256": "482d5903062e84dcf86fbeb54e8a10e905e105c8114df51206ebc20333a3b2e5",
   "paths": {
     "directory": "reference/directory.json",
     "graph": "reference/graph.json",
@@ -3524,178 +3566,178 @@
   "term_shards": {
     "30": {
       "path": "reference/terms/30.json",
-      "terms": 16,
-      "sha256": "eae0c99366e7f78635e74cf5027f6360185e866e2b8d40dbee83184570ace757"
+      "terms": 18,
+      "sha256": "f7da707d3a9841d4a181563328542ff410eb1cd1b92082b60664d543b0aee635"
     },
     "31": {
       "path": "reference/terms/31.json",
-      "terms": 57,
-      "sha256": "b3d6bc288bc1004f59b7d815d037bf9abad8a7708a8e5f496e6dd9cf1f1b338b"
+      "terms": 59,
+      "sha256": "6e522106ea6949110ed47c4ab01af5d76890363b4efe84fba8ba388823a281b5"
     },
     "32": {
       "path": "reference/terms/32.json",
-      "terms": 60,
-      "sha256": "b570d2bfde9e29d7ddc8c6c968e75b287e56bd8b4239f32994994566f011da9c"
+      "terms": 61,
+      "sha256": "204c7545900a98b09329bdbe426c604e7c7dc06604de75d2494045ea875d3cbc"
     },
     "33": {
       "path": "reference/terms/33.json",
-      "terms": 19,
-      "sha256": "c281a1bfb85fc3cd879446a4d627aa39f921c33c8ab05b078216a64f3852f661"
+      "terms": 20,
+      "sha256": "3b63357009c5bdfe17c2952765081db9dadb7099efbf2a2c4079e3a1f7541712"
     },
     "34": {
       "path": "reference/terms/34.json",
       "terms": 15,
-      "sha256": "a395de1c3b06d488303587a44d708f58da377711c2e779effa10d36d8ee49d35"
+      "sha256": "0aae2ad34e31a3d88ed296b836475877a15a2362b225da87d32262a54349877a"
     },
     "35": {
       "path": "reference/terms/35.json",
       "terms": 15,
-      "sha256": "aaf9a7641acec26a08ee0f1cc47f99ae231edceb28188529da999665a9e705a7"
+      "sha256": "1d9403bb63b75134a35813d7f8adeb2d9c7723853214c998183e438b2e49e69c"
     },
     "36": {
       "path": "reference/terms/36.json",
-      "terms": 10,
-      "sha256": "e520f9fe225c416c85b8690598ac5aae39554e6d4ee47d6d70c970d0aadf581c"
+      "terms": 12,
+      "sha256": "29c8c7b3060c1b174e411a969f10d8b3cbe8a299ce8f6e32c7c78c4379cd54e5"
     },
     "37": {
       "path": "reference/terms/37.json",
-      "terms": 13,
-      "sha256": "ab0f71ddbef1c7b7d5d9615cb5c59cce2abebe9b44ed5acd21b81ba0a645fa47"
+      "terms": 15,
+      "sha256": "27516b72d2dd4bde287fcec39f6fa84ca0edf377fa6e189b775b3deb763e6f6e"
     },
     "38": {
       "path": "reference/terms/38.json",
-      "terms": 8,
-      "sha256": "62c63bde656fdcfd2c80830ad63faaabc850b8c994331d52629f42d68337ac00"
+      "terms": 9,
+      "sha256": "c977d15a49ae0f3bf4dbd99c053f95935b4669dbbe9fe1f5bfaeeecabbbf26f0"
     },
     "39": {
       "path": "reference/terms/39.json",
-      "terms": 8,
-      "sha256": "c17937502d2ea804f5087adffa5e92c916e199349e6fb7c1472d18e6a9a44541"
+      "terms": 9,
+      "sha256": "cdd92de754efa2cd959030087bcb1f172c42e2aa4aae201cbc2d471a319bbf82"
     },
     "61": {
       "path": "reference/terms/61.json",
-      "terms": 454,
-      "sha256": "d550792cac931e23cf8cc0373a296c0d845872226e4457344cb19a816441424a"
+      "terms": 495,
+      "sha256": "01e4094ccd87a071eec170e14710ce2882df28a6c04375c17449f5f7ba0ed402"
     },
     "62": {
       "path": "reference/terms/62.json",
-      "terms": 115,
-      "sha256": "2a5e5085a5301feee4d71d23fc854f21175a977a745dc55dff90c206897102e1"
+      "terms": 127,
+      "sha256": "595d9005085e45301a037c846e0638b355b245b5350b29694999ade595811705"
     },
     "63": {
       "path": "reference/terms/63.json",
-      "terms": 447,
-      "sha256": "dce1904038fb54521221298af98bbf1f120d11319928c14e6026e7a6a94ed241"
+      "terms": 482,
+      "sha256": "c5881c2962174cd0cea42b2c7ee91f06e53146232a306f2aaf72fc84679b4549"
     },
     "64": {
       "path": "reference/terms/64.json",
-      "terms": 286,
-      "sha256": "72d4ccaa2198f88385716cddb91ed9723642ff8c808ce1728a60fa4c39d54261"
+      "terms": 314,
+      "sha256": "a87abf09c34c6dc673b66c9352f920ffa7eaf2c28cde73aac549689769b0d1f3"
     },
     "65": {
       "path": "reference/terms/65.json",
-      "terms": 276,
-      "sha256": "c3a087eea5380e2d572a9cd5a5e277eb104b061165dafcb7f2e9fd62993fad28"
+      "terms": 308,
+      "sha256": "e1d67189c9b942bbafa75fb86038aa0fcd87f5a6344c950efb5eb95a4911c3d5"
     },
     "66": {
       "path": "reference/terms/66.json",
-      "terms": 181,
-      "sha256": "4645c059fbf7d87ce9f0a804acd4e7bcba308f7cfff0ff6f48a4b554f68c396f"
+      "terms": 197,
+      "sha256": "d1293c8a5117ce82c246ee2c1246ffd3c7099c712d7a330f676843e26acd113a"
     },
     "67": {
       "path": "reference/terms/67.json",
-      "terms": 621,
-      "sha256": "0307310d4c29058cd958d6d03ca4d608e910a302611fe3d0f1ccf93ae4399148"
+      "terms": 629,
+      "sha256": "206455fd4673618425f9c7f69f83807c0418d0b78ca357de3fedfed347229327"
     },
     "68": {
       "path": "reference/terms/68.json",
-      "terms": 127,
-      "sha256": "8c719ad79067847429cc650f51a27b5f0a9eca9bb79c43a32d261e1a6de251fb"
+      "terms": 136,
+      "sha256": "78a3e4f3ba33a74ee47d83e96aecb96c5c1aa374acd662f3ba48230b2cd34900"
     },
     "69": {
       "path": "reference/terms/69.json",
-      "terms": 250,
-      "sha256": "9a6c2ea5a8137c33581a96aedb77a71e47cc87d920734109909aadd49ab8747e"
+      "terms": 269,
+      "sha256": "ba0d923d44ab5029834818114dcb25321f6ebd7f5bb41d9eaa1f0f835939245d"
     },
     "70": {
       "path": "reference/terms/70.json",
-      "terms": 427,
-      "sha256": "9992653d07b105071e1cfefb73f778567c5d7884f0679d18eed3f157cfe3385e"
+      "terms": 462,
+      "sha256": "6844b10ba0a0e3bb51cc206a6897c2eadaea1db844255218e2e363c546a783ea"
     },
     "71": {
       "path": "reference/terms/71.json",
-      "terms": 34,
-      "sha256": "d371f0f95ad7856fcde5e2bbac5dd31ea7c50e3d5c9ceb294e1753c033d958f6"
+      "terms": 35,
+      "sha256": "8dd0a1b0117583145c654a719cc9289dbd5a98c434fb75383b8447e8c9550563"
     },
     "72": {
       "path": "reference/terms/72.json",
-      "terms": 356,
-      "sha256": "efd5aa90f1e74136c5670f27023fd26b209196580454c94716d4ddfd1d84fbd3"
+      "terms": 394,
+      "sha256": "3b446cba583ff6ba425dc28a96158fe52e711f66a12122e3101b9fc8deb503ae"
     },
     "73": {
       "path": "reference/terms/73.json",
-      "terms": 543,
-      "sha256": "d882413971d4b793a1f91d82a9587a3574213f9f80f77638807dbd789eaaa5d8"
+      "terms": 586,
+      "sha256": "778257a1132103688b75a99bde0ca77e5204d7ae47643cd972fd6ea8b052f143"
     },
     "74": {
       "path": "reference/terms/74.json",
-      "terms": 226,
-      "sha256": "ff1cac317afb73e6c9cf369befcdb514c2110c6562d496a49490f86ec6c73c73"
+      "terms": 249,
+      "sha256": "92ce37d532df86da73d69109f2acd311065d7bca8e6ba684924815ce2e87760c"
     },
     "75": {
       "path": "reference/terms/75.json",
-      "terms": 108,
-      "sha256": "0caf76ee8180b2b6cb05f76efa1b79c3fee067ffa6fd5132dcf0b5d0a76ac9eb"
+      "terms": 122,
+      "sha256": "d79cd570ce0bd81575e5cc1e87ed755fc44d7a4bedf85d41f235557a3e1f1f78"
     },
     "76": {
       "path": "reference/terms/76.json",
-      "terms": 73,
-      "sha256": "1dfbee1c187a922bb68ca2a0f6d7d6f9c522d6df258d6993efc7852a143ee651"
+      "terms": 80,
+      "sha256": "bf6b78cd0fb9fc564b6be3f98d590ff37820522f95960d2b3662446c97bdaefc"
     },
     "77": {
       "path": "reference/terms/77.json",
-      "terms": 72,
-      "sha256": "cbfc966fa8335da938d2bb02c341bc57264451cf999962db63f34357ce99c05c"
+      "terms": 82,
+      "sha256": "b1c60ee67547e9c6406bc615efa59ba9d801d050defe7d4ef9cd2a6b61847baa"
     },
     "78": {
       "path": "reference/terms/78.json",
-      "terms": 47,
-      "sha256": "f9b1fd9557b1a4e950fb8ed1b7c618218dfbb820649161347b3a231bdf8de194"
+      "terms": 48,
+      "sha256": "373d9a08f35f7ad3a9f0579c9a2fe6745e126173472c6faaa4580eec80b48ab4"
     },
     "79": {
       "path": "reference/terms/79.json",
       "terms": 8,
-      "sha256": "988eb19bd1cef827fedad4e8425fa7337de0d3f5e6fdd6ae402de53eca27533d"
+      "sha256": "059ae09ac571dd44a5c3fd23b6da2ee71d42caae50db2f1151dcede16da459ed"
     },
     "6e": {
       "path": "reference/terms/6e.json",
-      "terms": 114,
-      "sha256": "4b23dd375a0ac57db1a594bac44ffe519f6de748c32187ee89c5d343d8fd93dd"
+      "terms": 224,
+      "sha256": "efd19914e47ef48806f18ee43983aceb8df79e48c67adc2593373c5acbc7431e"
     },
     "6d": {
       "path": "reference/terms/6d.json",
-      "terms": 245,
-      "sha256": "c2e1d9e9af4f8c6611cb828526e955904ead7a861dd5a7cce15b8e95f9c299a3"
+      "terms": 262,
+      "sha256": "101fed83603d346e37fc8df32ec03f5f74fbd52e0601f02a08b9cb6cb13aab96"
     },
     "6f": {
       "path": "reference/terms/6f.json",
-      "terms": 147,
-      "sha256": "c3377039c8056b9402701a1efd89f9d412d187bd7145ebf8ad5459563a3aad31"
+      "terms": 161,
+      "sha256": "db8bb74fbfeec90a821839e9dc7421954f19d8f814cf43a8be3aa46704f8a75c"
     },
     "6c": {
       "path": "reference/terms/6c.json",
-      "terms": 198,
-      "sha256": "92fb2a1333f7766fb1f05e6d70ae684a98eff2d1656540eb28d12cab329a14f2"
+      "terms": 208,
+      "sha256": "31e37c39d3711db9190792a65ffa8a7edef6396686342cc1671903d49318de06"
     },
     "5f": {
       "path": "reference/terms/5f.json",
-      "terms": 6,
-      "sha256": "26935f81890c50ff5cd591d1b9df4ded799ec0905a3236f81615a9c53404a7df"
+      "terms": 7,
+      "sha256": "f12f8907d5f2d9c5f6c5f31a5f8804f8554f08cd1d49223c0729e2d026f70361"
     },
     "6b": {
       "path": "reference/terms/6b.json",
       "terms": 24,
-      "sha256": "36780fcb3194db2dfce53617066b6306e02d550c56287f16d64dfa062f3394d1"
+      "sha256": "cfdd83f9c3b0d14c219d5a5ecc59367d346a1ace0777ca0120db92c424e8e119"
     },
     "3ba": {
       "path": "reference/terms/3ba.json",
@@ -3705,7 +3747,7 @@
     "7a": {
       "path": "reference/terms/7a.json",
       "terms": 19,
-      "sha256": "bcd9b3608c551ec6d20ef489626cfd09c3e9327e1ff55287393fc1e61e76162b"
+      "sha256": "206016634d324c7bfd9154f91bfa1b5c9b6b025ab7fc5b265d6dc000be864cfe"
     },
     "3c9": {
       "path": "reference/terms/3c9.json",
@@ -3724,13 +3766,13 @@
     },
     "6a": {
       "path": "reference/terms/6a.json",
-      "terms": 21,
-      "sha256": "1e1cba18645bef035074ba8ecffecd65ad51540903386ce04bf98486a3ea463f"
+      "terms": 22,
+      "sha256": "1872a3aa51838bde7d2fbd7a408294ac764dc5bab69822cfccae823b5d44f8be"
     },
     "3c6": {
       "path": "reference/terms/3c6.json",
       "terms": 2,
-      "sha256": "c197ff796c5647d7abe82e097507f9f52a74e202c2aad59c35b88ab2465139cf"
+      "sha256": "30cca6382397f1f256f892afc462fdafe5d25c16bcf05915ffef4599076ef9bf"
     },
     "3b3": {
       "path": "reference/terms/3b3.json",

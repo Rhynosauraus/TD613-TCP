@@ -1,15 +1,21 @@
 {
+  "justified": [
+    "G-047",
+    "G-164",
+    "H-07"
+  ],
   "jacobian": [
     "G-056",
     "G-057"
   ],
   "joint": [
     "G-064",
-    "G-068",
+    "G-291",
     "G-340",
     "G-410",
     "X-23",
     "X-25",
+    "H-10",
     "H-37"
   ],
   "joining": [
@@ -77,7 +83,6 @@
     "G-447",
     "G-448",
     "G-449",
-    "G-450",
     "G-451",
     "G-452",
     "G-453",
@@ -103,15 +108,14 @@
   "just": [
     "G-297"
   ],
-  "joint-information": [
-    "G-340"
+  "justice": [
+    "G-373",
+    "G-393",
+    "SRC-EPI_CUSTODIAL_PDF"
   ],
   "j_t": [
     "G-393",
     "M-28"
-  ],
-  "justice": [
-    "G-393"
   ],
   "justify": [
     "G-409"
@@ -135,5 +139,8 @@
   ],
   "jsonl": [
     "SRC-SR_SRC_RESOLVER"
+  ],
+  "journalist": [
+    "SRC-EPI_CUSTODIAL_PDF"
   ]
 }
