@@ -26,6 +26,14 @@ export const DOLLHOUSE_ATLAS_RELATION_IDENTITY_SCHEMA = 'td613.dollhouse.atlas-r
 export const DOLLHOUSE_ATLAS_HISTORY_PARITY_SCHEMA = 'td613.dollhouse.atlas-history-parity/v0.1';
 export const DOLLHOUSE_TYPED_DIGEST_SCHEMA = 'td613.dollhouse.typed-digest/v0.1';
 export const DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA = 'td613.phason.custody-diff/v0.5-governed';
+export const DOLLHOUSE_CROSS_INSTRUMENT_BRIDGE_SCHEMA = 'td613.dollhouse.cross-instrument-digest-bridge/v0.1';
+export const DOLLHOUSE_SERIALIZATION_PROFILE_SCHEMA = 'td613.dollhouse.serialization-profile/v0.1';
+
+export const SERIALIZATION_PROFILES = Object.freeze({
+  DOME_V0: 'dome-v0',
+  ATLAS_V1: 'atlas-v1',
+  DEFAULT: 'atlas-v1'
+});
 
 export const ATLAS_RELATION_CUSTODY_LAWS = Object.freeze({
   relation_recognition_not_identity_substitution: true,
@@ -247,6 +255,34 @@ export function canonicalSerialize(value) {
   }
 
   return `v1:${serializeNode(value)}`;
+}
+
+/**
+ * Serializes a structured snapshot under an explicit, versioned serialization profile.
+ * - 'atlas-v1': Injective typed serialization with version prefix v1: and explicit type tags (default).
+ * - 'dome-v0': Dome-World historical sorted-key JSON serialization without explicit type tags.
+ * Validates domain first using validateStructuredSnapshotDomain; throws TypeError if out of domain.
+ */
+export function serializeWithProfile(value, profile = SERIALIZATION_PROFILES.ATLAS_V1) {
+  const check = validateStructuredSnapshotDomain(value);
+  if (!check.valid) {
+    throw new TypeError(`Cannot serialize out-of-domain snapshot: ${check.reason} at ${check.path}`);
+  }
+
+  if (profile === SERIALIZATION_PROFILES.ATLAS_V1) {
+    return canonicalSerialize(value);
+  }
+
+  if (profile === SERIALIZATION_PROFILES.DOME_V0) {
+    function domeSerialize(val) {
+      if (val === null || typeof val !== 'object') return JSON.stringify(val);
+      if (Array.isArray(val)) return '[' + val.map(domeSerialize).join(',') + ']';
+      return '{' + Object.keys(val).sort().map(k => JSON.stringify(k) + ':' + domeSerialize(val[k])).join(',') + '}';
+    }
+    return domeSerialize(value);
+  }
+
+  throw new TypeError(`Unrecognized serialization profile: "${profile}" (expected "atlas-v1" or "dome-v0")`);
 }
 
 export function stableStringify(value) {
@@ -549,17 +585,37 @@ export function classifyTypedDigest(digestString) {
   }
 
   if (trimmed.startsWith('fnv32:')) {
-    const hex = trimmed.slice(6);
-    if (hex.length === 8 && /^[0-9a-fA-F]{8}$/.test(hex)) {
+    const rest = trimmed.slice(6);
+    const profileMatch = rest.match(/^(dome-v0|atlas-v1):([0-9a-fA-F]{8})$/);
+    if (profileMatch) {
+      const profile = profileMatch[1];
+      const hex = profileMatch[2].toLowerCase();
       return deepFreeze({
         schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
         valid: true,
         algorithm: 'fnv32',
         is_canonical: true,
-        canonical_form: `fnv32:${hex.toLowerCase()}`,
+        canonical_form: `fnv32:${hex}`,
+        profile: profile,
+        profile_qualified: true,
         hex_length: 8,
         is_historical_mislabeled: false,
-        hex: hex.toLowerCase()
+        hex: hex
+      });
+    }
+    if (rest.length === 8 && /^[0-9a-fA-F]{8}$/.test(rest)) {
+      return deepFreeze({
+        schema: DOLLHOUSE_TYPED_DIGEST_SCHEMA,
+        valid: true,
+        algorithm: 'fnv32',
+        is_canonical: true,
+        canonical_form: `fnv32:${rest.toLowerCase()}`,
+        profile: null,
+        profile_qualified: false,
+        hex_length: 8,
+        is_historical_mislabeled: false,
+        hex: rest.toLowerCase(),
+        note: 'format recognized only; serialization profile not embedded in unqualified fnv32: string'
       });
     }
     return deepFreeze({
@@ -567,8 +623,8 @@ export function classifyTypedDigest(digestString) {
       valid: false,
       algorithm: 'fnv32',
       is_canonical: false,
-      hex_length: hex.length,
-      reason: `invalid fnv32 hex length: ${hex.length} (expected 8)`
+      hex_length: rest.length,
+      reason: `invalid fnv32 hex length: ${rest.length} (expected 8)`
     });
   }
 
@@ -581,12 +637,14 @@ export function classifyTypedDigest(digestString) {
 }
 
 /**
- * Computes 32-bit FNV-1a hash over canonical serialized value.
+ * Computes 32-bit FNV-1a hash over canonical serialized value according to explicit profile.
  * Emits canonical fnv32: prefix aligned with Dome-World runtime and modern TD613 standard,
  * preserving fnv1a32: as recognized compatibility alias and sha256: as historical mislabeled alias.
+ * Default profile is 'atlas-v1' (injective versioned).
  */
-export function computeTypedFnv1a32(value) {
-  const s = typeof value === 'string' ? value : canonicalSerialize(value);
+export function computeTypedFnv1a32(value, options = {}) {
+  const profile = options.profile || options.serialization_profile || SERIALIZATION_PROFILES.ATLAS_V1;
+  const s = typeof value === 'string' ? value : serializeWithProfile(value, profile);
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i += 1) {
     h ^= s.charCodeAt(i);
@@ -597,12 +655,102 @@ export function computeTypedFnv1a32(value) {
     raw_hex: hex,
     canonical_digest: `fnv32:${hex}`,
     typed_digest: `fnv32:${hex}`,
+    profile: profile,
+    serialization_profile: profile,
+    profile_qualified_digest: `fnv32:${profile}:${hex}`,
     compatibility_alias: `fnv1a32:${hex}`,
     legacy_mislabeled: `sha256:${hex}`
   });
 }
 
 export const computeTypedFnv32 = computeTypedFnv1a32;
+
+/**
+ * Asserts whether two serialization profiles can be treated as directly interchangeable.
+ * Differently encoded digests under dome-v0 and atlas-v1 are NOT interchangeable.
+ */
+export function assertProfilesInterchangeable(profileA, profileB) {
+  if (!profileA || !profileB) return false;
+  return profileA === profileB;
+}
+
+/**
+ * Verifies a cross-instrument serialization bridge between Dome-World (dome-v0) and Atlas (atlas-v1).
+ * Consumes structured payload and declared digest, verifies authenticity under source profile,
+ * and derives the corresponding target profile digest while enforcing that raw digests are NOT interchangeable.
+ */
+export function bridgeCrossInstrumentDigest(payload, declaredDigest, options = {}) {
+  const sourceProfile = options.source_profile || SERIALIZATION_PROFILES.DOME_V0;
+  const targetProfile = options.target_profile || SERIALIZATION_PROFILES.ATLAS_V1;
+
+  if (payload === null || payload === undefined) {
+    return deepFreeze({
+      schema: DOLLHOUSE_CROSS_INSTRUMENT_BRIDGE_SCHEMA,
+      valid: false,
+      bridge_verified: false,
+      raw_interchangeable: false,
+      reason: 'payload must be non-null structured data or string'
+    });
+  }
+
+  const valRes = validateStructuredSnapshotDomain(payload);
+  if (!valRes.valid) {
+    return deepFreeze({
+      schema: DOLLHOUSE_CROSS_INSTRUMENT_BRIDGE_SCHEMA,
+      valid: false,
+      bridge_verified: false,
+      raw_interchangeable: false,
+      reason: `payload rejected by structured snapshot validator: ${valRes.reason}`
+    });
+  }
+
+  const classified = classifyTypedDigest(declaredDigest);
+  if (!classified.valid) {
+    return deepFreeze({
+      schema: DOLLHOUSE_CROSS_INSTRUMENT_BRIDGE_SCHEMA,
+      valid: false,
+      bridge_verified: false,
+      raw_interchangeable: false,
+      reason: `declared digest invalid: ${classified.reason}`
+    });
+  }
+
+  const sourceComputed = computeTypedFnv1a32(payload, { profile: sourceProfile });
+  const sourceMatches = (classified.hex === sourceComputed.raw_hex);
+
+  if (!sourceMatches) {
+    return deepFreeze({
+      schema: DOLLHOUSE_CROSS_INSTRUMENT_BRIDGE_SCHEMA,
+      valid: false,
+      bridge_verified: false,
+      raw_interchangeable: false,
+      declared_digest: declaredDigest,
+      computed_source_digest: sourceComputed.canonical_digest,
+      source_profile: sourceProfile,
+      reason: 'declared digest does not match computed source profile digest'
+    });
+  }
+
+  const targetComputed = computeTypedFnv1a32(payload, { profile: targetProfile });
+
+  return deepFreeze({
+    schema: DOLLHOUSE_CROSS_INSTRUMENT_BRIDGE_SCHEMA,
+    valid: true,
+    bridge_verified: true,
+    raw_interchangeable: false,
+    source_instrument: sourceProfile === SERIALIZATION_PROFILES.DOME_V0 ? 'dome-world' : 'dollhouse-atlas',
+    source_profile: sourceProfile,
+    source_digest: sourceComputed.canonical_digest,
+    source_profile_qualified_digest: sourceComputed.profile_qualified_digest,
+    target_instrument: targetProfile === SERIALIZATION_PROFILES.ATLAS_V1 ? 'dollhouse-atlas' : 'dome-world',
+    target_profile: targetProfile,
+    target_digest: targetComputed.canonical_digest,
+    target_profile_qualified_digest: targetComputed.profile_qualified_digest,
+    payload_content_invariant: true,
+    bridge_disposition: 'VERIFIED_CROSS_INSTRUMENT_BRIDGE',
+    bridge_note: 'Verified cross-instrument serialization bridge: payload identity preserved across versioned profiles; digests differ lawfully under versioned encodings'
+  });
+}
 
 /**
  * Audits a Phason custody diff, failing closed against caller-declared string equality.
@@ -662,8 +810,11 @@ export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}
     });
   }
 
-  const prevComputed = computeTypedFnv1a32(prevPayload);
-  const currComputed = computeTypedFnv1a32(currPayload);
+  const prevProfile = options.prev_profile || prevMeta.profile || prevMeta.serialization_profile || (prevClass.profile_qualified ? prevClass.profile : null) || options.profile || SERIALIZATION_PROFILES.ATLAS_V1;
+  const currProfile = options.curr_profile || currMeta.profile || currMeta.serialization_profile || (currClass.profile_qualified ? currClass.profile : null) || options.profile || SERIALIZATION_PROFILES.ATLAS_V1;
+
+  const prevComputed = computeTypedFnv1a32(prevPayload, { profile: prevProfile });
+  const currComputed = computeTypedFnv1a32(currPayload, { profile: currProfile });
 
   // Check if declared matches computed
   const prevMatches = (prevClass.hex === prevComputed.raw_hex);
@@ -677,6 +828,62 @@ export function auditPhasonCustodyDiff(previous = {}, current = {}, options = {}
       decision: 'digest-payload-mismatch-rejected',
       reason: 'declared digest does not match computed payload digest',
       claim_ceiling: 'caller-string-equality-does-not-establish-content-invariance',
+      laws: ATLAS_RELATION_CUSTODY_LAWS
+    });
+  }
+
+  // Cross-profile serialization interchange audit
+  if (prevProfile !== currProfile) {
+    const contentMatches = stableContentEquals(prevPayload, currPayload);
+    if (!options.allow_cross_instrument_bridge) {
+      return deepFreeze({
+        schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+        status: 'HOLD_CROSS_PROFILE_SERIALIZATION_MISMATCH',
+        content_invariant: contentMatches,
+        cross_profile_mismatch: true,
+        source_profile: prevProfile,
+        target_profile: currProfile,
+        source_digest: prevDigest,
+        target_digest: currDigest,
+        raw_interchangeable: false,
+        decision: 'cross-profile-digest-interchange-refused',
+        reason: 'differently encoded fnv32: digests are not interchangeable across serialization profiles without explicit bridge',
+        claim_ceiling: 'caller-string-equality-does-not-establish-content-invariance',
+        laws: ATLAS_RELATION_CUSTODY_LAWS
+      });
+    }
+
+    if (!contentMatches) {
+      return deepFreeze({
+        schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+        status: 'HOLD_CONTENT_DIVERGENCE_DETECTED',
+        content_invariant: false,
+        drift_detected: true,
+        raw_interchangeable: false,
+        decision: 'payload-content-drift-rejected',
+        reason: 'cross-instrument payloads differ semantically',
+        claim_ceiling: 'caller-string-equality-does-not-establish-content-invariance',
+        laws: ATLAS_RELATION_CUSTODY_LAWS
+      });
+    }
+
+    const bridge = bridgeCrossInstrumentDigest(prevPayload, prevDigest, {
+      source_profile: prevProfile,
+      target_profile: currProfile
+    });
+
+    return deepFreeze({
+      schema: DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+      status: 'PASS_CROSS_INSTRUMENT_BRIDGE_VERIFIED',
+      content_invariant: true,
+      bridge_verified: bridge.bridge_verified,
+      raw_interchangeable: false,
+      cross_profile_bridge: bridge,
+      source_profile: prevProfile,
+      target_profile: currProfile,
+      decision: 'cross-instrument-bridge-verified',
+      reason: 'payload identity verified across distinct serialization profiles; digests differ lawfully under versioned encodings',
+      claim_ceiling: 'verified-cross-instrument-bridge-not-raw-interchange',
       laws: ATLAS_RELATION_CUSTODY_LAWS
     });
   }

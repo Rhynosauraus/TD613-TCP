@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import fs from 'node:fs';
+import vm from 'node:vm';
 
 import {
   validAtlasMember,
@@ -11,13 +13,19 @@ import {
   auditPhasonCustodyDiff,
   stableContentEquals,
   canonicalSerialize,
+  serializeWithProfile,
   stableStringify,
   validateStructuredSnapshotDomain,
   SNAPSHOT_DOMAIN_LIMITS,
+  SERIALIZATION_PROFILES,
+  bridgeCrossInstrumentDigest,
+  assertProfilesInterchangeable,
   DOLLHOUSE_ATLAS_RELATION_IDENTITY_SCHEMA,
   DOLLHOUSE_ATLAS_HISTORY_PARITY_SCHEMA,
   DOLLHOUSE_TYPED_DIGEST_SCHEMA,
   DOLLHOUSE_PHASON_CUSTODY_DIFF_SCHEMA,
+  DOLLHOUSE_CROSS_INSTRUMENT_BRIDGE_SCHEMA,
+  DOLLHOUSE_SERIALIZATION_PROFILE_SCHEMA,
   ATLAS_RELATION_CUSTODY_LAWS
 } from '../app/engine/dollhouse-atlas-relational-custody.js';
 
@@ -610,4 +618,138 @@ test('T-STRUCT-15: Projection with out-of-domain {x: NaN} vs {x: null} triggers 
   assert.equal(diff.invalid_projection_domain, true);
   assert.equal(diff.projection_changed, false);
   assert.match(diff.reason, /Non-finite number \(NaN\) is out of snapshot domain/);
+});
+
+// =========================================================================
+// CROSS-INSTRUMENT SERIALIZATION PROFILE INTEROPERABILITY & BRIDGE TESTS
+// =========================================================================
+
+function loadDomeCore() {
+  const html = fs.readFileSync('app/dome-world/index.html', 'utf8');
+  const scriptMatch = html.match(/(const DomeCore = \(\(\) => \{[\s\S]*?\n\}\)\(\);)/);
+  if (!scriptMatch) throw new Error('Failed to extract DomeCore from app/dome-world/index.html');
+  const code = scriptMatch[1].replace('const DomeCore =', 'this.DomeCore =');
+  const sandbox = { console };
+  vm.createContext(sandbox);
+  vm.runInContext(code, sandbox);
+  return sandbox.DomeCore;
+}
+
+test('T-CROSS-05: Exact cross-instrument fixture { fold: 4, weather_phase: "cyclonic" } reproduces Dome-World fnv32:88f4e316 and Atlas typed-v1 fnv32:22f3e8eb', () => {
+  const payload = { fold: 4, weather_phase: 'cyclonic' };
+
+  // Dome-World profile computation
+  const domeComputed = computeTypedFnv1a32(payload, { profile: SERIALIZATION_PROFILES.DOME_V0 });
+  assert.equal(domeComputed.canonical_digest, 'fnv32:88f4e316');
+  assert.equal(domeComputed.profile, 'dome-v0');
+
+  // Atlas typed-v1 profile computation
+  const atlasComputed = computeTypedFnv1a32(payload, { profile: SERIALIZATION_PROFILES.ATLAS_V1 });
+  assert.equal(atlasComputed.canonical_digest, 'fnv32:22f3e8eb');
+  assert.equal(atlasComputed.profile, 'atlas-v1');
+
+  // Explicitly distinct digests under identical semantic payload
+  assert.notEqual(domeComputed.canonical_digest, atlasComputed.canonical_digest);
+});
+
+test('T-CROSS-06: Prevent differently encoded digests from being treated as interchangeable merely because both use fnv32:', () => {
+  const payload = { fold: 4, weather_phase: 'cyclonic' };
+  const domeDigest = 'fnv32:88f4e316';
+  const atlasDigest = 'fnv32:22f3e8eb';
+
+  // Direct profile interchange assertion must return false
+  assert.equal(assertProfilesInterchangeable(SERIALIZATION_PROFILES.DOME_V0, SERIALIZATION_PROFILES.ATLAS_V1), false);
+  assert.equal(assertProfilesInterchangeable(SERIALIZATION_PROFILES.DOME_V0, null), false);
+
+  // auditPhasonCustodyDiff across unbridged profiles fails closed with HOLD_CROSS_PROFILE_SERIALIZATION_MISMATCH
+  const diff = auditPhasonCustodyDiff(
+    { artifact_id: 'dome-rec', payload, metadata: { raw_hash: domeDigest, profile: SERIALIZATION_PROFILES.DOME_V0 } },
+    { artifact_id: 'atlas-rec', payload, metadata: { raw_hash: atlasDigest, profile: SERIALIZATION_PROFILES.ATLAS_V1 } }
+  );
+
+  assert.equal(diff.status, 'HOLD_CROSS_PROFILE_SERIALIZATION_MISMATCH');
+  assert.equal(diff.cross_profile_mismatch, true);
+  assert.equal(diff.raw_interchangeable, false);
+  assert.equal(diff.content_invariant, true, 'Semantic content is invariant even while digests are non-interchangeable');
+  assert.match(diff.reason, /differently encoded fnv32: digests are not interchangeable across serialization profiles/);
+});
+
+test('T-CROSS-07: Consumes genuinely Dome-World-produced structured payload and digest', () => {
+  const C = loadDomeCore();
+  const world = C.createWorld({ seed: 'cross-instrument-test' });
+  const payload = { fold: 4, weather_phase: 'cyclonic' };
+
+  // Generate genuine Dome-World event and seed
+  const updatedWorld = C.applyFlowEvent(world, { type: 'transmission', payload });
+  const genuineSeed = updatedWorld.loom.seeds[updatedWorld.loom.seeds.length - 1];
+  const genuineEvent = updatedWorld.event_log[updatedWorld.event_log.length - 1];
+
+  assert.equal(genuineSeed.raw_hash, 'fnv32:88f4e316');
+  assert.equal(genuineEvent.payload_hash, 'fnv32:88f4e316');
+
+  // Verify that Atlas bridge consumes this genuine Dome-World payload and digest
+  const bridge = bridgeCrossInstrumentDigest(payload, genuineEvent.payload_hash, {
+    source_profile: SERIALIZATION_PROFILES.DOME_V0,
+    target_profile: SERIALIZATION_PROFILES.ATLAS_V1
+  });
+
+  assert.equal(bridge.valid, true);
+  assert.equal(bridge.bridge_verified, true);
+  assert.equal(bridge.source_profile, 'dome-v0');
+  assert.equal(bridge.source_digest, 'fnv32:88f4e316');
+  assert.equal(bridge.target_profile, 'atlas-v1');
+  assert.equal(bridge.target_digest, 'fnv32:22f3e8eb');
+  assert.equal(bridge.raw_interchangeable, false, 'Differently encoded fnv32: digests must NOT be raw interchangeable');
+  assert.equal(bridge.payload_content_invariant, true);
+  assert.equal(bridge.bridge_disposition, 'VERIFIED_CROSS_INSTRUMENT_BRIDGE');
+});
+
+test('T-CROSS-08: bridgeCrossInstrumentDigest rejects tampered or mismatched payloads fail-closed', () => {
+  const tamperedPayload = { fold: 5, weather_phase: 'cyclonic' };
+  const domeDigest = 'fnv32:88f4e316'; // genuine digest of fold: 4, NOT fold: 5
+
+  const bridge = bridgeCrossInstrumentDigest(tamperedPayload, domeDigest, {
+    source_profile: SERIALIZATION_PROFILES.DOME_V0,
+    target_profile: SERIALIZATION_PROFILES.ATLAS_V1
+  });
+
+  assert.equal(bridge.valid, false);
+  assert.equal(bridge.bridge_verified, false);
+  assert.equal(bridge.raw_interchangeable, false);
+  assert.match(bridge.reason, /declared digest does not match computed source profile digest/);
+
+  // Out-of-domain payload
+  const badBridge = bridgeCrossInstrumentDigest({ x: NaN }, domeDigest);
+  assert.equal(badBridge.valid, false);
+  assert.equal(badBridge.bridge_verified, false);
+  assert.match(badBridge.reason, /payload rejected by structured snapshot validator/);
+});
+
+test('T-CROSS-09: auditPhasonCustodyDiff with allow_cross_instrument_bridge verifies bridge and reports PASS_CROSS_INSTRUMENT_BRIDGE_VERIFIED', () => {
+  const payload = { fold: 4, weather_phase: 'cyclonic' };
+  const domeDigest = 'fnv32:88f4e316';
+  const atlasDigest = 'fnv32:22f3e8eb';
+
+  const diff = auditPhasonCustodyDiff(
+    { artifact_id: 'dome-rec', payload, metadata: { raw_hash: domeDigest, profile: SERIALIZATION_PROFILES.DOME_V0 } },
+    { artifact_id: 'atlas-rec', payload, metadata: { raw_hash: atlasDigest, profile: SERIALIZATION_PROFILES.ATLAS_V1 } },
+    { allow_cross_instrument_bridge: true }
+  );
+
+  assert.equal(diff.status, 'PASS_CROSS_INSTRUMENT_BRIDGE_VERIFIED');
+  assert.equal(diff.content_invariant, true);
+  assert.equal(diff.bridge_verified, true);
+  assert.equal(diff.raw_interchangeable, false);
+  assert.equal(diff.cross_profile_bridge.source_digest, domeDigest);
+  assert.equal(diff.cross_profile_bridge.target_digest, atlasDigest);
+
+  // Divergent payloads across bridge trigger HOLD_CONTENT_DIVERGENCE_DETECTED
+  const divergentDiff = auditPhasonCustodyDiff(
+    { artifact_id: 'dome-rec', payload, metadata: { raw_hash: domeDigest, profile: SERIALIZATION_PROFILES.DOME_V0 } },
+    { artifact_id: 'atlas-rec', payload: { fold: 4, weather_phase: 'cyclonic-altered' }, metadata: { raw_hash: computeTypedFnv1a32({ fold: 4, weather_phase: 'cyclonic-altered' }).canonical_digest, profile: SERIALIZATION_PROFILES.ATLAS_V1 } },
+    { allow_cross_instrument_bridge: true }
+  );
+  assert.equal(divergentDiff.status, 'HOLD_CONTENT_DIVERGENCE_DETECTED');
+  assert.equal(divergentDiff.content_invariant, false);
+  assert.equal(divergentDiff.drift_detected, true);
 });
