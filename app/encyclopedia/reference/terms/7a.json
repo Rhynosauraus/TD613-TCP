@@ -2,12 +2,18 @@
   "zero": [
     "G-006",
     "G-008",
+    "G-015",
+    "G-020",
     "G-313",
     "G-406",
     "G-411",
+    "G-503",
     "LAB-01",
     "LAB-18",
-    "SRC-NOVEL"
+    "SRC-NOVEL",
+    "SRC-EPI_CUSTODIAL_PDF",
+    "SRC-EPI_POSTWEB_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF"
   ],
   "z": [
     "G-076",
@@ -83,10 +89,16 @@
     "SRC-SR_P2_PDF",
     "SRC-SR_P3_PDF",
     "SRC-SR_UF_PDF",
+    "SRC-EPI_CUSTODIAL_PDF",
+    "SRC-EPI_POSTWEB_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF",
     "PDF-SR_P1_PDF",
     "PDF-SR_P2_PDF",
     "PDF-SR_P3_PDF",
     "PDF-SR_UF_PDF",
+    "PDF-EPI_CUSTODIAL_PDF",
+    "PDF-EPI_POSTWEB_PDF",
+    "PDF-EPI_DIAGNOSTICS_PDF",
     "LINEAGE-02"
   ],
   "zen_sr_frame": [

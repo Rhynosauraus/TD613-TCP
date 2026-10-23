@@ -33,7 +33,7 @@ test('staging preserves exact bytes; admission holds private/tampered input and 
   await mkdir(join(temp,'scripts'));for(const name of ['build-encyclopedia-reference.mjs','encyclopedia-reference-runtime.js','encyclopedia-intake.cjs','encyclopedia-intake-schema.json'])await copyFile(join(scripts,name),join(temp,'scripts',name));
   await copyFile(join(here,'../app/encyclopedia/index.html'),join(temp,'app/encyclopedia/index.html'));
   const build=spawnSync(process.execPath,[join(temp,'scripts/build-encyclopedia-reference.mjs')],{encoding:'utf8'});assert.equal(build.status,0,build.stderr);
-  const manifest=JSON.parse(await readFile(join(temp,'app/encyclopedia/reference/manifest.json')));assert.equal(manifest.record_count,837);
+  const manifest=JSON.parse(await readFile(join(temp,'app/encyclopedia/reference/manifest.json')));assert.equal(manifest.record_count,845);
   const indexed=JSON.parse(await readFile(join(temp,'app/encyclopedia/reference/records/R-TEST-EXPERIMENT-002.json')));assert(indexed.links.some(e=>e.type==='supersedes'&&e.target===fixture.record_id));assert.equal(indexed.status,'FAILED');assert(indexed.claim_ceiling.includes('zero empirical'));
   const exported=await readFile(join(temp,'app/encyclopedia/index.html'),'utf8');assert(exported.includes('Fictional revision; prior failure retained'));assert(exported.includes('Fictional intake transport fixture'));
  }finally{await rm(temp,{recursive:true,force:true})}

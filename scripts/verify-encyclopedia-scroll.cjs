@@ -23,7 +23,7 @@ const {pathToFileURL}=require('node:url');
    await page.getByRole('button',{name:'Open section navigation',exact:true}).click();assert.equal(await page.evaluate(()=>scrollY),lexicalY,'opening the mobile menu moved the page');await page.locator('#mobileNav [data-view="evidence"]').click();await page.waitForTimeout(50);
    await page.goBack();await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.body.dataset.view),'lexicon');assert.equal(await page.evaluate(()=>scrollY),lexicalY);
    await page.goBack();await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.body.dataset.view),'overview');assert.equal(await page.evaluate(()=>scrollY),scroll.y);
-   const reference=await page.evaluate(async()=>({first:TD613Reference.search('G-101').hits[0].id,integrity:await TD613Reference.verify()}));assert.equal(reference.first,'G-101');assert.equal(reference.integrity.verified,835);
+   const reference=await page.evaluate(async()=>({first:TD613Reference.search('G-101').hits[0].id,integrity:await TD613Reference.verify()}));assert.equal(reference.first,'G-101');assert.equal(reference.integrity.verified,843);
    witnesses.push({width,toolbar_resize:'stable',history_writes_during_scroll:scroll.writes,transparent_single_header:chrome.headerHeight,copy_gap:chrome.copyGap,back_restored:true,reference_records_verified:reference.integrity.verified});
    await page.close();
   }

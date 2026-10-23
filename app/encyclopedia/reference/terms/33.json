@@ -7,7 +7,6 @@
     "G-073",
     "G-074",
     "G-076",
-    "G-083",
     "G-248",
     "G-291",
     "G-292",
@@ -19,13 +18,16 @@
     "LAB-44",
     "SRC-NOVEL",
     "SRC-TWINPDF",
+    "SRC-EPI_CUSTODIAL_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF",
     "APT-04",
     "APT-08",
     "APT-12",
     "APT-31",
     "APT-38",
     "APT-40",
-    "EDITION"
+    "PDF-EPI_CUSTODIAL_PDF",
+    "PDF-EPI_DIAGNOSTICS_PDF"
   ],
   "30": [
     "APT-39"
@@ -58,6 +60,31 @@
   ],
   "31235": [
     "APT-27"
+  ],
+  "338642a0ee4c7bf2416af65d001c1508aba8ed85": [
+    "G-001",
+    "G-002",
+    "G-004",
+    "G-010",
+    "G-012",
+    "G-015",
+    "G-020",
+    "G-023",
+    "G-035",
+    "G-047",
+    "G-068",
+    "G-076",
+    "G-078",
+    "G-079",
+    "G-080",
+    "G-081",
+    "G-082",
+    "G-164",
+    "G-291",
+    "G-340",
+    "G-450",
+    "SRC-AIA_SPEC",
+    "EDITION"
   ],
   "39-strata": [
     "G-075"

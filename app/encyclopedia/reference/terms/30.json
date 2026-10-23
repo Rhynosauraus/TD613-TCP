@@ -1,12 +1,9 @@
 {
   "0": [
     "G-008",
-    "G-010",
-    "G-015",
     "G-020",
     "G-070",
     "G-081",
-    "G-190",
     "G-191",
     "G-194",
     "G-205",
@@ -16,7 +13,6 @@
     "G-215",
     "G-245",
     "G-291",
-    "G-340",
     "G-450",
     "M-15",
     "M-17",
@@ -94,6 +90,14 @@
   ],
   "01-manifests": [
     "SRC-SR_SRC_RESOLVER"
+  ],
+  "0dd723449c24af362d662e7c104d77b765ae12c70687118a399ea7a12c4f9c88": [
+    "SRC-EPI_CUSTODIAL_PDF",
+    "PDF-EPI_CUSTODIAL_PDF"
+  ],
+  "0374c8d6c2b7007125b7a67a1cdefb480721cd569bd16ae2344ee089ad019b38": [
+    "SRC-EPI_DIAGNOSTICS_PDF",
+    "PDF-EPI_DIAGNOSTICS_PDF"
   ],
   "0f200d64b40acb2c5d0418abb7af442f9996224ed0a20cd44d9a21a55f89902c": [
     "APT-25"

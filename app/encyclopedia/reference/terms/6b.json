@@ -19,12 +19,6 @@
     "M-01",
     "M-03"
   ],
-  "knapsack": [
-    "G-004"
-  ],
-  "ker": [
-    "G-010"
-  ],
   "kernel": [
     "G-010",
     "G-255",
@@ -58,42 +52,8 @@
     "SRC-AP32_DROMO",
     "SRC-AP32_DOCTRINE"
   ],
-  "keep": [
-    "G-010",
-    "G-046",
-    "G-048",
-    "G-062",
-    "G-068",
-    "G-136",
-    "G-152",
-    "G-153",
-    "G-154",
-    "G-155",
-    "G-156",
-    "G-157",
-    "G-158",
-    "G-159",
-    "G-160",
-    "G-161",
-    "G-162",
-    "G-163",
-    "G-164",
-    "G-165",
-    "G-166",
-    "G-167",
-    "G-168",
-    "G-169",
-    "G-170",
-    "G-171",
-    "G-172",
-    "G-216",
-    "G-321",
-    "M-04",
-    "LAB-05",
-    "SRC-ASH_TOMO",
-    "SRC-WEDDING",
-    "SRC-PR416",
-    "SRC-CUSTODY"
+  "ker": [
+    "G-010"
   ],
   "knowledge": [
     "G-013",
@@ -119,10 +79,68 @@
     "SRC-ZEN_SR_P2",
     "SRC-SR_SRC_P2",
     "SRC-SR_P2_PDF",
+    "SRC-EPI_POSTWEB_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF",
     "PDF-SR_P2_PDF"
+  ],
+  "known": [
+    "G-023",
+    "G-172",
+    "G-247",
+    "G-279",
+    "G-338",
+    "M-12",
+    "X-08"
   ],
   "knew": [
     "G-041"
+  ],
+  "keep": [
+    "G-046",
+    "G-048",
+    "G-062",
+    "G-136",
+    "G-152",
+    "G-153",
+    "G-154",
+    "G-155",
+    "G-156",
+    "G-157",
+    "G-158",
+    "G-159",
+    "G-160",
+    "G-161",
+    "G-162",
+    "G-163",
+    "G-164",
+    "G-165",
+    "G-166",
+    "G-167",
+    "G-168",
+    "G-169",
+    "G-170",
+    "G-171",
+    "G-172",
+    "G-205",
+    "G-216",
+    "G-254",
+    "G-264",
+    "G-299",
+    "G-321",
+    "G-340",
+    "G-343",
+    "G-478",
+    "M-04",
+    "LAB-05",
+    "X-13",
+    "X-25",
+    "H-20",
+    "H-22",
+    "H-26",
+    "SRC-ASH_TOMO",
+    "SRC-WEDDING",
+    "SRC-PR416",
+    "SRC-CUSTODY"
   ],
   "known-ground-truth": [
     "G-062"
@@ -153,6 +171,7 @@
     "G-158",
     "G-216",
     "G-378",
+    "H-25",
     "SRC-P1",
     "SRC-P2",
     "SRC-FADT",
@@ -232,18 +251,20 @@
     "SRC-SR_P1_PDF",
     "SRC-SR_P2_PDF",
     "SRC-SR_P3_PDF",
-    "SRC-SR_UF_PDF"
+    "SRC-SR_UF_PDF",
+    "SRC-AIA_SPEC",
+    "SRC-EPI_CUSTODIAL_PDF",
+    "SRC-EPI_POSTWEB_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF"
   ],
   "keeps": [
     "G-171"
   ],
-  "known": [
-    "G-172",
-    "G-279",
-    "M-12"
-  ],
   "kb": [
     "G-223"
+  ],
+  "kinds": [
+    "G-242"
   ],
   "kept": [
     "G-265",
@@ -321,6 +342,7 @@
     "G-455"
   ],
   "knowledge-survival": [
+    "G-380",
     "G-386",
     "X-17",
     "SRC-AP32_EPI"
@@ -405,7 +427,11 @@
     "SRC-SR_P1_PDF",
     "SRC-SR_P2_PDF",
     "SRC-SR_P3_PDF",
-    "SRC-SR_UF_PDF"
+    "SRC-SR_UF_PDF",
+    "SRC-AIA_SPEC",
+    "SRC-EPI_CUSTODIAL_PDF",
+    "SRC-EPI_POSTWEB_PDF",
+    "SRC-EPI_DIAGNOSTICS_PDF"
   ],
   "kv": [
     "SRC-EX_CACHE"
