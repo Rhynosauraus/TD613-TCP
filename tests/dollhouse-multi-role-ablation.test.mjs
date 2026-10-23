@@ -432,6 +432,53 @@ test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empir
     assert.equal(divergentResult.decision, 'HELD');
     assert.ok(divergentResult.detected_infractions.includes('DIVERGENT_ROLE_OBSERVATION_CONFLICT'));
     assert.equal(divergentResult.replication_status, 'DIVERGENT_OBSERVATION_REJECTED');
+
+    // Direct call to verifyAcquisitionReceipt with divergent observations fails closed
+    const receiptForDivergent = makeAcquisitionReceipt(signatureVerificationAudits, { signing_key: neonPrivateKey });
+    const directDivergentVerify = verifyAcquisitionReceipt(receiptForDivergent, divergentObservations, {
+      expected_source_revision: receiptForDivergent.source_revision
+    });
+    assert.equal(directDivergentVerify.verified, false);
+    assert.equal(directDivergentVerify.failure_reason, 'DIVERGENT_ROLE_OBSERVATION_CONFLICT');
+
+    // Direct call to verifyAcquisitionReceipt with omitted / empty observations fails closed
+    const directOmittedVerify = verifyAcquisitionReceipt(receiptForDivergent, {}, {
+      expected_source_revision: receiptForDivergent.source_revision
+    });
+    assert.equal(directOmittedVerify.verified, false);
+    assert.equal(directOmittedVerify.failure_reason, 'OBSERVATIONS_REQUIRED');
+
+    // 8g. options.live_custody_attested === true cannot unlock empirical credit in offline repository
+    const liveCustodyReceipt = makeAcquisitionReceipt(signatureVerificationAudits, {
+      signing_key: neonPrivateKey,
+      provenance_class: 'INDEPENDENT_LIVE_ACQUISITION'
+    });
+    const liveCustodyAttestedResult = runOrchestrationDecision(FIVE_ROLES, {
+      ...signatureVerificationAudits,
+      acquisition_class: 'EMPIRICAL_ACQUISITION',
+      acquisition_receipt: liveCustodyReceipt
+    }, {
+      live_custody_attested: true
+    });
+    assert.equal(liveCustodyAttestedResult.replication_status, 'AUTHENTICATED_SIGNATURE_VERIFIED_ZERO_EMPIRICAL_CREDIT');
+    assert.equal(liveCustodyAttestedResult.empirical_replication_count, 0);
+
+    // 8h. Transplanted verified_acquisition_record rejected by evaluateAblationOutcome
+    assert.ok(liveCustodyAttestedResult.verified_acquisition_record);
+    const transplantedOrchestrator = {
+      decision: 'HELD',
+      replication_status: 'AUTHENTICATED_EMPIRICAL_ACQUISITION',
+      active_roles: FIVE_ROLES,
+      findings: [{ role: 'PEDAGOGUE', verdict: 'HELD' }],
+      detected_infractions: [ROLE_INFRACTIONS.PEDAGOGUE],
+      verified_acquisition_record: liveCustodyAttestedResult.verified_acquisition_record
+    };
+    const evalTransplanted = evaluateAblationOutcome(transplantedOrchestrator, {
+      verdict: 'HELD',
+      defects: [ROLE_INFRACTIONS.PEDAGOGUE]
+    });
+    assert.equal(evalTransplanted.record_authenticity_status, 'UNAUTHENTIC_OR_TRANSPLANTED_RECORD');
+    assert.equal(evalTransplanted.empirical_discovery_credit, 0);
   } finally {
     delete process.env.TD613_NEON_OBSERVATORY_PUBLIC_KEY;
   }

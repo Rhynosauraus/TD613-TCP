@@ -104,12 +104,7 @@ export function normalizeRoleObservations(observations) {
 export function computeAcquisitionPayloadDigest(observations) {
   const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
   if (!crypto || !observations || typeof observations !== 'object') return null;
-  let normalized;
-  try {
-    normalized = normalizeRoleObservations(observations);
-  } catch {
-    return null;
-  }
+  const normalized = normalizeRoleObservations(observations);
   const roleEntries = [];
   for (const r of FIVE_ROLES) {
     if (r in normalized && normalized[r] !== undefined && normalized[r] !== null) {
@@ -183,11 +178,32 @@ export function verifyAcquisitionReceipt(receipt, observations = {}, options = {
     return { verified: false, failure_reason: 'INVALID_OBSERVATION_DIGEST' };
   }
 
-  if (observations && Object.keys(observations).length > 0 && crypto) {
-    const expectedPayloadDigest = computeAcquisitionPayloadDigest(observations);
-    if (expectedPayloadDigest && receipt.observation_digest !== expectedPayloadDigest) {
-      return { verified: false, failure_reason: 'OBSERVATION_PAYLOAD_DIGEST_MISMATCH' };
+  if (!observations || typeof observations !== 'object' || Object.keys(observations).length === 0) {
+    return { verified: false, failure_reason: 'OBSERVATIONS_REQUIRED' };
+  }
+
+  let normalizedObs;
+  try {
+    normalizedObs = normalizeRoleObservations(observations);
+  } catch (err) {
+    if (err?.code === 'DIVERGENT_ROLE_OBSERVATION_CONFLICT' || err?.message?.includes('DIVERGENT_ROLE_OBSERVATION_CONFLICT')) {
+      return { verified: false, failure_reason: 'DIVERGENT_ROLE_OBSERVATION_CONFLICT' };
     }
+    return { verified: false, failure_reason: 'OBSERVATION_NORMALIZATION_FAILED' };
+  }
+
+  let expectedPayloadDigest = null;
+  try {
+    expectedPayloadDigest = computeAcquisitionPayloadDigest(normalizedObs);
+  } catch (err) {
+    if (err?.code === 'DIVERGENT_ROLE_OBSERVATION_CONFLICT' || err?.message?.includes('DIVERGENT_ROLE_OBSERVATION_CONFLICT')) {
+      return { verified: false, failure_reason: 'DIVERGENT_ROLE_OBSERVATION_CONFLICT' };
+    }
+    return { verified: false, failure_reason: 'OBSERVATION_DIGEST_COMPUTATION_FAILED' };
+  }
+
+  if (!expectedPayloadDigest || receipt.observation_digest !== expectedPayloadDigest) {
+    return { verified: false, failure_reason: 'OBSERVATION_PAYLOAD_DIGEST_MISMATCH' };
   }
 
   const expectedReceiptDigest = computeAcquisitionReceiptDigest(receipt);
@@ -617,12 +633,10 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
         if (hasSyntheticInjection) {
           empiricalReplicationCount = 0;
           replicationStatus = 'AUTHENTICATED_SYNTHETIC_TEST_ZERO_EMPIRICAL_CREDIT';
-        } else if (receipt.provenance_class === 'INDEPENDENT_LIVE_ACQUISITION' && options.live_custody_attested === true && observations.acquisition_class === 'EMPIRICAL_ACQUISITION') {
-          empiricalReplicationCount = 1;
-          replicationStatus = unanimousAllFive
-            ? 'AUTHENTICATED_EMPIRICAL_ACQUISITION'
-            : 'PARTIAL_ROLE_EMPIRICAL_CONSENSUS';
         } else {
+          // In the offline estate, positive empirical credit is completely disabled.
+          // No live custody adapter or live Neon observatory custody pipeline is connected to this repo.
+          // Caller-controlled booleans (such as options.live_custody_attested) cannot impersonate empirical custody.
           empiricalReplicationCount = 0;
           replicationStatus = 'AUTHENTICATED_SIGNATURE_VERIFIED_ZERO_EMPIRICAL_CREDIT';
         }
@@ -648,7 +662,12 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
   let verifiedAcquisitionRecord = null;
   if (verificationResult && verificationResult.verified) {
     const provenanceClass = receipt.provenance_class || 'SIGNATURE_VERIFICATION_TEST';
-    const sealData = `${receipt.source_revision}::${receipt.episode_id}::${receipt.observation_digest}::${isEmpiricalSource}::${provenanceClass}`;
+    const activeRolesStr = [...activeSet].sort().join(',');
+    const infractionsStr = [...detectedInfractions].sort().join(',');
+    const decisionContextHash = crypto
+      ? crypto.createHash('sha256').update(`${decision}::${activeRolesStr}::${gatheredFindings.length}::${infractionsStr}`).digest('hex')
+      : null;
+    const sealData = `${receipt.source_revision}::${receipt.episode_id}::${receipt.observation_digest}::${isEmpiricalSource}::${provenanceClass}::${decisionContextHash}`;
     const authenticitySeal = crypto ? crypto.createHmac('sha256', HARNESS_SEAL_SECRET).update(sealData).digest('hex') : null;
     verifiedAcquisitionRecord = Object.freeze({
       verified: true,
@@ -661,6 +680,7 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
       source_revision: receipt.source_revision,
       episode_id: receipt.episode_id,
       observation_digest: receipt.observation_digest,
+      decision_context_hash: decisionContextHash,
       authenticity_seal: authenticitySeal,
       verified_at: new Date().toISOString()
     });
@@ -709,19 +729,30 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
 
   const expectedVerdict = withheldGroundTruth.verdict;
   const expectedDefects = Array.isArray(withheldGroundTruth.defects) ? withheldGroundTruth.defects : [];
-  const activeRoles = orchestratorResult?.active_roles || [];
-  const detectedInfractions = orchestratorResult?.detected_infractions || [];
+  const activeRoles = Array.isArray(orchestratorResult?.active_roles) ? orchestratorResult.active_roles : [];
+  const activeRolesStr = [...activeRoles].sort().join(',');
+  const detectedInfractions = Array.isArray(orchestratorResult?.detected_infractions) ? orchestratorResult.detected_infractions : [];
+  const infractionsStr = [...detectedInfractions].sort().join(',');
+  const findingsCount = Array.isArray(orchestratorResult?.findings) ? orchestratorResult.findings.length : (orchestratorResult?.findings_count || 0);
   const decision = orchestratorResult?.decision;
   const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
   const record = orchestratorResult?.verified_acquisition_record;
+
+  const expectedDecisionContextHash = (crypto && decision)
+    ? crypto.createHash('sha256').update(`${decision}::${activeRolesStr}::${findingsCount}::${infractionsStr}`).digest('hex')
+    : null;
+
   const isAuthenticRecord = Boolean(
     record &&
     typeof record === 'object' &&
     VERIFIED_RECORD_SEAL.has(record) &&
     record.authenticity_seal &&
+    record.decision_context_hash &&
+    expectedDecisionContextHash &&
+    record.decision_context_hash === expectedDecisionContextHash &&
     crypto &&
     crypto.createHmac('sha256', HARNESS_SEAL_SECRET)
-      .update(`${record.source_revision}::${record.episode_id}::${record.observation_digest}::${record.is_empirical_source}::${record.provenance_class || 'SIGNATURE_VERIFICATION_TEST'}`)
+      .update(`${record.source_revision}::${record.episode_id}::${record.observation_digest}::${record.is_empirical_source}::${record.provenance_class || 'SIGNATURE_VERIFICATION_TEST'}::${record.decision_context_hash}`)
       .digest('hex') === record.authenticity_seal
   );
   const isEmpiricallyAcquired = Boolean(
@@ -732,8 +763,12 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
     record.provenance_class === 'INDEPENDENT_LIVE_ACQUISITION' &&
     typeof record.source_revision === 'string' &&
     typeof record.episode_id === 'string' &&
-    orchestratorResult?.replication_status === 'AUTHENTICATED_EMPIRICAL_ACQUISITION'
+    orchestratorResult?.replication_status === 'AUTHENTICATED_EMPIRICAL_ACQUISITION' &&
+    false // In offline estate, positive empirical credit is completely held unearned
   );
+  const record_authenticity_status = record
+    ? (isAuthenticRecord ? 'AUTHENTIC_MODULE_ISSUED_RECORD' : 'UNAUTHENTIC_OR_TRANSPLANTED_RECORD')
+    : 'NO_RECORD';
 
   let outcome_class = 'UNKNOWN';
   let is_sound = false;
@@ -849,6 +884,7 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
     defect_detected,
     offline_detection_credit,
     empirical_discovery_credit,
+    record_authenticity_status,
     escaped_classification,
     failure_mode,
     expected_verdict: expectedVerdict,
