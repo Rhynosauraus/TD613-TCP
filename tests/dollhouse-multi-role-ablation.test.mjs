@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import crypto from 'node:crypto';
 
 import {
   runOrchestrationDecision,
@@ -12,16 +13,38 @@ import {
   FAILURE_MODES,
   DOLLHOUSE_ABLATION_EXPERIMENT_SCHEMA,
   DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA,
+  TRUSTED_ACQUISITION_REGISTRIES,
+  computeAcquisitionPayloadDigest,
+  computeAcquisitionReceiptDigest,
   CANONICAL_EMPIRICAL_SCENARIOS
 } from '../app/engine/dollhouse-ablation-harness.js';
 
 const mockAudits = {
-  PEDAGOGUE: { concern: 'Broken return promise trapped operator', jurisdiction: 'human_consequence_and_burden' },
-  APERTURE: { concern: 'URL hash does not equal workspace admitted', jurisdiction: 'observability_and_identifiability' },
-  ATLAS: { concern: 'Predecessor chain unverified across windows', jurisdiction: 'receiver_relative_custody' },
-  FADT: { concern: 'Action grant exposed under erased conditioning', jurisdiction: 'finite_support_boundary' },
-  TEMPORAL_CUSTODIAN: { concern: 'Phase 3 lacks phase 2 parent citation', jurisdiction: 'chronological_sequence' }
+  PEDAGOGUE: { fixture_class: 'SYNTHETIC_FAULT_INJECTION', concern: 'Broken return promise trapped operator', jurisdiction: 'human_consequence_and_burden' },
+  APERTURE: { fixture_class: 'SYNTHETIC_FAULT_INJECTION', concern: 'URL hash does not equal workspace admitted', jurisdiction: 'observability_and_identifiability' },
+  ATLAS: { fixture_class: 'SYNTHETIC_FAULT_INJECTION', concern: 'Predecessor chain unverified across windows', jurisdiction: 'receiver_relative_custody' },
+  FADT: { fixture_class: 'SYNTHETIC_FAULT_INJECTION', concern: 'Action grant exposed under erased conditioning', jurisdiction: 'finite_support_boundary' },
+  TEMPORAL_CUSTODIAN: { fixture_class: 'SYNTHETIC_FAULT_INJECTION', concern: 'Phase 3 lacks phase 2 parent citation', jurisdiction: 'chronological_sequence' }
 };
+
+function makeAcquisitionReceipt(observations, overrides = {}) {
+  const observationDigest = computeAcquisitionPayloadDigest(observations);
+  const receipt = {
+    schema: DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA,
+    authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY',
+    acquisition_boundary: 'NEON_LOOM_CUSTODY_OBSERVATORY',
+    source_revision: 'b'.repeat(40),
+    observation_digest: observationDigest,
+    ...overrides
+  };
+  const receiptDigest = computeAcquisitionReceiptDigest(receipt);
+  receipt.verification_digest = receiptDigest;
+
+  const key = overrides.signing_key || TRUSTED_ACQUISITION_REGISTRIES[receipt.authority_id]?.verification_key || 'test-key';
+  receipt.signature = crypto.createHmac('sha256', key).update(receiptDigest).digest('hex');
+  delete receipt.signing_key;
+  return receipt;
+}
 
 test('Full 5-Role Dollhouse detects all 5 infractions and holds route fail-closed', () => {
   const result = runOrchestrationDecision(FIVE_ROLES, mockAudits);
@@ -99,8 +122,11 @@ test('Unrecognized role identities and malformed schemas reject fail-closed', ()
   assert.equal(evalBadGt.outcome_class, 'UNADJUDICATED');
   assert.equal(evalBadGt.is_sound, false);
 
-  // 6. Caller-declared verdict cannot override detected defect
-  const contaminatedInput = executeSpecialistRole('PEDAGOGUE', { concern: 'user navigation trap', verdict: 'SUPPORTED' });
+  // 6. Caller-declared verdict cannot override executed domain defect
+  const contaminatedInput = executeSpecialistRole('PEDAGOGUE', {
+    events: [{ phase: 'ACT', at: 10 }, { phase: 'NOTICE', at: 20 }], // Cadence violation
+    verdict: 'SUPPORTED' // Contaminating caller verdict
+  });
   assert.equal(contaminatedInput.verdict, 'HELD');
   assert.equal(contaminatedInput.status, 'VIOLATION_DETECTED');
 });
@@ -215,21 +241,128 @@ test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empir
   assert.equal(callerDeclaredResult.empirical_replication_count, 0);
   assert.equal(callerDeclaredResult.independent_replication, false);
 
-  // 3. Authenticated empirical acquisition receipt yields at most 1 empirical replication
-  const authenticatedAudits = {
+  // 3. Caller-controlled dummy receipt (e.g. legacy v0.1 format or unverified digest) receives 0 empirical credit
+  const legacyReceiptAudits = {
     ...mockAudits,
     acquisition_class: 'EMPIRICAL_ACQUISITION',
     acquisition_receipt: {
-      schema: DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA,
+      schema: 'td613.dollhouse.acquisition-receipt/v0.1',
       acquisition_boundary: 'NEON_HOSTED_DURABLE_HEAD_OBSERVATORY',
       receipt_sha256: 'c'.repeat(64),
       verified: true
     }
   };
+  const legacyResult = runOrchestrationDecision(FIVE_ROLES, legacyReceiptAudits);
+  assert.equal(legacyResult.replication_status, 'UNAUTHENTICATED_RECEIPT_REJECTED');
+  assert.equal(legacyResult.empirical_replication_count, 0);
+
+  // 4. Untrusted acquisition authority receives 0 empirical credit
+  const untrustedReceiptAudits = {
+    ...mockAudits,
+    acquisition_class: 'EMPIRICAL_ACQUISITION',
+    acquisition_receipt: makeAcquisitionReceipt(mockAudits, {
+      authority_id: 'UNTRUSTED_ACQUISITION_OBSERVATORY'
+    })
+  };
+  const untrustedResult = runOrchestrationDecision(FIVE_ROLES, untrustedReceiptAudits);
+  assert.equal(untrustedResult.replication_status, 'UNAUTHENTICATED_RECEIPT_REJECTED');
+  assert.equal(untrustedResult.empirical_replication_count, 0);
+
+  // 5. Corrupted signature receives 0 empirical credit
+  const corruptedReceipt = makeAcquisitionReceipt(mockAudits);
+  corruptedReceipt.signature = '0'.repeat(64);
+  const corruptedResult = runOrchestrationDecision(FIVE_ROLES, {
+    ...mockAudits,
+    acquisition_class: 'EMPIRICAL_ACQUISITION',
+    acquisition_receipt: corruptedReceipt
+  });
+  assert.equal(corruptedResult.replication_status, 'UNAUTHENTICATED_RECEIPT_REJECTED');
+  assert.equal(corruptedResult.empirical_replication_count, 0);
+
+  // 6. Observation payload digest mismatch receives 0 empirical credit
+  const mismatchReceipt = makeAcquisitionReceipt({ different: 'payload' });
+  const mismatchResult = runOrchestrationDecision(FIVE_ROLES, {
+    ...mockAudits,
+    acquisition_class: 'EMPIRICAL_ACQUISITION',
+    acquisition_receipt: mismatchReceipt
+  });
+  assert.equal(mismatchResult.replication_status, 'UNAUTHENTICATED_RECEIPT_REJECTED');
+  assert.equal(mismatchResult.empirical_replication_count, 0);
+
+  // 7. Synthetic test key receipt (SYNTHETIC_TEST_ACQUISITION) proves verifier behavior but earns ZERO empirical acquisition credit
+  const syntheticKeyReceiptAudits = {
+    ...mockAudits,
+    acquisition_class: 'EMPIRICAL_ACQUISITION',
+    acquisition_receipt: makeAcquisitionReceipt(mockAudits, {
+      authority_id: 'SYNTHETIC_TEST_ACQUISITION',
+      acquisition_boundary: 'SYNTHETIC_TEST_OBSERVATORY'
+    })
+  };
+  const syntheticKeyResult = runOrchestrationDecision(FIVE_ROLES, syntheticKeyReceiptAudits);
+  assert.equal(syntheticKeyResult.replication_status, 'SYNTHETIC_VERIFIED_RECEIPT_ZERO_EMPIRICAL_CREDIT');
+  assert.equal(syntheticKeyResult.empirical_replication_count, 0);
+
+  // 8. Authenticated empirical acquisition receipt from authentic external authority yields count 1
+  const authenticatedAudits = {
+    ...mockAudits,
+    acquisition_class: 'EMPIRICAL_ACQUISITION',
+    acquisition_receipt: makeAcquisitionReceipt(mockAudits, {
+      authority_id: 'NEON_LOOM_CUSTODY_OBSERVATORY'
+    })
+  };
   const authenticatedResult = runOrchestrationDecision(FIVE_ROLES, authenticatedAudits);
   assert.equal(authenticatedResult.replication_status, 'AUTHENTICATED_EMPIRICAL_ACQUISITION');
   assert.equal(authenticatedResult.empirical_replication_count, 1);
+  // Shared acquisition across 5 dolls does NOT manufacture independent replication across multiple acquisitions
   assert.equal(authenticatedResult.independent_replication, false);
+});
+
+test('Elimination of synthetic concern injection: untyped caller concerns reject fail-closed and cannot override domain audits', () => {
+  // 1. Untyped caller concern strings without valid domain schemas reject fail-closed as MALFORMED_OBSERVATION_SCHEMA
+  const untypedInput = { concern: 'Adversarial defect claim without domain schema', defective: true };
+  const rejectedResult = executeSpecialistRole('PEDAGOGUE', untypedInput);
+  assert.equal(rejectedResult.verdict, 'HELD');
+  assert.equal(rejectedResult.status, 'MALFORMED_OBSERVATION_SCHEMA');
+  assert.deepEqual(rejectedResult.infractions, ['MALFORMED_OBSERVATION_SCHEMA']);
+
+  // 2. Schema-valid domain observations: caller concern cannot override executed domain audit
+  const validBenignPedagogue = {
+    events: [
+      { phase: 'NOTICE', at: 10 },
+      { phase: 'ACT', at: 20 },
+      { phase: 'WORLD_ANSWERS', at: 30 },
+      { phase: 'NAME', at: 40 }
+    ],
+    concern: 'Bogus injected concern on benign input',
+    defective: true
+  };
+  const executedResult = executeSpecialistRole('PEDAGOGUE', validBenignPedagogue);
+  assert.equal(executedResult.verdict, 'SUPPORTED');
+  assert.equal(executedResult.status, 'NO_VIOLATION_DETECTED');
+  assert.deepEqual(executedResult.infractions, []);
+
+  // 3. Explicitly typed synthetic fault injection is contained fail-closed with 0 empirical discovery credit
+  const typedSynthetic = {
+    fixture_class: 'SYNTHETIC_FAULT_INJECTION',
+    concern: 'Simulated fault injection for testing',
+    defective: true
+  };
+  const containedResult = executeSpecialistRole('APERTURE', typedSynthetic);
+  assert.equal(containedResult.verdict, 'HELD');
+  assert.equal(containedResult.status, 'SYNTHETIC_FAULT_CONTAINED');
+  assert.equal(containedResult.is_synthetic_injection, true);
+
+  // In ablation trial, synthetic fault injection earns 0 empirical discovery credit
+  const trial = runAblationTrial(
+    ['APERTURE'],
+    {
+      ground_truth: { verdict: 'HELD', defects: [ROLE_INFRACTIONS.APERTURE] },
+      aperture: typedSynthetic
+    }
+  );
+  assert.equal(trial.evaluation.outcome_class, 'SYNTHETIC_FAULT_CONTAINED');
+  assert.equal(trial.evaluation.defect_detected, true);
+  assert.equal(trial.evaluation.empirical_discovery_credit, 0);
 });
 
 test('runCompleteDollhouseAblation runs all 13 conditions and proves non-redundancy', () => {

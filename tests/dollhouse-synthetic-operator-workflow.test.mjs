@@ -36,7 +36,13 @@ import {
 import { runTemporalCustodianAudit } from '../app/engine/dollhouse-temporal-custodian.js';
 
 // 6. Orchestrator Case Dossier & Multi-Role Ablation
-import { createDollhouseCaseDossier, DOLLHOUSE_WITNESS_RECEIPT_SCHEMA } from '../app/engine/dollhouse-case-dossier.js';
+import {
+  createDollhouseCaseDossier,
+  DOLLHOUSE_WITNESS_RECEIPT_SCHEMA,
+  TRUSTED_WITNESS_REGISTRY,
+  computeWitnessReceiptDigest,
+  signWitnessReceipt
+} from '../app/engine/dollhouse-case-dossier.js';
 import { runCompleteDollhouseAblation } from '../app/engine/dollhouse-ablation-harness.js';
 
 test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, Reparative Recovery, and Orchestrator Necessity', async (t) => {
@@ -194,31 +200,44 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
     assert.equal(repairedTemporal.verdict, 'PASS');
     assert.equal(repairedTemporal.ledger_audit.baseline_compared, true);
 
+    const sourceRevision = '78c7ea6b974e176611fb2ed4d0c59649ebf05f62';
+    const beforeSha = fileSha256('tests/fixtures/dollhouse/repair-before-held.json');
+    const afterSha = fileSha256('tests/fixtures/dollhouse/repair-after-supported.json');
+
+    const witnessReceipt = {
+      schema: DOLLHOUSE_WITNESS_RECEIPT_SCHEMA,
+      witness_identity: 'AMARI_ADJUDICATION_AUTHORITY',
+      issuer_authority: 'AMARI_INDEPENDENT_ADJUDICATOR',
+      source_revision: sourceRevision,
+      before_artifact: {
+        path: 'tests/fixtures/dollhouse/repair-before-held.json',
+        sha256: beforeSha,
+        verdict: 'HELD',
+        defect_class: 'NUMERICAL_STABILITY_DEFICIT'
+      },
+      after_artifact: {
+        path: 'tests/fixtures/dollhouse/repair-after-supported.json',
+        sha256: afterSha,
+        verdict: 'SUPPORTED',
+        predecessor_sha256: beforeSha
+      },
+      transition_claim: 'Operator adopted canonical cadence, well-conditioned aperture probe, zero-winding atlas path, and largest sound FADT support'
+    };
+    witnessReceipt.verification_digest = computeWitnessReceiptDigest(witnessReceipt);
+    witnessReceipt.signature = signWitnessReceipt(witnessReceipt, TRUSTED_WITNESS_REGISTRY.AMARI_ADJUDICATION_AUTHORITY.verification_key);
+
     // 2F. Orchestrator Synthesis: Unified 5-Doll Case Dossier
     const unifiedDossier = createDollhouseCaseDossier({
       schema: 'td613.dollhouse.case-dossier/v0.1',
       case_id: 'synthetic-operator-repaired-case-01',
-      source_revision: '78c7ea6b974e176611fb2ed4d0c59649ebf05f62',
+      source_revision: sourceRevision,
       repair_demonstration: {
         initial_verdict: 'HELD',
         reparative_action: 'Operator adopted canonical cadence, well-conditioned aperture probe, zero-winding atlas path, and largest sound FADT support',
         post_repair_verdict: 'SUPPORTED',
         verified: true,
         verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
-        witness_receipt: {
-          schema: DOLLHOUSE_WITNESS_RECEIPT_SCHEMA,
-          witness_identity: 'AMARI_INDEPENDENT_ADJUDICATOR',
-          verification_digest: fileSha256('app/engine/dollhouse-case-dossier.js'),
-          source_revision: '78c7ea6b974e176611fb2ed4d0c59649ebf05f62',
-          before_artifact: {
-            path: 'app/engine/dollhouse-pedagogue-dromological.js',
-            sha256: fileSha256('app/engine/dollhouse-pedagogue-dromological.js')
-          },
-          after_artifact: {
-            path: 'app/engine/aperture-v32-typed-epistemic-deficit.js',
-            sha256: fileSha256('app/engine/aperture-v32-typed-epistemic-deficit.js')
-          }
-        }
+        witness_receipt: witnessReceipt
       },
       findings: [
         {

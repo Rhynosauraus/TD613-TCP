@@ -1,7 +1,155 @@
 import { getDollhouseAgent, listDollhouseAgents } from './dollhouse-agent-registry.js';
 
 export const DOLLHOUSE_CASE_DOSSIER_SCHEMA = 'td613.dollhouse.case-dossier/v0.1';
-export const DOLLHOUSE_WITNESS_RECEIPT_SCHEMA = 'td613.dollhouse.witness-receipt/v0.1';
+export const DOLLHOUSE_WITNESS_RECEIPT_SCHEMA = 'td613.dollhouse.witness-receipt/v0.2';
+
+export const TRUSTED_WITNESS_REGISTRY = Object.freeze({
+  OPERATOR_DIRECT_WITNESS: Object.freeze({
+    witness_identity: 'OPERATOR_DIRECT_WITNESS',
+    authority_class: 'CONTEMPORANEOUS_OPERATOR_DIRECT',
+    verification_key: 'td613-operator-direct-witness-key-2026',
+    is_independent: true
+  }),
+  AMARI_ADJUDICATION_AUTHORITY: Object.freeze({
+    witness_identity: 'AMARI_ADJUDICATION_AUTHORITY',
+    authority_class: 'INDEPENDENT_EXTERNAL_ADJUDICATOR',
+    verification_key: 'amari-ed25519-public-adjudication-witness-key-2026',
+    is_independent: true
+  }),
+  SYNTHETIC_TEST_AUTHORITY: Object.freeze({
+    witness_identity: 'SYNTHETIC_TEST_AUTHORITY',
+    authority_class: 'SYNTHETIC_TEST_FIXTURE',
+    verification_key: 'td613-synthetic-offline-test-key-001',
+    is_independent: false
+  })
+});
+
+export function computeWitnessReceiptDigest(receipt) {
+  const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
+  if (!crypto) return null;
+  const canonical = [
+    receipt.schema,
+    receipt.witness_identity,
+    receipt.issuer_authority,
+    receipt.source_revision,
+    receipt.before_artifact?.path,
+    receipt.before_artifact?.sha256,
+    receipt.before_artifact?.verdict,
+    receipt.before_artifact?.defect_class,
+    receipt.after_artifact?.path,
+    receipt.after_artifact?.sha256,
+    receipt.after_artifact?.verdict,
+    receipt.after_artifact?.predecessor_sha256,
+    receipt.transition_claim
+  ].join('::');
+  return crypto.createHash('sha256').update(canonical).digest('hex');
+}
+
+export function signWitnessReceipt(receipt, secretKey) {
+  const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
+  if (!crypto) return null;
+  const digest = computeWitnessReceiptDigest(receipt);
+  return crypto.createHmac('sha256', secretKey).update(digest).digest('hex');
+}
+
+export function verifyWitnessReceipt(receipt, options = {}) {
+  const crypto = globalThis.process?.getBuiltinModule?.('node:crypto');
+  const fs = globalThis.process?.getBuiltinModule?.('node:fs');
+  if (!receipt || typeof receipt !== 'object') {
+    return { verified: false, failure_reason: 'RECEIPT_NOT_PROVIDED' };
+  }
+
+  if (receipt.schema === 'td613.dollhouse.witness-receipt/v0.1') {
+    return { verified: false, failure_reason: 'LEGACY_V01_UNAUTHENTICATED' };
+  }
+  if (receipt.schema !== DOLLHOUSE_WITNESS_RECEIPT_SCHEMA) {
+    return { verified: false, failure_reason: 'UNSUPPORTED_RECEIPT_SCHEMA' };
+  }
+
+  // 1. Layer 1: Local Artifact Byte Integrity
+  const beforeArt = receipt.before_artifact;
+  const afterArt = receipt.after_artifact;
+  if (!beforeArt || !afterArt || !fs || !crypto) {
+    return { verified: false, failure_reason: 'BYTE_INTEGRITY_CHECK_UNAVAILABLE' };
+  }
+
+  let beforeBytes, afterBytes;
+  try {
+    if (!fs.existsSync(beforeArt.path) || !fs.existsSync(afterArt.path)) {
+      return { verified: false, failure_reason: 'ARTIFACT_NOT_FOUND_ON_DISK' };
+    }
+    beforeBytes = fs.readFileSync(beforeArt.path);
+    afterBytes = fs.readFileSync(afterArt.path);
+    const actualBeforeSha = crypto.createHash('sha256').update(beforeBytes).digest('hex');
+    const actualAfterSha = crypto.createHash('sha256').update(afterBytes).digest('hex');
+    if (actualBeforeSha !== beforeArt.sha256 || actualAfterSha !== afterArt.sha256) {
+      return { verified: false, failure_reason: 'ARTIFACT_DIGEST_MISMATCH' };
+    }
+  } catch {
+    return { verified: false, failure_reason: 'BYTE_READ_ERROR' };
+  }
+
+  // 2. Layer 2: Substantive Repair Transition Verification
+  if (beforeArt.verdict !== 'HELD' || afterArt.verdict !== 'SUPPORTED') {
+    return { verified: false, failure_reason: 'INVALID_TRANSITION_VERDICTS' };
+  }
+  if (!afterArt.predecessor_sha256 || afterArt.predecessor_sha256 !== beforeArt.sha256) {
+    return { verified: false, failure_reason: 'FALSE_REPAIR_TRANSITION_UNLINKED_PREDECESSOR' };
+  }
+  if (beforeArt.path === afterArt.path) {
+    return { verified: false, failure_reason: 'IDENTICAL_BEFORE_AFTER_ARTIFACT' };
+  }
+
+  // Substantive repair verification of on-disk artifact contents:
+  // Reject valid hashes on unrelated files (e.g. package.json + README.md) as FALSE_REPAIR_TRANSITION
+  try {
+    const beforeObj = JSON.parse(beforeBytes.toString('utf8'));
+    const afterObj = JSON.parse(afterBytes.toString('utf8'));
+    if (!beforeObj || typeof beforeObj !== 'object' || !afterObj || typeof afterObj !== 'object') {
+      return { verified: false, failure_reason: 'FALSE_REPAIR_TRANSITION_NON_OBJECT' };
+    }
+    if (beforeObj.verdict !== 'HELD' || afterObj.verdict !== 'SUPPORTED') {
+      return { verified: false, failure_reason: 'FALSE_REPAIR_TRANSITION_UNMATCHED_VERDICTS' };
+    }
+    if (afterObj.predecessor_sha256 !== beforeArt.sha256) {
+      return { verified: false, failure_reason: 'FALSE_REPAIR_TRANSITION_UNLINKED_PREDECESSOR' };
+    }
+  } catch {
+    return { verified: false, failure_reason: 'FALSE_REPAIR_TRANSITION_INVALID_JSON' };
+  }
+
+  // 3. Layer 3: Witness Identity & Receipt Authenticity (Cryptographic Verification)
+  const registry = options.trusted_registry || TRUSTED_WITNESS_REGISTRY;
+  const authority = registry[receipt.witness_identity];
+  if (!authority) {
+    return { verified: false, failure_reason: 'UNTRUSTED_WITNESS_AUTHORITY' };
+  }
+
+  const expectedDigest = computeWitnessReceiptDigest(receipt);
+  if (!receipt.verification_digest || receipt.verification_digest !== expectedDigest) {
+    return { verified: false, failure_reason: 'VERIFICATION_DIGEST_MISMATCH' };
+  }
+
+  const expectedSignature = crypto.createHmac('sha256', authority.verification_key).update(expectedDigest).digest('hex');
+  if (!receipt.signature || receipt.signature !== expectedSignature) {
+    return { verified: false, failure_reason: 'INVALID_SIGNATURE' };
+  }
+
+  if (options.expected_source_revision && receipt.source_revision !== options.expected_source_revision) {
+    return { verified: false, failure_reason: 'STALE_SOURCE_REVISION' };
+  }
+
+  // 4. Layer 4: Independent Provenance vs Synthetic Verification
+  return {
+    verified: true,
+    witness_identity: receipt.witness_identity,
+    authority_class: authority.authority_class,
+    is_independent: authority.is_independent,
+    verification_digest: receipt.verification_digest,
+    transition_claim: receipt.transition_claim
+  };
+}
+
 const CLASSES = ['DECLARATION', 'OFFLINE_TEST', 'BROWSER_WITNESS', 'PROVIDER_RESPONSE', 'EMPIRICAL_ACQUISITION'];
 const VERDICTS = ['SUPPORTED', 'HELD', 'CONTRADICTED', 'UNKNOWN'];
 function exact(value, keys, label) {
@@ -82,48 +230,61 @@ export function createDollhouseCaseDossier(input) {
     let witnessDetails = null;
 
     if (demo.witness_receipt) {
-      exact(demo.witness_receipt, ['schema', 'witness_identity', 'verification_digest', 'source_revision', 'before_artifact', 'after_artifact'], 'witness receipt');
-      if (demo.witness_receipt.schema !== DOLLHOUSE_WITNESS_RECEIPT_SCHEMA) {
+      const receipt = demo.witness_receipt;
+      exact(receipt, [
+        'schema', 'witness_identity', 'issuer_authority', 'signature',
+        'verification_digest', 'source_revision', 'before_artifact',
+        'after_artifact', 'transition_claim'
+      ], 'witness receipt');
+      if (receipt.schema !== DOLLHOUSE_WITNESS_RECEIPT_SCHEMA) {
         throw new TypeError(`witness receipt: invalid schema (expected ${DOLLHOUSE_WITNESS_RECEIPT_SCHEMA})`);
       }
-      text(demo.witness_receipt.witness_identity, 120, 'witness identity');
-      if (typeof demo.witness_receipt.verification_digest !== 'string' || !/^[a-f0-9]{64}$/.test(demo.witness_receipt.verification_digest)) {
+      text(receipt.witness_identity, 120, 'witness identity');
+      text(receipt.issuer_authority, 120, 'issuer authority');
+      if (typeof receipt.signature !== 'string' || !/^[a-f0-9]{64}$/.test(receipt.signature)) {
+        throw new TypeError('witness receipt: signature must be 64-hex SHA-256 HMAC');
+      }
+      if (typeof receipt.verification_digest !== 'string' || !/^[a-f0-9]{64}$/.test(receipt.verification_digest)) {
         throw new TypeError('witness receipt: verification_digest must be 64-hex SHA-256');
       }
-      text(demo.witness_receipt.source_revision, 120, 'source revision');
-      exact(demo.witness_receipt.before_artifact, ['path', 'sha256'], 'before artifact');
-      exact(demo.witness_receipt.after_artifact, ['path', 'sha256'], 'after artifact');
-      text(demo.witness_receipt.before_artifact.path, 500, 'before artifact path');
-      text(demo.witness_receipt.after_artifact.path, 500, 'after artifact path');
-      if (!/^[a-f0-9]{64}$/.test(demo.witness_receipt.before_artifact.sha256) || !/^[a-f0-9]{64}$/.test(demo.witness_receipt.after_artifact.sha256)) {
+      text(receipt.source_revision, 120, 'source revision');
+      text(receipt.transition_claim, 500, 'transition claim');
+
+      exact(receipt.before_artifact, ['path', 'sha256', 'verdict', 'defect_class'], 'before artifact');
+      exact(receipt.after_artifact, ['path', 'sha256', 'verdict', 'predecessor_sha256'], 'after artifact');
+      text(receipt.before_artifact.path, 500, 'before artifact path');
+      text(receipt.after_artifact.path, 500, 'after artifact path');
+      text(receipt.before_artifact.verdict, 20, 'before artifact verdict');
+      text(receipt.before_artifact.defect_class, 120, 'before artifact defect class');
+      text(receipt.after_artifact.verdict, 20, 'after artifact verdict');
+      if (!/^[a-f0-9]{64}$/.test(receipt.before_artifact.sha256) || !/^[a-f0-9]{64}$/.test(receipt.after_artifact.sha256)) {
         throw new TypeError('witness receipt: artifact sha256 must be 64-hex SHA-256');
       }
+      if (!/^[a-f0-9]{64}$/.test(receipt.after_artifact.predecessor_sha256)) {
+        throw new TypeError('witness receipt: predecessor_sha256 must be 64-hex SHA-256');
+      }
 
-      const fsModule = globalThis.process?.getBuiltinModule?.('node:fs');
-      const cryptoModule = globalThis.process?.getBuiltinModule?.('node:crypto');
-      if (fsModule && cryptoModule) {
-        try {
-          if (fsModule.existsSync(demo.witness_receipt.before_artifact.path) && fsModule.existsSync(demo.witness_receipt.after_artifact.path)) {
-            const beforeContent = fsModule.readFileSync(demo.witness_receipt.before_artifact.path);
-            const afterContent = fsModule.readFileSync(demo.witness_receipt.after_artifact.path);
-            const actualBeforeSha = cryptoModule.createHash('sha256').update(beforeContent).digest('hex');
-            const actualAfterSha = cryptoModule.createHash('sha256').update(afterContent).digest('hex');
-            if (actualBeforeSha === demo.witness_receipt.before_artifact.sha256 && actualAfterSha === demo.witness_receipt.after_artifact.sha256) {
-              witnessVerified = true;
-              witnessDetails = demo.witness_receipt;
-            }
-          }
-        } catch {
-          witnessVerified = false;
-        }
+      const witnessResult = verifyWitnessReceipt(receipt, {
+        expected_source_revision: input.source_revision
+      });
+      if (witnessResult.verified) {
+        witnessVerified = true;
+        witnessDetails = witnessResult;
       }
     }
 
     if (validInitial && validPost && isVerified && witnessVerified) {
-      repairScore = 1.0;
-      repairStatus = 'DEMONSTRATED';
-      repairEvidenceText = `Independently authenticated witness receipt verified: on-disk before/after artifacts match SHA-256 commitments under witness ${witnessDetails.witness_identity} (${witnessDetails.verification_digest.slice(0, 12)}...).`;
-      repairLimitations = 'Verified against local disk artifact bytes; live runtime replay not executed by clerk.';
+      if (witnessDetails.is_independent === true) {
+        repairScore = 1.0;
+        repairStatus = 'DEMONSTRATED';
+        repairEvidenceText = `Independently authenticated witness receipt verified: on-disk before/after artifacts match SHA-256 commitments under authentic witness ${witnessDetails.witness_identity} (${witnessDetails.verification_digest.slice(0, 12)}...).`;
+        repairLimitations = 'Verified against authentic independent witness receipt and on-disk artifact bytes; live runtime replay not executed by clerk.';
+      } else {
+        repairScore = 1.0;
+        repairStatus = 'SYNTHETIC_VERIFIED_RECOVERY';
+        repairEvidenceText = `Synthetic offline test authority verified before/after artifact transition under ${witnessDetails.witness_identity} (${witnessDetails.verification_digest.slice(0, 12)}...). Zero independent empirical evidence credit.`;
+        repairLimitations = 'Verified by synthetic offline test authority only; external independent witness remains unverified.';
+      }
     } else if (validInitial && validPost && isVerified) {
       repairScore = 0.5;
       repairStatus = 'CALLER_DECLARED_RECOVERY';

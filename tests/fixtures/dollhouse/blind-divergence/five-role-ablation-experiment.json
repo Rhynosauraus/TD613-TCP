@@ -32,7 +32,8 @@
           "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
           "jurisdiction": "consequence_order_route_burden_practice",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "APERTURE",
@@ -40,7 +41,8 @@
           "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
           "jurisdiction": "observability_identifiability_uncertainty",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "ATLAS",
@@ -48,7 +50,8 @@
           "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
           "jurisdiction": "receiver_relative_relations_predecessor_chain",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "FADT",
@@ -56,7 +59,8 @@
           "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
           "jurisdiction": "finite_quotient_survival_lawful_support",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "TEMPORAL_CUSTODIAN",
@@ -64,7 +68,8 @@
           "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
           "jurisdiction": "chronological_sequence_and_attempt_lineage",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -123,7 +128,8 @@
           "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
           "jurisdiction": "consequence_order_route_burden_practice",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -150,7 +156,8 @@
           "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
           "jurisdiction": "observability_identifiability_uncertainty",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -177,7 +184,8 @@
           "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
           "jurisdiction": "receiver_relative_relations_predecessor_chain",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -204,7 +212,8 @@
           "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
           "jurisdiction": "finite_quotient_survival_lawful_support",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -231,7 +240,8 @@
           "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
           "jurisdiction": "chronological_sequence_and_attempt_lineage",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -261,7 +271,8 @@
           "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
           "jurisdiction": "observability_identifiability_uncertainty",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "ATLAS",
@@ -269,7 +280,8 @@
           "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
           "jurisdiction": "receiver_relative_relations_predecessor_chain",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "FADT",
@@ -277,7 +289,8 @@
           "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
           "jurisdiction": "finite_quotient_survival_lawful_support",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "TEMPORAL_CUSTODIAN",
@@ -285,7 +298,8 @@
           "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
           "jurisdiction": "chronological_sequence_and_attempt_lineage",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -318,7 +332,8 @@
           "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
           "jurisdiction": "consequence_order_route_burden_practice",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "ATLAS",
@@ -326,7 +341,8 @@
           "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
           "jurisdiction": "receiver_relative_relations_predecessor_chain",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "FADT",
@@ -334,7 +350,8 @@
           "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
           "jurisdiction": "finite_quotient_survival_lawful_support",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "TEMPORAL_CUSTODIAN",
@@ -342,7 +359,8 @@
           "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
           "jurisdiction": "chronological_sequence_and_attempt_lineage",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -375,7 +393,8 @@
           "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
           "jurisdiction": "consequence_order_route_burden_practice",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "APERTURE",
@@ -383,7 +402,8 @@
           "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
           "jurisdiction": "observability_identifiability_uncertainty",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "FADT",
@@ -391,7 +411,8 @@
           "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
           "jurisdiction": "finite_quotient_survival_lawful_support",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "TEMPORAL_CUSTODIAN",
@@ -399,7 +420,8 @@
           "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
           "jurisdiction": "chronological_sequence_and_attempt_lineage",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -432,7 +454,8 @@
           "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
           "jurisdiction": "consequence_order_route_burden_practice",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "APERTURE",
@@ -440,7 +463,8 @@
           "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
           "jurisdiction": "observability_identifiability_uncertainty",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "ATLAS",
@@ -448,7 +472,8 @@
           "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
           "jurisdiction": "receiver_relative_relations_predecessor_chain",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "TEMPORAL_CUSTODIAN",
@@ -456,7 +481,8 @@
           "claim": "Chronological sequence violation and unreferenced retry hazard: admitting phase 3 without verified parent linkage to phase 2 creates a chronological oblivion hazard where a failed prior attempt is silently bypassed without predecessor citation.",
           "jurisdiction": "chronological_sequence_and_attempt_lineage",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -489,7 +515,8 @@
           "claim": "Route confusion and broken promise: operator is told they have returned to review, but the interface fails to visibly inhabit the return consequence, violating consequence-before-ontology.",
           "jurisdiction": "consequence_order_route_burden_practice",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "APERTURE",
@@ -497,7 +524,8 @@
           "claim": "State-observation conflation (S != O != E). Testing tools treat URL hash presence as proxy evidence for visual rendering, producing false-positive route completion witnesses.",
           "jurisdiction": "observability_identifiability_uncertainty",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "ATLAS",
@@ -505,7 +533,8 @@
           "claim": "Broken predecessor digest chain and receiver-relative divergence: Loom receiver cannot verify continuity across the popup boundary without the Marrowline receipt digest.",
           "jurisdiction": "receiver_relative_relations_predecessor_chain",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         },
         {
           "role": "FADT",
@@ -513,7 +542,8 @@
           "claim": "Lawful support violation and stage collapse: displaying the Return workspace while underlying conditioning is unadmitted would illegally expose EXPORT_CURRENT and ADMIT_LOCAL actions without lawful support.",
           "jurisdiction": "finite_quotient_survival_lawful_support",
           "verdict": "HELD",
-          "status": "VIOLATION_DETECTED"
+          "status": "SYNTHETIC_FAULT_CONTAINED",
+          "is_synthetic_injection": true
         }
       ],
       "detected_infractions": [
@@ -553,6 +583,7 @@
         "is_sound": false,
         "defect_escaped": true,
         "defect_detected": false,
+        "empirical_discovery_credit": 0,
         "escaped_classification": "UNCHECKED_MUTATION_PERMITTED",
         "failure_mode": "System executes unverified mutation with zero role audits or epistemic checks.",
         "expected_verdict": "HELD",
@@ -584,6 +615,7 @@
         "is_sound": true,
         "defect_escaped": false,
         "defect_detected": false,
+        "empirical_discovery_credit": 0,
         "escaped_classification": null,
         "failure_mode": null,
         "expected_verdict": "HELD",
@@ -609,7 +641,8 @@
             "claim": "Invariants verified by APERTURE",
             "jurisdiction": "observability_and_identifiability",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "ATLAS",
@@ -617,7 +650,8 @@
             "claim": "Invariants verified by ATLAS",
             "jurisdiction": "receiver_relative_custody",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "FADT",
@@ -625,7 +659,8 @@
             "claim": "Invariants verified by FADT",
             "jurisdiction": "finite_support_boundary",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "TEMPORAL_CUSTODIAN",
@@ -633,7 +668,8 @@
             "claim": "Invariants verified by TEMPORAL_CUSTODIAN",
             "jurisdiction": "chronological_sequence",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           }
         ],
         "detected_infractions": [],
@@ -651,6 +687,7 @@
         "is_sound": false,
         "defect_escaped": true,
         "defect_detected": false,
+        "empirical_discovery_credit": 0,
         "escaped_classification": "HUMAN_COST_IGNORED",
         "failure_mode": "Orchestrator declares technical validity while ignoring broken user experience and navigation trap.",
         "expected_verdict": "HELD",
@@ -678,7 +715,8 @@
             "claim": "Invariants verified by PEDAGOGUE",
             "jurisdiction": "human_consequence_and_burden",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "ATLAS",
@@ -686,7 +724,8 @@
             "claim": "Invariants verified by ATLAS",
             "jurisdiction": "receiver_relative_custody",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "FADT",
@@ -694,7 +733,8 @@
             "claim": "Invariants verified by FADT",
             "jurisdiction": "finite_support_boundary",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "TEMPORAL_CUSTODIAN",
@@ -702,7 +742,8 @@
             "claim": "Invariants verified by TEMPORAL_CUSTODIAN",
             "jurisdiction": "chronological_sequence",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           }
         ],
         "detected_infractions": [],
@@ -720,6 +761,7 @@
         "is_sound": false,
         "defect_escaped": true,
         "defect_detected": false,
+        "empirical_discovery_credit": 0,
         "escaped_classification": "FALSE_COMPLETION_ADMITTED",
         "failure_mode": "Orchestrator accepts URL hash #return-review as proof of Return, overlooking unadmitted DOM workspace.",
         "expected_verdict": "HELD",
@@ -747,7 +789,8 @@
             "claim": "Invariants verified by PEDAGOGUE",
             "jurisdiction": "human_consequence_and_burden",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "APERTURE",
@@ -755,7 +798,8 @@
             "claim": "Invariants verified by APERTURE",
             "jurisdiction": "observability_and_identifiability",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "FADT",
@@ -763,7 +807,8 @@
             "claim": "Invariants verified by FADT",
             "jurisdiction": "finite_support_boundary",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "TEMPORAL_CUSTODIAN",
@@ -771,7 +816,8 @@
             "claim": "Invariants verified by TEMPORAL_CUSTODIAN",
             "jurisdiction": "chronological_sequence",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           }
         ],
         "detected_infractions": [],
@@ -789,6 +835,7 @@
         "is_sound": false,
         "defect_escaped": true,
         "defect_detected": false,
+        "empirical_discovery_credit": 0,
         "escaped_classification": "CUSTODY_FORK_RISK_ACCEPTED",
         "failure_mode": "Orchestrator treats C2 as valid without verifying predecessor receipt digest continuity across window boundaries.",
         "expected_verdict": "HELD",
@@ -816,7 +863,8 @@
             "claim": "Invariants verified by PEDAGOGUE",
             "jurisdiction": "human_consequence_and_burden",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "APERTURE",
@@ -824,7 +872,8 @@
             "claim": "Invariants verified by APERTURE",
             "jurisdiction": "observability_and_identifiability",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "ATLAS",
@@ -832,7 +881,8 @@
             "claim": "Invariants verified by ATLAS",
             "jurisdiction": "receiver_relative_custody",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "TEMPORAL_CUSTODIAN",
@@ -840,7 +890,8 @@
             "claim": "Invariants verified by TEMPORAL_CUSTODIAN",
             "jurisdiction": "chronological_sequence",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           }
         ],
         "detected_infractions": [],
@@ -858,6 +909,7 @@
         "is_sound": false,
         "defect_escaped": true,
         "defect_detected": false,
+        "empirical_discovery_credit": 0,
         "escaped_classification": "ILLEGAL_ACTION_ESCALATION_ACCEPTED",
         "failure_mode": "Orchestrator allows Export action grant without verifying conditioning state survival under stage erasure.",
         "expected_verdict": "HELD",
@@ -885,7 +937,8 @@
             "claim": "Invariants verified by PEDAGOGUE",
             "jurisdiction": "human_consequence_and_burden",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "APERTURE",
@@ -893,7 +946,8 @@
             "claim": "Invariants verified by APERTURE",
             "jurisdiction": "observability_and_identifiability",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "ATLAS",
@@ -901,7 +955,8 @@
             "claim": "Invariants verified by ATLAS",
             "jurisdiction": "receiver_relative_custody",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           },
           {
             "role": "FADT",
@@ -909,7 +964,8 @@
             "claim": "Invariants verified by FADT",
             "jurisdiction": "finite_support_boundary",
             "verdict": "SUPPORTED",
-            "status": "NO_VIOLATION_DETECTED"
+            "status": "NO_VIOLATION_DETECTED",
+            "is_synthetic_injection": false
           }
         ],
         "detected_infractions": [],
@@ -927,6 +983,7 @@
         "is_sound": false,
         "defect_escaped": true,
         "defect_detected": false,
+        "empirical_discovery_credit": 0,
         "escaped_classification": "CHRONOLOGICAL_OBLIVION_ADMITTED",
         "failure_mode": "Orchestrator accepts out-of-order unreferenced retry without predecessor citation or phase completeness.",
         "expected_verdict": "HELD",
