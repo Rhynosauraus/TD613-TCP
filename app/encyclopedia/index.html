@@ -1776,7 +1776,7 @@ body[data-motion="paused"] *,body[data-motion="paused"] *:before,body[data-motio
 <button class="stat-btn" data-view="observatory"><span class="stat-value">49</span><span class="stat-label">Equations<small>THE CANONICAL ATLAS</small></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M7 6h11v11"/></svg></button>
 <button class="stat-btn" data-view="evidence" data-kind="labs"><span class="stat-value">46</span><span class="stat-label">Evidence records<small>THE RECORDED FINDINGS</small></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M7 6h11v11"/></svg></button>
 <button class="stat-btn" data-view="evidence" data-kind="crosswalk"><span class="stat-value">28</span><span class="stat-label">Crosswalks<small>RESEARCH IN RELATION</small></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M7 6h11v11"/></svg></button>
-<button class="stat-btn" data-view="sources"><span class="stat-value">88</span><span class="stat-label">Source anchors<small>RETURN TO THE ORIGINAL</small></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M7 6h11v11"/></svg></button>
+<button class="stat-btn" data-view="sources"><span class="stat-value">92</span><span class="stat-label">Source anchors<small>RETURN TO THE ORIGINAL</small></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M7 6h11v11"/></svg></button>
 <button class="stat-btn" data-view="evidence" data-kind="burdens"><span class="stat-value">37</span><span class="stat-label">Open questions<small>THE UNRESOLVED, RETAINED</small></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M7 6h11v11"/></svg></button>
 </div></div>
 <div class="editorial-questions"><div class="section-heading"><p class="eyebrow">THREE WAYS INTO THE WORK</p><span class="editorial-caption">Begin with a question.</span></div><div class="research-paths">
@@ -14112,6 +14112,7 @@ const GLOSSARY_MATH_CALLOUTS = {
 
 // --- 1. CANONICAL DATA & O(1) PRE-INDEXED MAPS ---
 const AUDIT = JSON.parse(document.getElementById('canonical-audit-data').textContent);
+document.querySelector('.stat-btn[data-view="sources"] .stat-value').textContent=Object.keys(AUDIT.sources).length;
 
 const GLOSSARY_LIST = AUDIT.glossary || [];
 const FORMULAS_LIST = AUDIT.formula_atlas || [];
