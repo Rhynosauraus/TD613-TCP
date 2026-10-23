@@ -25,6 +25,7 @@ import { computeFadtFiberBounds } from './dollhouse-fadt-reparative-assistance.j
 import { auditServiceJourneyChronology } from './dollhouse-temporal-custodian.js';
 
 export const DOLLHOUSE_ABLATION_EXPERIMENT_SCHEMA = 'td613.dollhouse.ablation-experiment/v1.2';
+export const DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA = 'td613.dollhouse.acquisition-receipt/v0.1';
 
 export const FIVE_ROLES = Object.freeze([
   'PEDAGOGUE',
@@ -124,14 +125,11 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.clean === true) {
-      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
-    }
     return {
       verdict: 'HELD',
       status: 'MALFORMED_OBSERVATION_SCHEMA',
-      infractions: [ROLE_INFRACTIONS.PEDAGOGUE],
-      concern: 'Malformed observation schema for PEDAGOGUE (expected events array or clean declaration)',
+      infractions: ['MALFORMED_OBSERVATION_SCHEMA'],
+      concern: 'Malformed observation schema for PEDAGOGUE (expected events array)',
       jurisdiction
     };
   }
@@ -151,14 +149,11 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.clean === true) {
-      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
-    }
     return {
       verdict: 'HELD',
       status: 'MALFORMED_OBSERVATION_SCHEMA',
-      infractions: [ROLE_INFRACTIONS.APERTURE],
-      concern: 'Malformed observation schema for APERTURE (expected current_operator matrix or clean declaration)',
+      infractions: ['MALFORMED_OBSERVATION_SCHEMA'],
+      concern: 'Malformed observation schema for APERTURE (expected current_operator matrix)',
       jurisdiction
     };
   }
@@ -175,14 +170,11 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.clean === true) {
-      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
-    }
     return {
       verdict: 'HELD',
       status: 'MALFORMED_OBSERVATION_SCHEMA',
-      infractions: [ROLE_INFRACTIONS.ATLAS],
-      concern: 'Malformed observation schema for ATLAS (expected trajectoryA and trajectoryB or clean declaration)',
+      infractions: ['MALFORMED_OBSERVATION_SCHEMA'],
+      concern: 'Malformed observation schema for ATLAS (expected trajectoryA and trajectoryB)',
       jurisdiction
     };
   }
@@ -199,14 +191,11 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.clean === true) {
-      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
-    }
     return {
       verdict: 'HELD',
       status: 'MALFORMED_OBSERVATION_SCHEMA',
-      infractions: [ROLE_INFRACTIONS.FADT],
-      concern: 'Malformed observation schema for FADT (expected fiberRows array or clean declaration)',
+      infractions: ['MALFORMED_OBSERVATION_SCHEMA'],
+      concern: 'Malformed observation schema for FADT (expected fiberRows array)',
       jurisdiction
     };
   }
@@ -223,14 +212,11 @@ export function executeSpecialistRole(role, domainInput) {
         jurisdiction
       };
     }
-    if (domainInput.clean === true) {
-      return { verdict: 'SUPPORTED', status: 'NO_VIOLATION_DETECTED', infractions: [], concern: null, jurisdiction };
-    }
     return {
       verdict: 'HELD',
       status: 'MALFORMED_OBSERVATION_SCHEMA',
-      infractions: [ROLE_INFRACTIONS.TEMPORAL_CUSTODIAN],
-      concern: 'Malformed observation schema for TEMPORAL_CUSTODIAN (expected phases and required_phases or clean declaration)',
+      infractions: ['MALFORMED_OBSERVATION_SCHEMA'],
+      concern: 'Malformed observation schema for TEMPORAL_CUSTODIAN (expected phases and required_phases)',
       jurisdiction
     };
   }
@@ -361,14 +347,40 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
     consensus = 'INCOMPLETE_OBSERVATION';
   }
 
-  // Replication counting:
-  // Offline synthetic fixtures count as ZERO empirical replications
-  // A shared empirical acquisition counts as ONE empirical replication
-  const isEmpiricalAcquisition = observations.acquisition_class === 'EMPIRICAL_ACQUISITION';
-  const empiricalReplicationCount = isEmpiricalAcquisition ? 1 : 0;
-  const replicationStatus = isEmpiricalAcquisition
-    ? (unanimousAllFive ? 'SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION' : 'PARTIAL_ROLE_CONSENSUS')
-    : 'SYNTHETIC_EXECUTION_ZERO_EMPIRICAL_REPLICATION';
+  // Replication counting & provenance classification:
+  // Caller passing acquisition_class: 'EMPIRICAL_ACQUISITION' alone does NOT earn empirical replication count.
+  // 1. Valid authenticated receipt provided -> AUTHENTICATED_EMPIRICAL_ACQUISITION (count 1)
+  // 2. Caller-declared empirical string without authenticated receipt -> CALLER_DECLARED_UNAUTHENTICATED_EMPIRICAL (count 0)
+  // 3. Default synthetic offline fixture -> SYNTHETIC_OFFLINE_FIXTURE (count 0)
+  const receipt = observations.acquisition_receipt;
+  let isAuthenticatedEmpirical = false;
+  if (receipt && typeof receipt === 'object') {
+    const validSchema = receipt.schema === DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA;
+    const hasBoundary = typeof receipt.acquisition_boundary === 'string' && receipt.acquisition_boundary.length > 0 && receipt.acquisition_boundary !== 'SYNTHETIC';
+    const hasDigest = typeof receipt.receipt_sha256 === 'string' && /^[a-f0-9]{64}$/.test(receipt.receipt_sha256);
+    const isVerified = receipt.verified === true;
+    if (validSchema && hasBoundary && hasDigest && isVerified) {
+      isAuthenticatedEmpirical = true;
+    }
+  }
+
+  const isCallerDeclaredEmpirical = observations.acquisition_class === 'EMPIRICAL_ACQUISITION';
+
+  let replicationStatus = 'SYNTHETIC_OFFLINE_FIXTURE';
+  let empiricalReplicationCount = 0;
+
+  if (isAuthenticatedEmpirical) {
+    empiricalReplicationCount = 1;
+    replicationStatus = unanimousAllFive
+      ? 'AUTHENTICATED_EMPIRICAL_ACQUISITION'
+      : 'PARTIAL_ROLE_EMPIRICAL_CONSENSUS';
+  } else if (isCallerDeclaredEmpirical) {
+    empiricalReplicationCount = 0;
+    replicationStatus = 'CALLER_DECLARED_UNAUTHENTICATED_EMPIRICAL';
+  } else {
+    empiricalReplicationCount = 0;
+    replicationStatus = 'SYNTHETIC_OFFLINE_FIXTURE';
+  }
 
   return deepFreeze({
     active_roles: [...activeSet],
@@ -396,17 +408,20 @@ export function runOrchestrationDecision(activeRoleNames = [], observations = {}
  *   - Verifies sound admission when four dolls succeed on benign inputs without the fifth.
  */
 export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth) {
-  if (!withheldGroundTruth || typeof withheldGroundTruth !== 'object') {
+  if (!withheldGroundTruth || typeof withheldGroundTruth !== 'object' || typeof withheldGroundTruth.verdict !== 'string' || !['SUPPORTED', 'HELD'].includes(withheldGroundTruth.verdict)) {
     return deepFreeze({
-      status: 'GROUND_TRUTH_NOT_PROVIDED',
+      status: 'MALFORMED_GROUND_TRUTH_REJECTED',
       orchestrator_decision: orchestratorResult?.decision || null,
       outcome_class: 'UNADJUDICATED',
+      is_sound: false,
+      defect_escaped: false,
+      defect_detected: false,
       failure_mode: null,
-      description: 'No withheld ground truth provided for evaluation.'
+      description: 'Withheld ground truth missing, malformed, or lacks valid verdict string.'
     });
   }
 
-  const expectedVerdict = withheldGroundTruth.verdict || 'SUPPORTED';
+  const expectedVerdict = withheldGroundTruth.verdict;
   const expectedDefects = Array.isArray(withheldGroundTruth.defects) ? withheldGroundTruth.defects : [];
   const activeRoles = orchestratorResult?.active_roles || [];
   const detectedInfractions = orchestratorResult?.detected_infractions || [];
@@ -444,6 +459,7 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
       defect_detected = false;
       description = 'Orchestrator held fail-closed due to insufficient or missing specialist observations (safe abstention; defect was not actively detected by specialist instrumentation).';
     } else if (decision === 'HELD' || decision === 'HELD_UNKNOWN_ROLE') {
+      const hasMalformedSchema = detectedInfractions.includes('MALFORMED_OBSERVATION_SCHEMA');
       const defectMatched = expectedDefects.length > 0 && detectedInfractions.some(i => expectedDefects.includes(i));
       if (defectMatched) {
         outcome_class = 'TRUE_NEGATIVE_PREVENTION';
@@ -451,6 +467,12 @@ export function evaluateAblationOutcome(orchestratorResult, withheldGroundTruth)
         defect_escaped = false;
         defect_detected = true;
         description = 'True defect detected and held fail-closed by active specialists.';
+      } else if (hasMalformedSchema) {
+        outcome_class = 'MALFORMED_OBSERVATION_REJECTED';
+        is_sound = true;
+        defect_escaped = false;
+        defect_detected = false;
+        description = 'Observation rejected fail-closed due to malformed payload schema (protective hold; domain audit not executed, defect was not actively detected).';
       } else {
         outcome_class = 'PROTECTIVE_HOLD_UNMATCHED_DEFECT';
         is_sound = true;

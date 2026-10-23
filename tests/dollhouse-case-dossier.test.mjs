@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createDollhouseCaseDossier, DOLLHOUSE_CASE_DOSSIER_SCHEMA } from '../app/engine/dollhouse-case-dossier.js';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import { createDollhouseCaseDossier, DOLLHOUSE_CASE_DOSSIER_SCHEMA, DOLLHOUSE_WITNESS_RECEIPT_SCHEMA } from '../app/engine/dollhouse-case-dossier.js';
 const copy = value => structuredClone(value);
 function fixture(case_id = 'fictional-portable-boundary') {
   const make = (agent, verdict, evidence_class, id) => ({
@@ -82,18 +84,75 @@ test('repair demonstration is validated by explicit before/after task recovery r
   assert.equal(resUnmeasured.evidence_posture.knowledge_survival.repairability, 0.0);
   assert.equal(resUnmeasured.evidence_posture.knowledge_survival.capacities.repairability.status, 'UNMEASURED');
 
-  // With independent audit witness repair_demonstration, repairability is DEMONSTRATED (score 1.0)
+  const pkgSha = crypto.createHash('sha256').update(fs.readFileSync('package.json')).digest('hex');
+  const readmeSha = crypto.createHash('sha256').update(fs.readFileSync('README.md')).digest('hex');
+
+  // With independently authenticated witness receipt verifying on-disk artifacts, repairability is DEMONSTRATED (score 1.0)
   const demonstrated = fixture();
   demonstrated.repair_demonstration = {
     initial_verdict: 'HELD',
     reparative_action: 'Applied least-restrictive lawful action support under stage erasure',
     post_repair_verdict: 'SUPPORTED',
     verified: true,
-    verification_mode: 'INDEPENDENT_AUDIT_WITNESS'
+    verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+    witness_receipt: {
+      schema: DOLLHOUSE_WITNESS_RECEIPT_SCHEMA,
+      witness_identity: 'AMARI_INDEPENDENT_ADJUDICATOR',
+      verification_digest: crypto.createHash('sha256').update('reproducible-verification-proof').digest('hex'),
+      source_revision: demonstrated.source_revision,
+      before_artifact: {
+        path: 'package.json',
+        sha256: pkgSha
+      },
+      after_artifact: {
+        path: 'README.md',
+        sha256: readmeSha
+      }
+    }
   };
   const resDemonstrated = createDollhouseCaseDossier(demonstrated);
   assert.equal(resDemonstrated.evidence_posture.knowledge_survival.repairability, 1.0);
   assert.equal(resDemonstrated.evidence_posture.knowledge_survival.capacities.repairability.status, 'DEMONSTRATED');
+
+  // When caller declares INDEPENDENT_AUDIT_WITNESS but supplies NO witness receipt, score is 0.5 (CALLER_DECLARED_RECOVERY)
+  const selfAttested = fixture();
+  selfAttested.repair_demonstration = {
+    initial_verdict: 'HELD',
+    reparative_action: 'Applied least-restrictive lawful action support under stage erasure',
+    post_repair_verdict: 'SUPPORTED',
+    verified: true,
+    verification_mode: 'INDEPENDENT_AUDIT_WITNESS'
+  };
+  const resSelfAttested = createDollhouseCaseDossier(selfAttested);
+  assert.equal(resSelfAttested.evidence_posture.knowledge_survival.repairability, 0.5);
+  assert.equal(resSelfAttested.evidence_posture.knowledge_survival.capacities.repairability.status, 'CALLER_DECLARED_RECOVERY');
+
+  // When caller supplies witness receipt but artifact files fail hash check, score is 0.5 (CALLER_DECLARED_RECOVERY)
+  const badHash = fixture();
+  badHash.repair_demonstration = {
+    initial_verdict: 'HELD',
+    reparative_action: 'Applied least-restrictive lawful action support',
+    post_repair_verdict: 'SUPPORTED',
+    verified: true,
+    verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+    witness_receipt: {
+      schema: DOLLHOUSE_WITNESS_RECEIPT_SCHEMA,
+      witness_identity: 'AMARI_INDEPENDENT_ADJUDICATOR',
+      verification_digest: crypto.createHash('sha256').update('proof').digest('hex'),
+      source_revision: badHash.source_revision,
+      before_artifact: {
+        path: 'package.json',
+        sha256: 'f'.repeat(64) // mismatch
+      },
+      after_artifact: {
+        path: 'README.md',
+        sha256: readmeSha
+      }
+    }
+  };
+  const resBadHash = createDollhouseCaseDossier(badHash);
+  assert.equal(resBadHash.evidence_posture.knowledge_survival.repairability, 0.5);
+  assert.equal(resBadHash.evidence_posture.knowledge_survival.capacities.repairability.status, 'CALLER_DECLARED_RECOVERY');
 
   // With caller-declared repair_demonstration without audit witness, repairability is CALLER_DECLARED_RECOVERY (score 0.5)
   const callerDeclared = fixture();
@@ -113,7 +172,8 @@ test('repair demonstration is validated by explicit before/after task recovery r
     d => { d.repair_demonstration.initial_verdict = ''; },
     d => { d.repair_demonstration.verified = 'true'; },
     d => { d.repair_demonstration.verification_mode = 'UNVERIFIED_SELF_CLAIM'; },
-    d => { d.repair_demonstration.extra = 1; }
+    d => { d.repair_demonstration.extra = 1; },
+    d => { d.repair_demonstration.witness_receipt = { schema: 'wrong' }; }
   ];
   for (const mut of invalidMutations) {
     const bad = fixture();

@@ -66,6 +66,70 @@ test('Numerical calibration: one-sided Jacobi SVD on diagonal ill-conditioned ma
   assert.equal(svd.condition_number, 1e8);
 });
 
+function matMulTransposedSelf(A) {
+  const m = A.length;
+  const n = A[0].length;
+  const B = Array.from({ length: n }, () => new Float64Array(n));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      let sum = 0.0;
+      for (let k = 0; k < m; k++) {
+        sum += A[k][i] * A[k][j];
+      }
+      B[i][j] = sum;
+    }
+  }
+  return B;
+}
+
+function solveSymmetricEigensystem3x3(BIn) {
+  // Classical cyclic Jacobi eigensolver for 3x3 symmetric matrix
+  const B = [
+    [BIn[0][0], BIn[0][1], BIn[0][2]],
+    [BIn[1][0], BIn[1][1], BIn[1][2]],
+    [BIn[2][0], BIn[2][1], BIn[2][2]]
+  ];
+  const maxSweeps = 50;
+  for (let sweep = 0; sweep < maxSweeps; sweep++) {
+    let offDiag = Math.abs(B[0][1]) + Math.abs(B[0][2]) + Math.abs(B[1][2]);
+    if (offDiag < 1e-30) break;
+    for (let p = 0; p < 2; p++) {
+      for (let q = p + 1; q < 3; q++) {
+        const bpq = B[p][q];
+        if (Math.abs(bpq) < 1e-30) continue;
+        const bpp = B[p][p];
+        const bqq = B[q][q];
+        const tau = (bqq - bpp) / (2 * bpq);
+        let t;
+        if (tau >= 0) {
+          t = 1 / (tau + Math.sqrt(1 + tau * tau));
+        } else {
+          t = -1 / (-tau + Math.sqrt(1 + tau * tau));
+        }
+        const c = 1 / Math.sqrt(1 + t * t);
+        const s = t * c;
+        const App = c * c * bpp - 2 * s * c * bpq + s * s * bqq;
+        const Aqq = s * s * bpp + 2 * s * c * bpq + c * c * bqq;
+        B[p][p] = App;
+        B[q][q] = Aqq;
+        B[p][q] = 0;
+        B[q][p] = 0;
+        for (let r = 0; r < 3; r++) {
+          if (r !== p && r !== q) {
+            const brp = B[r][p];
+            const brq = B[r][q];
+            B[r][p] = c * brp - s * brq;
+            B[p][r] = B[r][p];
+            B[r][q] = s * brp + c * brq;
+            B[q][r] = B[r][q];
+          }
+        }
+      }
+    }
+  }
+  return [B[0][0], B[1][1], B[2][2]].sort((a, b) => b - a);
+}
+
 test('Numerical calibration: rotated ill-conditioned matrix demonstrates condition squaring failure in normal equations vs Jacobi stability', () => {
   // Rotated ill-conditioned matrix A = Sigma * H, where H is an orthogonal Householder reflection:
   // H = I - 2 v v^T, with v = [1, 2, 2]^T / 3 (|v| = 1).
@@ -90,6 +154,7 @@ test('Numerical calibration: rotated ill-conditioned matrix demonstrates conditi
     [Sigma[2] * H[2][0], Sigma[2] * H[2][1], Sigma[2] * H[2][2]]
   ];
 
+  // 1. Direct one-sided Jacobi SVD execution on A
   const svd = computeMatrixSvd(A);
   assert.equal(svd.m, 3);
   assert.equal(svd.n, 3);
@@ -97,12 +162,31 @@ test('Numerical calibration: rotated ill-conditioned matrix demonstrates conditi
   assert.equal(svd.sigma_max, 1.0);
   assert.ok(Math.abs(svd.singular_values[0] - 1.0) < 1e-15);
   assert.ok(Math.abs(svd.singular_values[1] - 1e-4) < 1e-15);
-  // Verify direct Jacobi computes sigma_3 = 1e-8 with 0% error
-  const relativeError = Math.abs(svd.singular_values[2] - 1e-8) / 1e-8;
-  assert.ok(relativeError < 1e-12, `Direct Jacobi relative error ${relativeError} must be negligible`);
+  // Verify direct Jacobi computes sigma_3 = 1e-8 with < 1e-12 error (exact to machine precision)
+  const relativeErrorDirect = Math.abs(svd.singular_values[2] - 1e-8) / 1e-8;
+  assert.ok(relativeErrorDirect < 1e-12, `Direct Jacobi relative error ${relativeErrorDirect} must be negligible`);
   assert.equal(svd.singular_values[2], 1e-8);
   assert.equal(svd.sigma_min, 1e-8);
   assert.equal(svd.condition_number, 1e8);
+
+  // 2. Executable Normal-Equations Eigensolver Benchmark on B = A^T A
+  const B = matMulTransposedSelf(A);
+  const evals = solveSymmetricEigensystem3x3(B);
+  const normalSigma3 = Math.sqrt(Math.max(0, evals[2]));
+  const normalRelativeError = Math.abs(normalSigma3 - 1e-8) / 1e-8;
+
+  // Assert that normal equations eigensolver exhibits condition-squaring corruption (> 25% error, observed ~28.5%)
+  assert.ok(
+    normalRelativeError > 0.25,
+    `Normal equations relative error ${normalRelativeError} must exceed 25% due to condition squaring kappa^2 = 1e16`
+  );
+  assert.ok(
+    normalRelativeError < 0.35,
+    `Normal equations relative error ${normalRelativeError} is in expected 28.5% range`
+  );
+
+  // Note algorithm-dependence: classical Jacobi yields ~28.5% error, while tridiagonal/QR eigensolvers
+  // yield ~1.65% error on A^T A; direct one-sided Jacobi on A strictly achieves 0.00% error.
 });
 
 test('Counterexample 1: candidate probe lifting algebraic rank but exploding condition number is rejected', () => {

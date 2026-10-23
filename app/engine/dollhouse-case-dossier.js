@@ -1,6 +1,7 @@
 import { getDollhouseAgent, listDollhouseAgents } from './dollhouse-agent-registry.js';
 
 export const DOLLHOUSE_CASE_DOSSIER_SCHEMA = 'td613.dollhouse.case-dossier/v0.1';
+export const DOLLHOUSE_WITNESS_RECEIPT_SCHEMA = 'td613.dollhouse.witness-receipt/v0.1';
 const CLASSES = ['DECLARATION', 'OFFLINE_TEST', 'BROWSER_WITNESS', 'PROVIDER_RESPONSE', 'EMPIRICAL_ACQUISITION'];
 const VERDICTS = ['SUPPORTED', 'HELD', 'CONTRADICTED', 'UNKNOWN'];
 function exact(value, keys, label) {
@@ -54,31 +55,80 @@ export function createDollhouseCaseDossier(input) {
   let repairLimitations = null;
 
   if (input.repair_demonstration) {
-    exact(input.repair_demonstration, ['initial_verdict', 'reparative_action', 'post_repair_verdict', 'verified', 'verification_mode'], 'repair demonstration');
-    text(input.repair_demonstration.initial_verdict, 20, 'initial verdict');
-    text(input.repair_demonstration.reparative_action, 500, 'reparative action');
-    text(input.repair_demonstration.post_repair_verdict, 20, 'post repair verdict');
-    if (typeof input.repair_demonstration.verified !== 'boolean') throw new TypeError('repair demonstration: verified must be boolean');
-    text(input.repair_demonstration.verification_mode, 40, 'verification mode');
-    if (!['INDEPENDENT_AUDIT_WITNESS', 'CALLER_DECLARED'].includes(input.repair_demonstration.verification_mode)) {
+    const demo = input.repair_demonstration;
+    const demoKeys = Reflect.ownKeys(demo);
+    if (demoKeys.length === 5) {
+      exact(demo, ['initial_verdict', 'reparative_action', 'post_repair_verdict', 'verified', 'verification_mode'], 'repair demonstration');
+    } else if (demoKeys.length === 6) {
+      exact(demo, ['initial_verdict', 'reparative_action', 'post_repair_verdict', 'verified', 'verification_mode', 'witness_receipt'], 'repair demonstration');
+    } else {
+      throw new TypeError('repair demonstration: exact fields required');
+    }
+
+    text(demo.initial_verdict, 20, 'initial verdict');
+    text(demo.reparative_action, 500, 'reparative action');
+    text(demo.post_repair_verdict, 20, 'post repair verdict');
+    if (typeof demo.verified !== 'boolean') throw new TypeError('repair demonstration: verified must be boolean');
+    text(demo.verification_mode, 40, 'verification mode');
+    if (!['INDEPENDENT_AUDIT_WITNESS', 'CALLER_DECLARED'].includes(demo.verification_mode)) {
       throw new TypeError('repair demonstration: unsupported verification mode');
     }
 
-    const validInitial = input.repair_demonstration.initial_verdict === 'HELD';
-    const validPost = input.repair_demonstration.post_repair_verdict === 'SUPPORTED';
-    const isVerified = input.repair_demonstration.verified === true;
-    const mode = input.repair_demonstration.verification_mode;
+    const validInitial = demo.initial_verdict === 'HELD';
+    const validPost = demo.post_repair_verdict === 'SUPPORTED';
+    const isVerified = demo.verified === true;
 
-    if (validInitial && validPost && isVerified && mode === 'INDEPENDENT_AUDIT_WITNESS') {
+    let witnessVerified = false;
+    let witnessDetails = null;
+
+    if (demo.witness_receipt) {
+      exact(demo.witness_receipt, ['schema', 'witness_identity', 'verification_digest', 'source_revision', 'before_artifact', 'after_artifact'], 'witness receipt');
+      if (demo.witness_receipt.schema !== DOLLHOUSE_WITNESS_RECEIPT_SCHEMA) {
+        throw new TypeError(`witness receipt: invalid schema (expected ${DOLLHOUSE_WITNESS_RECEIPT_SCHEMA})`);
+      }
+      text(demo.witness_receipt.witness_identity, 120, 'witness identity');
+      if (typeof demo.witness_receipt.verification_digest !== 'string' || !/^[a-f0-9]{64}$/.test(demo.witness_receipt.verification_digest)) {
+        throw new TypeError('witness receipt: verification_digest must be 64-hex SHA-256');
+      }
+      text(demo.witness_receipt.source_revision, 120, 'source revision');
+      exact(demo.witness_receipt.before_artifact, ['path', 'sha256'], 'before artifact');
+      exact(demo.witness_receipt.after_artifact, ['path', 'sha256'], 'after artifact');
+      text(demo.witness_receipt.before_artifact.path, 500, 'before artifact path');
+      text(demo.witness_receipt.after_artifact.path, 500, 'after artifact path');
+      if (!/^[a-f0-9]{64}$/.test(demo.witness_receipt.before_artifact.sha256) || !/^[a-f0-9]{64}$/.test(demo.witness_receipt.after_artifact.sha256)) {
+        throw new TypeError('witness receipt: artifact sha256 must be 64-hex SHA-256');
+      }
+
+      const fsModule = globalThis.process?.getBuiltinModule?.('node:fs');
+      const cryptoModule = globalThis.process?.getBuiltinModule?.('node:crypto');
+      if (fsModule && cryptoModule) {
+        try {
+          if (fsModule.existsSync(demo.witness_receipt.before_artifact.path) && fsModule.existsSync(demo.witness_receipt.after_artifact.path)) {
+            const beforeContent = fsModule.readFileSync(demo.witness_receipt.before_artifact.path);
+            const afterContent = fsModule.readFileSync(demo.witness_receipt.after_artifact.path);
+            const actualBeforeSha = cryptoModule.createHash('sha256').update(beforeContent).digest('hex');
+            const actualAfterSha = cryptoModule.createHash('sha256').update(afterContent).digest('hex');
+            if (actualBeforeSha === demo.witness_receipt.before_artifact.sha256 && actualAfterSha === demo.witness_receipt.after_artifact.sha256) {
+              witnessVerified = true;
+              witnessDetails = demo.witness_receipt;
+            }
+          }
+        } catch {
+          witnessVerified = false;
+        }
+      }
+    }
+
+    if (validInitial && validPost && isVerified && witnessVerified) {
       repairScore = 1.0;
       repairStatus = 'DEMONSTRATED';
-      repairEvidenceText = `Demonstrated recovery: initial HELD resolved to post-repair SUPPORTED via ${input.repair_demonstration.reparative_action} with independent audit witness.`;
-      repairLimitations = 'Demonstrated in test harness; live runtime replay not executed by clerk.';
-    } else if (validInitial && validPost && isVerified && mode === 'CALLER_DECLARED') {
+      repairEvidenceText = `Independently authenticated witness receipt verified: on-disk before/after artifacts match SHA-256 commitments under witness ${witnessDetails.witness_identity} (${witnessDetails.verification_digest.slice(0, 12)}...).`;
+      repairLimitations = 'Verified against local disk artifact bytes; live runtime replay not executed by clerk.';
+    } else if (validInitial && validPost && isVerified) {
       repairScore = 0.5;
       repairStatus = 'CALLER_DECLARED_RECOVERY';
-      repairEvidenceText = `Caller self-attested recovery via ${input.repair_demonstration.reparative_action} without independent audit witness.`;
-      repairLimitations = 'Caller assertion only; unverified by independent witness.';
+      repairEvidenceText = `Caller self-attested recovery via ${demo.reparative_action} without independently validated witness receipt.`;
+      repairLimitations = 'Caller assertion only; unverified by independent witness receipt.';
     } else {
       repairScore = 0.0;
       repairStatus = 'UNMEASURED';

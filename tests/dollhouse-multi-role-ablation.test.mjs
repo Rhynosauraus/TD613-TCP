@@ -11,6 +11,7 @@ import {
   ROLE_INFRACTIONS,
   FAILURE_MODES,
   DOLLHOUSE_ABLATION_EXPERIMENT_SCHEMA,
+  DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA,
   CANONICAL_EMPIRICAL_SCENARIOS
 } from '../app/engine/dollhouse-ablation-harness.js';
 
@@ -70,13 +71,35 @@ test('Unrecognized role identities and malformed schemas reject fail-closed', ()
   assert.equal(unknownRoleResult.detected_infractions[0], 'UNRECOGNIZED_ROLE_REJECTED');
   assert.equal(unknownRoleResult.findings[0].status, 'UNKNOWN_ROLE_REJECTED');
 
-  // 2. Malformed observation schema rejected fail-closed
+  // 2. Malformed observation schema rejected fail-closed without emitting domain infraction
   const malformedAperture = executeSpecialistRole('APERTURE', { arbitrary_field: 123 });
   assert.equal(malformedAperture.verdict, 'HELD');
   assert.equal(malformedAperture.status, 'MALFORMED_OBSERVATION_SCHEMA');
+  assert.deepEqual(malformedAperture.infractions, ['MALFORMED_OBSERVATION_SCHEMA']);
+  assert.ok(!malformedAperture.infractions.includes(ROLE_INFRACTIONS.APERTURE));
   assert.ok(malformedAperture.concern.includes('Malformed observation schema'));
 
-  // 3. Caller-declared verdict cannot override detected defect
+  // 3. clean: true bypass eliminated: clean: true is rejected as malformed schema rather than returning SUPPORTED
+  const cleanBypassPedagogue = executeSpecialistRole('PEDAGOGUE', { clean: true });
+  assert.equal(cleanBypassPedagogue.verdict, 'HELD');
+  assert.equal(cleanBypassPedagogue.status, 'MALFORMED_OBSERVATION_SCHEMA');
+  assert.deepEqual(cleanBypassPedagogue.infractions, ['MALFORMED_OBSERVATION_SCHEMA']);
+
+  // 4. Evaluator integrity: malformed schema hold evaluates to MALFORMED_OBSERVATION_REJECTED, NOT true defect detection
+  const malformedRun = runOrchestrationDecision(['APERTURE'], { APERTURE: { malformed: true } });
+  const evalMalformed = evaluateAblationOutcome(malformedRun, { verdict: 'HELD', defects: [ROLE_INFRACTIONS.APERTURE] });
+  assert.equal(evalMalformed.outcome_class, 'MALFORMED_OBSERVATION_REJECTED');
+  assert.equal(evalMalformed.is_sound, true);
+  assert.equal(evalMalformed.defect_escaped, false);
+  assert.equal(evalMalformed.defect_detected, false);
+
+  // 5. Evaluator rejects malformed or missing ground truth fail-closed
+  const evalBadGt = evaluateAblationOutcome(malformedRun, { invalid: 'ground-truth' });
+  assert.equal(evalBadGt.status, 'MALFORMED_GROUND_TRUTH_REJECTED');
+  assert.equal(evalBadGt.outcome_class, 'UNADJUDICATED');
+  assert.equal(evalBadGt.is_sound, false);
+
+  // 6. Caller-declared verdict cannot override detected defect
   const contaminatedInput = executeSpecialistRole('PEDAGOGUE', { concern: 'user navigation trap', verdict: 'SUPPORTED' });
   assert.equal(contaminatedInput.verdict, 'HELD');
   assert.equal(contaminatedInput.status, 'VIOLATION_DETECTED');
@@ -181,16 +204,32 @@ test('Empirical specialist trials: ablating specialized doll allows domain defec
 test('False consensus prevention: 5/5 role agreement on 1 receipt yields 1 empirical replication only', () => {
   // 1. Synthetic offline execution yields 0 empirical replications
   const syntheticResult = runOrchestrationDecision(FIVE_ROLES, mockAudits);
-  assert.equal(syntheticResult.replication_status, 'SYNTHETIC_EXECUTION_ZERO_EMPIRICAL_REPLICATION');
+  assert.equal(syntheticResult.replication_status, 'SYNTHETIC_OFFLINE_FIXTURE');
   assert.equal(syntheticResult.empirical_replication_count, 0);
   assert.equal(syntheticResult.independent_replication, false);
 
-  // 2. Shared empirical acquisition yields at most 1 empirical replication
-  const empiricalAudits = { ...mockAudits, acquisition_class: 'EMPIRICAL_ACQUISITION' };
-  const empiricalResult = runOrchestrationDecision(FIVE_ROLES, empiricalAudits);
-  assert.equal(empiricalResult.replication_status, 'SHARED_ACQUISITION_NOT_INDEPENDENT_REPLICATION');
-  assert.equal(empiricalResult.empirical_replication_count, 1);
-  assert.equal(empiricalResult.independent_replication, false);
+  // 2. Caller-declared empirical string without receipt yields 0 empirical replications (cannot manufacture credit)
+  const callerDeclaredAudits = { ...mockAudits, acquisition_class: 'EMPIRICAL_ACQUISITION' };
+  const callerDeclaredResult = runOrchestrationDecision(FIVE_ROLES, callerDeclaredAudits);
+  assert.equal(callerDeclaredResult.replication_status, 'CALLER_DECLARED_UNAUTHENTICATED_EMPIRICAL');
+  assert.equal(callerDeclaredResult.empirical_replication_count, 0);
+  assert.equal(callerDeclaredResult.independent_replication, false);
+
+  // 3. Authenticated empirical acquisition receipt yields at most 1 empirical replication
+  const authenticatedAudits = {
+    ...mockAudits,
+    acquisition_class: 'EMPIRICAL_ACQUISITION',
+    acquisition_receipt: {
+      schema: DOLLHOUSE_ACQUISITION_RECEIPT_SCHEMA,
+      acquisition_boundary: 'NEON_HOSTED_DURABLE_HEAD_OBSERVATORY',
+      receipt_sha256: 'c'.repeat(64),
+      verified: true
+    }
+  };
+  const authenticatedResult = runOrchestrationDecision(FIVE_ROLES, authenticatedAudits);
+  assert.equal(authenticatedResult.replication_status, 'AUTHENTICATED_EMPIRICAL_ACQUISITION');
+  assert.equal(authenticatedResult.empirical_replication_count, 1);
+  assert.equal(authenticatedResult.independent_replication, false);
 });
 
 test('runCompleteDollhouseAblation runs all 13 conditions and proves non-redundancy', () => {

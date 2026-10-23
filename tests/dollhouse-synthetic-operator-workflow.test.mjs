@@ -36,7 +36,7 @@ import {
 import { runTemporalCustodianAudit } from '../app/engine/dollhouse-temporal-custodian.js';
 
 // 6. Orchestrator Case Dossier & Multi-Role Ablation
-import { createDollhouseCaseDossier } from '../app/engine/dollhouse-case-dossier.js';
+import { createDollhouseCaseDossier, DOLLHOUSE_WITNESS_RECEIPT_SCHEMA } from '../app/engine/dollhouse-case-dossier.js';
 import { runCompleteDollhouseAblation } from '../app/engine/dollhouse-ablation-harness.js';
 
 test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, Reparative Recovery, and Orchestrator Necessity', async (t) => {
@@ -204,7 +204,21 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
         reparative_action: 'Operator adopted canonical cadence, well-conditioned aperture probe, zero-winding atlas path, and largest sound FADT support',
         post_repair_verdict: 'SUPPORTED',
         verified: true,
-        verification_mode: 'INDEPENDENT_AUDIT_WITNESS'
+        verification_mode: 'INDEPENDENT_AUDIT_WITNESS',
+        witness_receipt: {
+          schema: DOLLHOUSE_WITNESS_RECEIPT_SCHEMA,
+          witness_identity: 'AMARI_INDEPENDENT_ADJUDICATOR',
+          verification_digest: fileSha256('app/engine/dollhouse-case-dossier.js'),
+          source_revision: '78c7ea6b974e176611fb2ed4d0c59649ebf05f62',
+          before_artifact: {
+            path: 'app/engine/dollhouse-pedagogue-dromological.js',
+            sha256: fileSha256('app/engine/dollhouse-pedagogue-dromological.js')
+          },
+          after_artifact: {
+            path: 'app/engine/aperture-v32-typed-epistemic-deficit.js',
+            sha256: fileSha256('app/engine/aperture-v32-typed-epistemic-deficit.js')
+          }
+        }
       },
       findings: [
         {
@@ -329,7 +343,7 @@ test('SYNTHETIC OPERATOR WORKFLOW: Demonstration of 5-Doll Scientific Fidelity, 
 
     // Verify false consensus defense on offline synthetic execution vs shared acquisition
     assert.equal(ablationReport.replication_audit.empirical_replication_count, 0);
-    assert.equal(ablationReport.replication_audit.status, 'SYNTHETIC_EXECUTION_ZERO_EMPIRICAL_REPLICATION');
+    assert.equal(ablationReport.replication_audit.status, 'SYNTHETIC_OFFLINE_FIXTURE');
   });
 
 });
