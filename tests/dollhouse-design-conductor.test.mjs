@@ -136,6 +136,35 @@ test('TD613 Dollhouse Design Conductor - runDollhouseDesignCycle Full Execution'
   assert.equal(receipt.governance.human_closure_required, true);
 });
 
+test('TD613 Dollhouse Design Conductor - Refractive parameter dynamic derivation and causality trace', async () => {
+  // Test 1: Explicit declared mutation parameter is preserved
+  const receiptExplicit = await runDollhouseDesignCycle({
+    seed: 'Estuary Title Dissolution',
+    medium: 'SCHOLARLY',
+    instruments: ['CARO_INSTITUTIONAL_RECONSTRUCTION', 'SEDGWICK_REPARATIVE_TEXTURE'],
+    refractive_parameters: {
+      mutated_parameter: 'perspective_shift',
+      mutation_description: 'Shift focus from colonial surveyor to intertidal commoner',
+      formal_consequence: 'Contrasts sovereign boundary enforcement with communal seasonal access',
+      instruction_trace: 'Frame the primary text through the surveyor and the refraction through the commoner'
+    }
+  });
+
+  assert.equal(receiptExplicit.refractive_variant.mutated_parameter, 'perspective_shift');
+  assert.equal(receiptExplicit.refractive_variant.mutation_description, 'Shift focus from colonial surveyor to intertidal commoner');
+  assert.equal(receiptExplicit.refractive_variant.instruction_trace, 'Frame the primary text through the surveyor and the refraction through the commoner');
+
+  // Test 2: Default profile derived dynamically from primary instrument
+  const receiptButler = await runDollhouseDesignCycle({
+    seed: 'Normative Language Reiteration',
+    medium: 'THEORETICAL',
+    instruments: ['BUTLER_PERFORMATIVE_ITERATION']
+  });
+
+  assert.equal(receiptButler.refractive_variant.mutated_parameter, 'citational_conformity');
+  assert.ok(receiptButler.refractive_variant.instruction_trace.includes('variance'));
+});
+
 test('TD613 Dollhouse Design Conductor - Deep Immutability of Returned Receipt', async () => {
   const receipt = await runDollhouseDesignCycle({
     seed: 'Immutable Artifact Test',

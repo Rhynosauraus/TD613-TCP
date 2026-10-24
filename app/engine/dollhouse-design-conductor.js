@@ -180,27 +180,77 @@ export async function runDollhouseDesignCycle(commissionInput = {}) {
   };
 
   // 4. REFRACT (Controlled Counterfactual Variant)
+  const defaultRefractiveProfiles = {
+    PHASONIC_COUNTERPOINT: {
+      mutated_parameter: 'temporal_revelation_order',
+      mutation_description: 'Reverses the sequence: reveals path divergence first, and shared endpoint alibi second.',
+      formal_consequence: 'Changes the work from an exposure of institutional erasure into a study of inevitable convergence.',
+      material_difference: 'The viewer witnesses the divergence before discovering they were destined for the same door.',
+      instruction_trace: 'Choreograph the trajectory so the observer witnesses divergence before discovering the shared endpoint.'
+    },
+    CARO_INSTITUTIONAL_RECONSTRUCTION: {
+      mutated_parameter: 'administrative_friction_inversion',
+      mutation_description: 'Inverts the vantage point from sovereign bureaucratic gatekeeper to the affected citizen traversing the corridor.',
+      formal_consequence: 'Shifts from documenting administrative machinery to measuring the human exhaustion of delay.',
+      material_difference: 'The composition is framed through the citizen waiting room rather than the executive drafting chamber.',
+      instruction_trace: 'Reconstruct the physical and procedural friction from the standpoint of the delayed applicant.'
+    },
+    BUTLER_PERFORMATIVE_ITERATION: {
+      mutated_parameter: 'citational_conformity',
+      mutation_description: 'Shifts from compliant ritual repetition to subversive slippage across iterations.',
+      formal_consequence: 'Discloses the fragility of sovereign norms through imperfect mimicry.',
+      material_difference: 'Iterative copies introduce uncontrollable variance that destabilizes the original authority.',
+      instruction_trace: 'Structure each repetition to amplify marginal variance against the declared norm.'
+    },
+    SEDGWICK_REPARATIVE_TEXTURE: {
+      mutated_parameter: 'hermeneutic_posture',
+      mutation_description: 'Shifts from paranoid exposure of sovereign harm to paratactic affective survival.',
+      formal_consequence: 'Gathers discarded textures and communal practices beside the official ledger.',
+      material_difference: 'Replaces forensic prosecution of the censor with an inhabitable shelter of shared memory.',
+      instruction_trace: 'Assemble unofficial communal survival fragments in side-by-side parataxis with the sovereign decree.'
+    },
+    DIALECTICAL_TENSION: {
+      mutated_parameter: 'polyphonic_hierarchy',
+      mutation_description: 'Inverts the dominant and counter-melody lines without allowing synthesis.',
+      formal_consequence: 'Forces the audience to sustain contradictory claims simultaneously.',
+      material_difference: 'Elevates the suppressed counter-premise into structural dominance while preserving the interval.',
+      instruction_trace: 'Counter-pose thesis and antithesis without resolving them into a harmonious third term.'
+    }
+  };
+
+  const primaryInst = commission.instruments[0] || 'PHASONIC_COUNTERPOINT';
+  const defaultProfile = defaultRefractiveProfiles[primaryInst] || defaultRefractiveProfiles.PHASONIC_COUNTERPOINT;
+
+  const rawParams = commission.refractive_parameters || {};
+  const mutatedParameter = String(rawParams.mutated_parameter || Object.keys(rawParams)[0] || defaultProfile.mutated_parameter);
+  const mutationDescription = String(rawParams.mutation_description || rawParams[mutatedParameter] || defaultProfile.mutation_description);
+  const formalConsequence = String(rawParams.formal_consequence || defaultProfile.formal_consequence);
+  const materialDifference = String(rawParams.material_difference || defaultProfile.material_difference);
+  const instructionTrace = String(rawParams.instruction_trace || defaultProfile.instruction_trace);
+
   const refractiveVariant = {
     id: `${commission.commission_id}-REFRACT-01`,
-    mutated_parameter: 'temporal_revelation_order',
-    mutation_description: 'Reverses the sequence: reveals the difference first, and the shared terminal alibi second.',
-    formal_consequence: 'Changes the work from an exposure of institutional erasure into a study of inevitable convergence.',
-    material_difference: 'The viewer witnesses the divergence before discovering they were destined for the same door.'
+    governing_instrument: commission.instruments[1] || commission.instruments[0],
+    mutated_parameter: mutatedParameter,
+    mutation_description: mutationDescription,
+    formal_consequence: formalConsequence,
+    material_difference: materialDifference,
+    instruction_trace: instructionTrace
   };
 
   // 5. COMPARE (What survived, what changed, open decisions)
   const comparativeAnalysis = {
     shared_invariants: [
-      'Boundary terminal equivalence is formally retained',
-      'Path length divergence remains strictly observable',
+      `The core intellectual seed ("${commission.seed}") is held invariant across both realizations`,
+      `Both variants inhabit the declared medium: ${commission.medium}`,
       'No scalar utility score or automatic aesthetic crown is applied'
     ],
     divergent_qualities: [
-      'Candidate A builds dramatic tension toward an unexpected divergence',
-      'Candidate B confronts the viewer with the cost of convergence from the outset'
+      `Candidate A operates under primary instrument ${primaryInst}: ${candidateA.formal_proposition}`,
+      `Refractive Variant mutates [${mutatedParameter}]: ${formalConsequence}`
     ],
     open_aesthetic_questions: [
-      'Does the composition require explicit mathematical readouts, or does pure visual/rhetorical form suffice?',
+      `Does the materialization of [${mutatedParameter}] successfully alter the observer's understanding of the seed?`,
       'Should the refractive variant be preserved as an independent counterpart or kept as development scaffolding?'
     ]
   };
@@ -208,14 +258,22 @@ export async function runDollhouseDesignCycle(commissionInput = {}) {
   // 6. INSTRUMENT PROVENANCE LEDGER
   const instrumentProvenance = commission.instruments.map(instId => {
     const inst = AVAILABLE_INSTRUMENTS[instId];
+    let contrib = 'Supplied formal generative grammar';
+    if (inst.id === 'PHASONIC_COUNTERPOINT') {
+      contrib = 'Supplied D₃ periodic scaffold, φ quasiperiodic detour equations, and interference field';
+    } else if (inst.id === 'CARO_INSTITUTIONAL_RECONSTRUCTION') {
+      contrib = 'Supplied procedural friction, statutory cross-referencing, and corridor resistance';
+    } else if (inst.id === 'BUTLER_PERFORMATIVE_ITERATION') {
+      contrib = 'Supplied ritualized citational reiteration and subversive slippage across repetitions';
+    } else if (inst.id === 'SEDGWICK_REPARATIVE_TEXTURE') {
+      contrib = 'Supplied paratactic beside-ness, textural granularity, and affective survival';
+    } else if (inst.id === 'DIALECTICAL_TENSION') {
+      contrib = 'Supplied polyphonic contrapuntal resistance and non-synthesizing tension';
+    }
     return {
       instrument_id: inst.id,
       lineage: inst.lineage,
-      material_contribution: inst.id === 'PHASONIC_COUNTERPOINT'
-        ? 'Supplied the D₃ scaffold and φ counterlayer timing equations'
-        : inst.id === 'CARO_INSTITUTIONAL_RECONSTRUCTION'
-        ? 'Supplied procedural friction and physical corridor resistance'
-        : 'Supplied contrapuntal antithesis and textural nuance'
+      material_contribution: contrib
     };
   });
 
