@@ -14,12 +14,12 @@ The **TD613 Dollhouse** is a repository-native six-role scientific orchestration
 
 | Role | Operational Function | Primary Domain Engine | Core Research Lineage |
 |---|---|---|---|
-| **PEDAGOGUE** | Consequence order, dromology, route burden, rest/exit | [`dollhouse-pedagogue-dromological.js`](app/engine/dollhouse-pedagogue-dromological.js) | [`PEDAGOGUE.md`](PEDAGOGUE.md) |
-| **APERTURE** | Observability, identifiability, SVD conditioning, noise geometry | [`aperture-v32-typed-epistemic-deficit.js`](app/engine/aperture-v32-typed-epistemic-deficit.js) | [`APERTURE.md`](APERTURE.md) |
-| **ATLAS** | Receiver-relative identity, holonomy history, profile bridges | [`dollhouse-atlas-relational-custody.js`](app/engine/dollhouse-atlas-relational-custody.js) | [`ATLAS.md`](ATLAS.md) |
-| **FADT** | Finite quotient fibers, irreducible gaps, bounded search | [`dollhouse-fadt-reparative-assistance.js`](app/engine/dollhouse-fadt-reparative-assistance.js) | [`FADT.md`](FADT.md) |
-| **TEMPORAL CUSTODIAN** | Monotonic chronology, predecessor chains, attempt lineage | [`dollhouse-temporal-custodian.js`](app/engine/dollhouse-temporal-custodian.js) | [`DOLLHOUSE.md`](DOLLHOUSE.md) |
-| **ORCHESTRATOR** | Multi-role evidence adjudication, consensus, replication | [`dollhouse-ablation-harness.js`](app/engine/dollhouse-ablation-harness.js) | [`DOLLHOUSE.md`](DOLLHOUSE.md) |
+| **PEDAGOGUE** | Consequence order, dromology, route burden, rest/exit | [`dollhouse-pedagogue-dromological.js`](../../../app/engine/dollhouse-pedagogue-dromological.js) | [`PEDAGOGUE.md`](../../../PEDAGOGUE.md) |
+| **APERTURE** | Observability, identifiability, SVD conditioning, noise geometry | [`aperture-v32-typed-epistemic-deficit.js`](../../../app/engine/aperture-v32-typed-epistemic-deficit.js) | [`APERTURE.md`](../../../APERTURE.md) |
+| **ATLAS** | Receiver-relative identity, holonomy history, profile bridges | [`dollhouse-atlas-relational-custody.js`](../../../app/engine/dollhouse-atlas-relational-custody.js) | [`ATLAS.md`](../../../ATLAS.md) |
+| **FADT** | Finite quotient fibers, irreducible gaps, bounded search | [`dollhouse-fadt-reparative-assistance.js`](../../../app/engine/dollhouse-fadt-reparative-assistance.js) | [`FADT.md`](../../../FADT.md) |
+| **TEMPORAL CUSTODIAN** | Monotonic chronology, predecessor chains, attempt lineage | [`dollhouse-temporal-custodian.js`](../../../app/engine/dollhouse-temporal-custodian.js) | [`DOLLHOUSE.md`](../../../DOLLHOUSE.md) |
+| **ORCHESTRATOR** | Multi-role evidence adjudication, consensus, replication | [`dollhouse-ablation-harness.js`](../../../app/engine/dollhouse-ablation-harness.js) | [`DOLLHOUSE.md`](../../../DOLLHOUSE.md) |
 
 > [!IMPORTANT]
 > **Subagent Prose is Never a Substitute for Engine Execution.**
@@ -42,7 +42,7 @@ Activate `/dollhouse-audit` or invoke it programmatically when:
 
 ### 1. Deterministic CLI Invocation
 
-The skill is backed by the repository entrypoint [`scripts/run-dollhouse-skill-audit.mjs`](scripts/run-dollhouse-skill-audit.mjs):
+The skill is backed by the repository entrypoint [`scripts/run-dollhouse-skill-audit.mjs`](../../../scripts/run-dollhouse-skill-audit.mjs):
 
 ```bash
 # Complete five-specialist audit with Orchestrator adjudication

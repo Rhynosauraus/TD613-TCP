@@ -169,6 +169,16 @@ async function main() {
     }
   }
 
+  // Caller input JSON allow_overwrite is untrusted and NEVER authorizes overwriting.
+  // Overwrite authority requires explicit operator command line flag --allow-overwrite / -w.
+  if (!cliOpts.allow_overwrite) {
+    delete auditPayload.allow_overwrite;
+    if (auditPayload.options) {
+      delete auditPayload.options.allow_overwrite;
+      delete auditPayload.options.operator_authorized_overwrite;
+    }
+  }
+
   // CLI flags override input JSON fields
   if (cliOpts.roles.length > 0) {
     auditPayload.roles = cliOpts.roles;
@@ -196,7 +206,11 @@ async function main() {
   }
   if (cliOpts.allow_overwrite) {
     auditPayload.allow_overwrite = true;
-    auditPayload.options = { ...(auditPayload.options || {}), allow_overwrite: true };
+    auditPayload.options = {
+      ...(auditPayload.options || {}),
+      allow_overwrite: true,
+      operator_authorized_overwrite: true
+    };
   }
   if (cliOpts.strict_provenance) {
     auditPayload.options = { ...(auditPayload.options || {}), strict_provenance: true };

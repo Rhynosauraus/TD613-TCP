@@ -662,8 +662,10 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
   // 26. Strict distinction between synthetic fault injection and observed source defects (Redline Item 7)
   // -------------------------------------------------------------------------
   await t.test('26. Strict distinction between synthetic fault injection and observed source defects', async () => {
-    // Authentic domain calculation defect (observed source defect)
+    // Authentic domain calculation defect under declared source code audit
     const authenticDefect = await runDollhouseSkillAudit({
+      evidence_class: 'SOURCE_CODE_AUDIT',
+      evidence_references: ['app/engine/dollhouse-skill-dispatcher.js'],
       domain_inputs: {
         ...ALL_BENIGN_DOMAIN_INPUTS,
         APERTURE: {
@@ -719,5 +721,315 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     assert.equal(resReadiness.machine_receipt.orchestrator.decision, 'HELD');
     assert.equal(resReadiness.machine_receipt.orchestrator.consensus, 'UNANIMOUS_HOLD');
     assert.equal(resReadiness.machine_receipt.detected_infractions.length, 5);
+  });
+
+  // =========================================================================
+  // ARTIFACT 39 MANDATORY REGRESSION COUNTEREXAMPLES (11 REQUIRED CASES)
+  // =========================================================================
+
+  // -------------------------------------------------------------------------
+  // 28. (Artifact 39 C1) Atlas valid seam recorded without false hold from missing .verified
+  // -------------------------------------------------------------------------
+  await t.test('28. (Artifact 39 C1) Atlas valid seam recorded without false hold from missing .verified', async () => {
+    const payload = { fold: 4, weather_phase: 'cyclonic' };
+    const digest = 'fnv32:22f3e8eb'; // Atlas v1 typed digest
+    const res = await runDollhouseSkillAudit({
+      roles: ['ATLAS'],
+      include_orchestrator: false,
+      domain_inputs: {
+        ATLAS: {
+          previous: {
+            payload,
+            metadata: { artifact_digest: digest, profile: 'atlas-v1' },
+            projection: { view: 'PRIMARY' }
+          },
+          current: {
+            payload,
+            metadata: { artifact_digest: digest, profile: 'atlas-v1' },
+            projection: { view: 'SECONDARY' }
+          }
+        }
+      }
+    });
+
+    assert.equal(res.exit_code, 0);
+    const atlasFinding = res.machine_receipt.specialist_findings[0];
+    assert.equal(atlasFinding.verdict, 'SUPPORTED');
+    assert.equal(atlasFinding.status, 'SEAM_DETECTED');
+    assert.ok(atlasFinding.extensions?.phason_custody_diff);
+    assert.equal(atlasFinding.extensions.phason_custody_diff.status, 'SEAM_DETECTED');
+    assert.equal(atlasFinding.extensions.phason_custody_diff.content_invariant, true);
+    assert.equal(atlasFinding.extensions.phason_custody_diff.projection_changed, true);
+  });
+
+  // -------------------------------------------------------------------------
+  // 29. (Artifact 39 C2) Atlas invalid or corrupted seam produces expected hold
+  // -------------------------------------------------------------------------
+  await t.test('29. (Artifact 39 C2) Atlas invalid or corrupted seam produces expected hold', async () => {
+    const payload = { fold: 4, weather_phase: 'cyclonic' };
+    const corruptedDigest = 'fnv32:ffffffff';
+    const res = await runDollhouseSkillAudit({
+      roles: ['ATLAS'],
+      include_orchestrator: false,
+      domain_inputs: {
+        ATLAS: {
+          previous: {
+            payload,
+            metadata: { artifact_digest: corruptedDigest, profile: 'atlas-v1' }
+          },
+          current: {
+            payload,
+            metadata: { artifact_digest: corruptedDigest, profile: 'atlas-v1' }
+          }
+        }
+      }
+    });
+
+    assert.equal(res.exit_code, 1);
+    const atlasFinding = res.machine_receipt.specialist_findings[0];
+    assert.equal(atlasFinding.verdict, 'HELD');
+    assert.equal(atlasFinding.status, 'VIOLATION_DETECTED');
+    assert.ok(res.machine_receipt.detected_infractions.includes('HOLD_DIGEST_PAYLOAD_MISMATCH'));
+  });
+
+  // -------------------------------------------------------------------------
+  // 30. (Artifact 39 C3) FADT coordinate recovery handles two-argument signature correctly
+  // -------------------------------------------------------------------------
+  await t.test('30. (Artifact 39 C3) FADT coordinate recovery handles two-argument signature correctly', async () => {
+    const collidingFiberRows = [
+      { support: ['READ'], antecedent: { x: 0, y: 1 } },
+      { support: ['WRITE'], antecedent: { x: 1, y: 1 } }
+    ];
+    const candidateCoordinates = ['x'];
+
+    const res = await runDollhouseSkillAudit({
+      roles: ['FADT'],
+      include_orchestrator: false,
+      domain_inputs: {
+        FADT: {
+          collidingFiberRows,
+          candidateCoordinates
+        }
+      }
+    });
+
+    assert.equal(res.exit_code, 0);
+    const fadtFinding = res.machine_receipt.specialist_findings[0];
+    assert.equal(fadtFinding.verdict, 'SUPPORTED');
+    assert.equal(fadtFinding.status, 'RESTORING_COORDINATE_EXTENSION_FOUND');
+    assert.ok(fadtFinding.extensions?.coordinate_recovery);
+    assert.deepEqual(fadtFinding.extensions.coordinate_recovery.best_extension, ['x']);
+  });
+
+  // -------------------------------------------------------------------------
+  // 31. (Artifact 39 C4) FADT recovery rejects searches exceeding 10,000 combinations with UNSUPPORTED_SEARCH_SIZE
+  // -------------------------------------------------------------------------
+  await t.test('31. (Artifact 39 C4) FADT recovery rejects searches exceeding 10,000 combinations with UNSUPPORTED_SEARCH_SIZE', async () => {
+    const collidingFiberRows = [
+      { support: ['READ'], antecedent: { x: 0, y: 1 } },
+      { support: ['WRITE'], antecedent: { x: 1, y: 1 } }
+    ];
+    // 14 candidate coordinates => 2^14 - 1 = 16,383 > 10,000 budget limit
+    const candidateCoordinates = Array.from({ length: 14 }, (_, i) => `c_${i}`);
+
+    const res = await runDollhouseSkillAudit({
+      roles: ['FADT'],
+      include_orchestrator: false,
+      domain_inputs: {
+        FADT: {
+          collidingFiberRows,
+          candidateCoordinates
+        }
+      }
+    });
+
+    assert.equal(res.exit_code, 1);
+    const fadtFinding = res.machine_receipt.specialist_findings[0];
+    assert.equal(fadtFinding.verdict, 'HELD');
+    assert.equal(fadtFinding.status, 'VIOLATION_DETECTED');
+    assert.ok(res.machine_receipt.detected_infractions.includes('UNSUPPORTED_SEARCH_SIZE'));
+    assert.equal(fadtFinding.extensions.coordinate_recovery.status, 'UNSUPPORTED_SEARCH_SIZE');
+    assert.equal(fadtFinding.extensions.coordinate_recovery.budget_exceeded, true);
+  });
+
+  // -------------------------------------------------------------------------
+  // 32. (Artifact 39 C5) Temporal Custodian ledger/chronology defect triggers binding hold via actual schema properties
+  // -------------------------------------------------------------------------
+  await t.test('32. (Artifact 39 C5) Temporal Custodian ledger/chronology defect triggers binding hold via actual schema properties', async () => {
+    const fixture = JSON.parse(readFileSync('tests/fixtures/dollhouse/bounded-orchestrator-case.json', 'utf8')).temporal;
+    // Mutate baseline historical field (retroactive historical mutation)
+    fixture.ledger_entries[0].state = 'MUTATED_BASELINE_FIELD';
+
+    const res = await runDollhouseSkillAudit({
+      roles: ['TEMPORAL_CUSTODIAN'],
+      include_orchestrator: false,
+      domain_inputs: {
+        TEMPORAL_CUSTODIAN: {
+          temporal_input: fixture
+        }
+      }
+    });
+
+    assert.equal(res.exit_code, 1);
+    const temporalFinding = res.machine_receipt.specialist_findings[0];
+    assert.equal(temporalFinding.verdict, 'HELD');
+    assert.equal(temporalFinding.status, 'VIOLATION_DETECTED');
+    assert.ok(temporalFinding.extensions?.temporal_audit);
+    assert.equal(temporalFinding.extensions.temporal_audit.verdict, 'FAIL');
+    assert.ok(temporalFinding.infractions.includes('RETROACTIVE_HISTORICAL_MUTATION'));
+  });
+
+  // -------------------------------------------------------------------------
+  // 33. (Artifact 39 C6) Nonexistent git commit SHA produces git_commit_verified: false and explicit hold
+  // -------------------------------------------------------------------------
+  await t.test('33. (Artifact 39 C6) Nonexistent git commit SHA produces git_commit_verified: false and explicit hold', async () => {
+    const nonexistentCommit = '0123456789abcdef0123456789abcdef01234567';
+    const res = await runDollhouseSkillAudit({
+      source_revision: nonexistentCommit,
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(res.exit_code, 1);
+    assert.equal(res.machine_receipt.source_revision_verified, false);
+    assert.ok(res.machine_receipt.detected_infractions.includes('HOLD_SOURCE_REVISION_NOT_IN_LOCAL_HISTORY'));
+  });
+
+  // -------------------------------------------------------------------------
+  // 34. (Artifact 39 C7) Standalone 64-character digest without file bytes marked unverified
+  // -------------------------------------------------------------------------
+  await t.test('34. (Artifact 39 C7) Standalone 64-character digest without file bytes marked unverified', async () => {
+    const standaloneHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+    const validation = verifyEvidenceReferences([standaloneHash]);
+
+    assert.equal(validation.all_verified, false);
+    assert.equal(validation.manifest.length, 1);
+    assert.equal(validation.manifest[0].type, 'STANDALONE_CONTENT_DIGEST');
+    assert.equal(validation.manifest[0].verified, false);
+    assert.equal(validation.manifest[0].byte_digest_verified, false);
+    assert.equal(validation.manifest[0].provenance_tier, 'UNVERIFIED_DIGEST_DECLARATION');
+    assert.ok(validation.infractions.includes('HOLD_UNVERIFIED_STANDALONE_DIGEST'));
+  });
+
+  // -------------------------------------------------------------------------
+  // 35. (Artifact 39 C8) Failed dossier creation produces binding hold when requested
+  // -------------------------------------------------------------------------
+  await t.test('35. (Artifact 39 C8) Failed dossier creation produces binding hold when requested', async () => {
+    const res = await runDollhouseSkillAudit({
+      create_case_dossier: true,
+      dossier_spec: null, // missing dossier spec triggers failure
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(res.exit_code, 1);
+    assert.ok(res.machine_receipt.detected_infractions.includes('HOLD_CASE_DOSSIER_CREATION_FAILED'));
+    assert.equal(res.machine_receipt.orchestrator.decision, 'HELD');
+    assert.ok(res.machine_receipt.case_dossier.error);
+  });
+
+  // -------------------------------------------------------------------------
+  // 36. (Artifact 39 C9) Receipt writing rejects symlink redirection and unauthorized overwrites
+  // -------------------------------------------------------------------------
+  await t.test('36. (Artifact 39 C9) Receipt writing rejects symlink redirection and unauthorized overwrites', async () => {
+    const tempDir = join(tmpdir(), `td613-dollhouse-symlink-test-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+    const targetFile = join(tempDir, 'existing-receipt.json');
+    writeFileSync(targetFile, JSON.stringify({ protected: true }), 'utf8');
+
+    // 1. Unauthorized overwrite must throw HOLD_ARTIFACT_EXISTS_OVERWRITE_PREVENTED
+    await assert.rejects(
+      async () => {
+        await writeReceiptArtifact(targetFile, { test: 1 }, '# Receipt', {
+          operator_authorized_overwrite: false
+        });
+      },
+      /HOLD_ARTIFACT_EXISTS_OVERWRITE_PREVENTED/
+    );
+
+    // 2. Symlink redirection check
+    const symlinkPath = join(tempDir, 'receipt-symlink.json');
+    let symlinkCreated = false;
+    try {
+      const { symlinkSync } = await import('node:fs');
+      symlinkSync(targetFile, symlinkPath);
+      symlinkCreated = true;
+    } catch {}
+
+    if (symlinkCreated) {
+      await assert.rejects(
+        async () => {
+          await writeReceiptArtifact(symlinkPath, { test: 1 }, '# Receipt', {
+            operator_authorized_overwrite: true
+          });
+        },
+        /HOLD_ARTIFACT_SYMLINK_REDIRECTION_REJECTED/
+      );
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // 37. (Artifact 39 C10) Synthetic fixture violation labeled SYNTHETIC_MATHEMATICAL_VIOLATION
+  // -------------------------------------------------------------------------
+  await t.test('37. (Artifact 39 C10) Synthetic fixture violation labeled SYNTHETIC_MATHEMATICAL_VIOLATION', async () => {
+    const res = await runDollhouseSkillAudit({
+      evidence_class: 'SYNTHETIC_TEST_FIXTURE',
+      domain_inputs: {
+        ...ALL_BENIGN_DOMAIN_INPUTS,
+        APERTURE: {
+          current_operator: [[1.0, 0.0], [1.0, 1e-5]]
+        }
+      }
+    });
+
+    const apertureFinding = res.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
+    assert.equal(apertureFinding.verdict, 'HELD');
+    assert.equal(apertureFinding.defect_class, 'SYNTHETIC_MATHEMATICAL_VIOLATION');
+    assert.equal(apertureFinding.is_synthetic_injection, false);
+  });
+
+  // -------------------------------------------------------------------------
+  // 38. (Artifact 39 C11) Documentation links in .agents/ resolve to existing files
+  // -------------------------------------------------------------------------
+  await t.test('38. (Artifact 39 C11) Documentation links in .agents/ resolve to existing files', async () => {
+    const { readdirSync, statSync, readFileSync: rfs, existsSync: exs } = await import('node:fs');
+    const { resolve: rsv, dirname: dnm, join: jn } = await import('node:path');
+
+    function collectMarkdownFiles(dir) {
+      let results = [];
+      for (const entry of readdirSync(dir)) {
+        const full = jn(dir, entry);
+        if (statSync(full).isDirectory()) {
+          results.push(...collectMarkdownFiles(full));
+        } else if (full.endsWith('.md')) {
+          results.push(full);
+        }
+      }
+      return results;
+    }
+
+    const mdFiles = collectMarkdownFiles('.agents');
+    assert.ok(mdFiles.length >= 10, 'Expected at least 10 markdown documentation files in .agents/');
+
+    let brokenLinks = 0;
+    const brokenList = [];
+
+    for (const file of mdFiles) {
+      const content = rfs(file, 'utf8');
+      const fileDir = dnm(rsv(file));
+      const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+      let match;
+      while ((match = linkRegex.exec(content)) !== null) {
+        const rawLink = match[2].trim();
+        if (rawLink.startsWith('http') || rawLink.startsWith('#') || rawLink.startsWith('mailto')) continue;
+        const cleanPath = rawLink.split('#')[0];
+        if (!cleanPath) continue;
+        const targetPath = rsv(fileDir, cleanPath);
+        if (!exs(targetPath)) {
+          brokenLinks++;
+          brokenList.push(`${file} -> ${rawLink} (resolved: ${targetPath})`);
+        }
+      }
+    }
+
+    assert.equal(brokenLinks, 0, `All links in .agents/ must resolve to existing files. Broken: ${brokenList.join('; ')}`);
   });
 });

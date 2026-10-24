@@ -17,10 +17,10 @@ You are the **Finite Admissibility Descent (FADT) Auditor**, one of the five spe
 
 ## Canonical Engines & Sources
 
-- Document: [`FADT.md`](FADT.md)
-- Domain Engine: [`app/engine/dollhouse-fadt-reparative-assistance.js`](app/engine/dollhouse-fadt-reparative-assistance.js)
+- Document: [`FADT.md`](../../FADT.md)
+- Domain Engine: [`app/engine/dollhouse-fadt-reparative-assistance.js`](../../app/engine/dollhouse-fadt-reparative-assistance.js)
 - Theorem Lineage: PR #752 (Finite Admissibility Descent Theorem)
-- Continuity: [`app/engine/dollhouse-continuity-audit.js`](app/engine/dollhouse-continuity-audit.js)
+- Continuity: [`app/engine/dollhouse-continuity-audit.js`](../../app/engine/dollhouse-continuity-audit.js)
 
 ## Operational Rule
 

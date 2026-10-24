@@ -7,12 +7,12 @@ The TD613 Dollhouse architecture enforces jurisdictional independence between fi
 ## 1. Flow-Core Pedagogue (PEDAGOGUE)
 
 - **Jurisdiction:** Consequence order, dromology, route burden, rest/exit availability, and research transfer.
-- **Canonical House:** [`PEDAGOGUE.md`](PEDAGOGUE.md)
+- **Canonical House:** [`PEDAGOGUE.md`](../../../../PEDAGOGUE.md)
 - **Primary Engines:**
-  - [`dollhouse-pedagogue-dromological.js`](app/engine/dollhouse-pedagogue-dromological.js)
-  - [`pedagogue-institutional-time.js`](app/engine/pedagogue-institutional-time.js)
-  - [`pedagogue-lineage-second-pass.js`](app/engine/pedagogue-lineage-second-pass.js)
-  - [`pedagogue-design-gate.js`](app/engine/pedagogue-design-gate.js)
+  - [`dollhouse-pedagogue-dromological.js`](../../../../app/engine/dollhouse-pedagogue-dromological.js)
+  - [`pedagogue-institutional-time.js`](../../../../app/engine/pedagogue-institutional-time.js)
+  - [`pedagogue-lineage-second-pass.js`](../../../../app/engine/pedagogue-lineage-second-pass.js)
+  - [`pedagogue-design-gate.js`](../../../../app/engine/pedagogue-design-gate.js)
 - **Key Invariants:**
   - Canonical sequence: `NOTICE < ACT < WORLD_ANSWERS < NAME`.
   - Consequence before ontology: visible feedback must precede formal naming.
@@ -31,10 +31,10 @@ The TD613 Dollhouse architecture enforces jurisdictional independence between fi
 ## 2. TD613 Aperture (APERTURE)
 
 - **Jurisdiction:** Observability, identifiability, inverse problem conditioning, singular value decomposition (SVD), noise covariance geometry, candidate-probe stability.
-- **Canonical House:** [`APERTURE.md`](APERTURE.md)
+- **Canonical House:** [`APERTURE.md`](../../../../APERTURE.md)
 - **Primary Engines:**
-  - [`aperture-v32-typed-epistemic-deficit.js`](app/engine/aperture-v32-typed-epistemic-deficit.js)
-  - [`dollhouse-witness-plan.js`](app/engine/dollhouse-witness-plan.js)
+  - [`aperture-v32-typed-epistemic-deficit.js`](../../../../app/engine/aperture-v32-typed-epistemic-deficit.js)
+  - [`dollhouse-witness-plan.js`](../../../../app/engine/dollhouse-witness-plan.js)
 - **Key Invariants:**
   - SVD analysis via one-sided Jacobi decomposition (`computeMatrixSvd`).
   - Condition squaring detection in normal equations vs Jacobi stability.
@@ -52,11 +52,11 @@ The TD613 Dollhouse architecture enforces jurisdictional independence between fi
 ## 3. Atlas Receiver-Relation Auditor (ATLAS)
 
 - **Jurisdiction:** Receiver-relative control identity, concrete trajectories, holonomy history parity, content-versus-projection distinctions, bounded digest verification, and serialization bridges.
-- **Canonical House:** [`ATLAS.md`](ATLAS.md)
+- **Canonical House:** [`ATLAS.md`](../../../../ATLAS.md)
 - **Primary Engines:**
-  - [`dollhouse-atlas-relational-custody.js`](app/engine/dollhouse-atlas-relational-custody.js)
-  - [`dollhouse-atlas-fadt.js`](app/engine/dollhouse-atlas-fadt.js)
-  - [`dollhouse-continuity-audit.js`](app/engine/dollhouse-continuity-audit.js)
+  - [`dollhouse-atlas-relational-custody.js`](../../../../app/engine/dollhouse-atlas-relational-custody.js)
+  - [`dollhouse-atlas-fadt.js`](../../../../app/engine/dollhouse-atlas-fadt.js)
+  - [`dollhouse-continuity-audit.js`](../../../../app/engine/dollhouse-continuity-audit.js)
 - **Key Invariants:**
   - Preserves 5 concrete relation classes without member custody collapse.
   - Holonomy history parity: identical endpoints with different winding routes are non-equivalent (`same endpoint does not erase route history`).
@@ -75,10 +75,10 @@ The TD613 Dollhouse architecture enforces jurisdictional independence between fi
 ## 4. Finite Admissibility Descent (FADT)
 
 - **Jurisdiction:** Finite quotient fibers, irreducible gaps between union and intersection supports, coordinate recovery search, typed partition keys, bounded evaluation budgets.
-- **Canonical House:** [`FADT.md`](FADT.md)
+- **Canonical House:** [`FADT.md`](../../../../FADT.md)
 - **Primary Engines:**
-  - [`dollhouse-fadt-reparative-assistance.js`](app/engine/dollhouse-fadt-reparative-assistance.js)
-  - [`dollhouse-atlas-fadt.js`](app/engine/dollhouse-atlas-fadt.js)
+  - [`dollhouse-fadt-reparative-assistance.js`](../../../../app/engine/dollhouse-fadt-reparative-assistance.js)
+  - [`dollhouse-atlas-fadt.js`](../../../../app/engine/dollhouse-atlas-fadt.js)
 - **Key Invariants:**
   - Preserves the irreducible gap when conditioning states are erased under stage projection.
   - Coordinate recovery search bounded strictly under 10,000 evaluations; candidates exceeding budget return `UNSUPPORTED_SEARCH_SIZE`.
@@ -95,9 +95,9 @@ The TD613 Dollhouse architecture enforces jurisdictional independence between fi
 ## 5. TD613 Temporal Custodian (TEMPORAL_CUSTODIAN)
 
 - **Jurisdiction:** Monotonic chronology, predecessor chains, attempt lineage preservation, historical epistemic non-retroactivity.
-- **Canonical House:** [`DOLLHOUSE.md`](DOLLHOUSE.md)
+- **Canonical House:** [`DOLLHOUSE.md`](../../../../DOLLHOUSE.md)
 - **Primary Engines:**
-  - [`dollhouse-temporal-custodian.js`](app/engine/dollhouse-temporal-custodian.js)
+  - [`dollhouse-temporal-custodian.js`](../../../../app/engine/dollhouse-temporal-custodian.js)
 - **Key Invariants:**
   - Sequences and calendar timestamps must strictly increase.
   - Phase evidence must refer to distinct ledger entries in planned order.
@@ -115,7 +115,7 @@ The TD613 Dollhouse architecture enforces jurisdictional independence between fi
 ## 6. The Orchestrator (ORCHESTRATOR)
 
 - **Jurisdiction:** Multi-role evidence adjudication, consensus aggregation, empirical replication accounting, claim boundaries.
-- **Canonical Engine:** [`dollhouse-ablation-harness.js`](app/engine/dollhouse-ablation-harness.js)
+- **Canonical Engine:** [`dollhouse-ablation-harness.js`](../../../../app/engine/dollhouse-ablation-harness.js)
 - **Key Invariants:**
   - First-class operational adjudicator, NOT a sixth observational witness.
   - Evaluates active specialist findings strictly without inspecting withheld ground truth.

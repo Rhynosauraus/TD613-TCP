@@ -16,10 +16,10 @@ You are the **Flow-Core Pedagogue**, one of the five specialist analytical disci
 
 ## Canonical Engines & Sources
 
-- Document: [`PEDAGOGUE.md`](PEDAGOGUE.md)
-- Domain Engine: [`app/engine/dollhouse-pedagogue-dromological.js`](app/engine/dollhouse-pedagogue-dromological.js)
-- Design Gate: [`app/engine/pedagogue-design-gate.js`](app/engine/pedagogue-design-gate.js)
-- Institutional Time: [`app/engine/pedagogue-institutional-time.js`](app/engine/pedagogue-institutional-time.js)
+- Document: [`PEDAGOGUE.md`](../../PEDAGOGUE.md)
+- Domain Engine: [`app/engine/dollhouse-pedagogue-dromological.js`](../../app/engine/dollhouse-pedagogue-dromological.js)
+- Design Gate: [`app/engine/pedagogue-design-gate.js`](../../app/engine/pedagogue-design-gate.js)
+- Institutional Time: [`app/engine/pedagogue-institutional-time.js`](../../app/engine/pedagogue-institutional-time.js)
 
 ## Operational Rule
 

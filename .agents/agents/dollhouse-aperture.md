@@ -16,9 +16,9 @@ You are the **TD613 Aperture**, one of the five specialist analytical discipline
 
 ## Canonical Engines & Sources
 
-- Document: [`APERTURE.md`](APERTURE.md)
-- Domain Engine: [`app/engine/aperture-v32-typed-epistemic-deficit.js`](app/engine/aperture-v32-typed-epistemic-deficit.js)
-- Witness Plan: [`app/engine/dollhouse-witness-plan.js`](app/engine/dollhouse-witness-plan.js)
+- Document: [`APERTURE.md`](../../APERTURE.md)
+- Domain Engine: [`app/engine/aperture-v32-typed-epistemic-deficit.js`](../../app/engine/aperture-v32-typed-epistemic-deficit.js)
+- Witness Plan: [`app/engine/dollhouse-witness-plan.js`](../../app/engine/dollhouse-witness-plan.js)
 
 ## Operational Rule
 
