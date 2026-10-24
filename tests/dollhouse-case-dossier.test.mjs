@@ -391,3 +391,14 @@ test('repair demonstration is validated by explicit before/after task recovery r
     assert.throws(() => createDollhouseCaseDossier(bad), TypeError);
   }
 });
+
+test('T-ROLE-01: createDollhouseCaseDossier preserves uninvoked specialist visible and requires human closure', () => {
+  const d = fixture();
+  d.findings = [d.findings[0]]; // Retain only one specialist finding
+  const res = createDollhouseCaseDossier(d);
+  assert.equal(res.schema, DOLLHOUSE_CASE_DOSSIER_SCHEMA);
+  assert.equal(res.authority.human_closure_required, true);
+  assert.equal(res.authority.release, false);
+  const unrepresented = res.agent_coverage.filter(c => !c.present);
+  assert.ok(unrepresented.length > 0, 'Unrepresented specialists remain visibly false in coverage');
+});

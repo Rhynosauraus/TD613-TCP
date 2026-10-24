@@ -6,6 +6,7 @@ import {
   evaluateCandidateProbeStability,
   classifyTypedEpistemicDeficit,
   auditTypedEpistemicDeficit,
+  APERTURE_V32_TYPED_DEFICIT_RECEIPT_SCHEMA,
   mapEpistemicHarmsToPositiveSurvival,
   EPISTEMIC_HARMS_TO_KNOWLEDGE_SURVIVAL
 } from '../app/engine/aperture-v32-typed-epistemic-deficit.js';
@@ -352,4 +353,16 @@ test('auditDollhouseWitnessPlan seamlessly integrates numerical stability and pr
   assert.ok(claimReceipt.epistemic_harm_mappings.addressed_harms.includes('UNIDENTIFIABLE_WIDENING'));
   assert.equal(receipt.authority.execution, false);
   assert.equal(receipt.authority.human_closure_required, true);
+});
+
+test('T-APERTURE-01: auditTypedEpistemicDeficit with incomplete/unresolved noise covariance yields NOISE_GEOMETRY_INCOMPLETE with ABSTAIN', () => {
+  const resultIncomplete = auditTypedEpistemicDeficit({
+    current_operator: [[1.0, 0.0], [0.0, 1.0]],
+    uncertainty_status: 'INCOMPLETE'
+  });
+
+  assert.equal(resultIncomplete.schema, APERTURE_V32_TYPED_DEFICIT_RECEIPT_SCHEMA);
+  assert.equal(resultIncomplete.deficit_class, 'NOISE_GEOMETRY_INCOMPLETE');
+  assert.equal(resultIncomplete.disposition, 'ABSTAIN');
+  assert.match(resultIncomplete.reason, /missing reliability is not neutral reliability/);
 });
