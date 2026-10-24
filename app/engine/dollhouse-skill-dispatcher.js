@@ -1380,17 +1380,23 @@ export async function writeReceiptArtifact(targetPath, machineReceipt, humanRece
     }
   }
 
-  // Check overwrite authorization and symlink safety
+  // lstat (not existsSync) detects dangling symlinks as well as live ones.
+  // A dangling symlink could otherwise be followed by writeFile to a new path
+  // outside the approved destination subtree.
   const checkSymlinkAndOverwrite = (p) => {
-    if (existsSync(p)) {
-      const stat = lstatSync(p);
-      if (stat.isSymbolicLink()) {
-        throw new Error(`HOLD_ARTIFACT_SYMLINK_REDIRECTION_REJECTED: Target path (${p}) is a symbolic link`);
-      }
-      const isAuthorized = options.operator_authorized_overwrite === true || (options.allow_overwrite === true && options.untrusted_caller_json !== true);
-      if (!isAuthorized) {
-        throw new Error(`HOLD_ARTIFACT_EXISTS_OVERWRITE_PREVENTED: Cannot overwrite existing file (${p}) without explicit operator authorization`);
-      }
+    let stat;
+    try {
+      stat = lstatSync(p);
+    } catch (err) {
+      if (err.code === 'ENOENT') return;
+      throw err;
+    }
+    if (stat.isSymbolicLink()) {
+      throw new Error(`HOLD_ARTIFACT_SYMLINK_REDIRECTION_REJECTED: Target path (${p}) is a symbolic link`);
+    }
+    const isAuthorized = options.operator_authorized_overwrite === true || (options.allow_overwrite === true && options.untrusted_caller_json !== true);
+    if (!isAuthorized) {
+      throw new Error(`HOLD_ARTIFACT_EXISTS_OVERWRITE_PREVENTED: Cannot overwrite existing file (${p}) without explicit operator authorization`);
     }
   };
 
