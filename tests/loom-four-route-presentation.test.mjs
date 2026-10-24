@@ -13,6 +13,12 @@ import {
   compilePedagogicalTransition,
   compileRestState
 } from '../app/engine/flowcore-pedagogue-core.js';
+import {
+  AIA_ROUTE_IDS,
+  compileAIAView,
+  compareAIAViews,
+  verifyAIAInvariants
+} from '../app/engine/flowcore-pedagogue-aia.js';
 
 function loadPedagogueFixture() {
   const p = resolve('app/dome-world/fixtures/pedagogue/gluing-soft-fold.json');
@@ -27,6 +33,7 @@ test('T-ROUTE-01: Flow-Core Four AIA Routes preserve identical lawful action set
   // Four canonical routes must all be present
   const expectedRoutes = ['EXPERIENTIAL', 'CUSTODIAL', 'AUDIT', 'IMPLEMENTATION'];
   assert.deepEqual(FLOWCORE_AIA_ROUTE_IDS, expectedRoutes);
+  assert.deepEqual(AIA_ROUTE_IDS, expectedRoutes);
 
   // Verify non-equivalence and invariant preservation across all four routes
   const requiredPreservations = [
@@ -75,6 +82,83 @@ test('T-ROUTE-01: Flow-Core Four AIA Routes preserve identical lawful action set
   assert.equal(scene.authority.release_authorized, false);
   assert.equal(scene.authority.station_mutation_authorized, false);
   assert.equal(scene.authority.human_closure_required, true);
+
+  // Compile transition to execute Flow-Core AIA presentation compiler
+  const notice = await compilePedagogicalTransition(scene, null, null, {
+    ...opts,
+    phase: 'NOTICE',
+    staticEquivalent: { summary: 'Notice condition', steps: ['step1'] }
+  });
+
+  // Compile all four canonical AIA route views
+  const views = [];
+  for (const routeId of expectedRoutes) {
+    views.push(await compileAIAView(scene, notice, routeId, opts));
+  }
+  assert.equal(views.length, 4, 'All four canonical AIA route views must be compiled');
+
+  // Assert identical lawful action sets across all views
+  for (const view of views) {
+    assert.deepEqual(
+      view.authorized_actions,
+      views[0].authorized_actions,
+      `Route ${view.route} must have identical lawful action sets to other views`
+    );
+  }
+
+  // Assert identical, bounded, non-widened authority across all views
+  for (const view of views) {
+    assert.equal(view.authority.flowcore_commands_station, false);
+    assert.equal(view.authority.automatic_ash_action, false);
+    assert.equal(view.authority.release_authorized, false);
+    assert.equal(view.authority.station_mutation_authorized, false);
+    assert.equal(view.authority.authority_may_cross, false);
+    assert.equal(view.authority.human_closure_required, true);
+    assert.equal(view.closure.status, 'OPEN');
+    assert.equal(view.closure.closed_by, null);
+  }
+
+  // Assert non-punitive Rest and Exit preserved without penalty on all views
+  for (const view of views) {
+    assert.equal(view.rest.available, true);
+    assert.equal(view.rest.penalty, false);
+    assert.equal(view.rest.continuity_preserved, true);
+    assert.equal(view.exit.available, true);
+    assert.equal(view.exit.penalty, false);
+  }
+
+  // Assert distinct, non-equivalent presentation surfaces across all views
+  const surfaces = views.map(v => JSON.stringify(v.surface));
+  assert.equal(new Set(surfaces).size, 4, 'All four AIA route views must have distinct non-equivalent surfaces');
+
+  // Execute compareAIAViews across all 6 pairs (4 choose 2 = 6)
+  let comparisonCount = 0;
+  for (let i = 0; i < views.length; i++) {
+    for (let j = i + 1; j < views.length; j++) {
+      const comparison = compareAIAViews(views[i], views[j]);
+      comparisonCount++;
+      assert.equal(comparison.schema, 'td613.aia.view-comparison/v0.1');
+      assert.equal(comparison.same_governed_transition, true);
+      assert.equal(comparison.invariants_preserved, true, `${comparison.left_route} vs ${comparison.right_route} must preserve all invariants`);
+      assert.equal(comparison.surfaces_non_equivalent, true, `${comparison.left_route} vs ${comparison.right_route} must be non-equivalent`);
+      assert.equal(comparison.authority_equal_and_bounded, true, `${comparison.left_route} vs ${comparison.right_route} authority must be equal and bounded`);
+      assert.equal(comparison.rest_and_exit_preserved, true, `${comparison.left_route} vs ${comparison.right_route} must preserve rest and exit`);
+      assert.deepEqual(comparison.invariant_mismatches, []);
+    }
+  }
+  assert.equal(comparisonCount, 6, 'Must execute exactly six pairwise route comparisons');
+
+  // Execute verifyAIAInvariants to verify the complete four-view bundle
+  const report = verifyAIAInvariants(scene, views);
+  assert.equal(report.schema, 'td613.aia.invariant-report/v0.1');
+  assert.equal(report.scene_reference, scene.scene_id);
+  assert.equal(report.pair_count, 6);
+  assert.equal(report.all_invariants_preserved, true);
+  assert.equal(report.all_surfaces_non_equivalent, true);
+  assert.equal(report.route_inference_forbidden, true);
+  assert.equal(report.authority_transferred, false);
+  assert.equal(report.human_closure_required, true);
+  assert.equal(report.closure.status, 'OPEN');
 });
 
 test('T-REST-01: Non-punitive rest and exit are strictly preserved without penalty or state loss', async () => {
