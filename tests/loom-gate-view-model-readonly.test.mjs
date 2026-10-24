@@ -1,0 +1,345 @@
+/**
+ * @file tests/loom-gate-view-model-readonly.test.mjs
+ * @description Negative probe suite and boundary verification for the Loom Gate View-Model adapter (Issue #1592).
+ */
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  LOOM_GATE_SNAPSHOT_SCHEMA,
+  LOOM_GATE_VIEW_MODEL_SCHEMA,
+  PORTABLE_LOOM_GATE_SCHEMA,
+  validateLoomGateSnapshot,
+  deriveLoomGateViewModel,
+  sanitizePublicContinuation
+} from '../app/engine/portable-loom-gate-view-model.js';
+import {
+  inspectPortableLoomGateReport
+} from '../app/engine/portable-loom-gate.js';
+import {
+  PORTABLE_LOOM_CHALLENGE_VERIFICATION_SCHEMA
+} from '../app/engine/portable-loom-challenge.js';
+import { portableLoomCoreDigest } from '../app/engine/portable-loom-core.js';
+
+const VALID_HEX_64 = 'a'.repeat(64);
+const VALID_HEX_REF_1 = '1'.repeat(64);
+const VALID_HEX_REF_2 = '2'.repeat(64);
+
+function createBaseSnapshot(status = 'BOUNDED_CHALLENGE_PASSED', overrides = {}) {
+  const isExposure = status === 'OBSERVED_EXPOSURE';
+  const isIncomplete = status === 'HELD_INCOMPLETE_OBSERVATION';
+  return {
+    schema: LOOM_GATE_SNAPSHOT_SCHEMA,
+    session: {
+      session_root_ref: VALID_HEX_64,
+      anchor_work_unit_ref: VALID_HEX_REF_1,
+      phase: 'ARRIVED',
+      substantive_continuation_count: 0,
+      declared_withheld_documents: 2,
+      declared_selected_documents: 1
+    },
+    native_gate_report: {
+      schema: PORTABLE_LOOM_GATE_SCHEMA,
+      action: 'CHECK_LOOM_GATE',
+      label: '米 Check Loom Gate',
+      href: 'https://td613.com/dome-world/holonomy-loom.html#loomGate',
+      session_root_ref: VALID_HEX_64,
+      anchor_work_unit_ref: VALID_HEX_REF_1,
+      policy_commitment: VALID_HEX_REF_2,
+      challenge_ref: VALID_HEX_REF_1,
+      verification_ref: VALID_HEX_REF_2,
+      status,
+      evidence_class: 'OFFLINE_TEST',
+      coverage: {
+        captured_channels: 2,
+        missing_required_channels: isIncomplete ? 1 : 0,
+        checked_targets: 5,
+        disclosed_targets: isExposure ? 1 : 0,
+        declared_reconstruction_attempts: 10,
+        measured_reconstruction_attempts: isIncomplete ? 8 : 10,
+        successful_reconstruction_attempts: isExposure ? 1 : 0,
+        missing_attempts: isIncomplete ? 2 : 0
+      },
+      joining: {
+        observed: 0,
+        incomplete: 0
+      },
+      conversation_leakage_fraction: null,
+      ref: VALID_HEX_64,
+      authority: {
+        head_advanced: false,
+        foreign_enforcement_proved: false,
+        empirical_credit: 0
+      }
+    },
+    specialist_summaries: {
+      PEDAGOGUE: { status: 'NOT_RUN' },
+      APERTURE: { status: 'NOT_RUN' },
+      ATLAS: { status: 'NOT_RUN' },
+      FADT: { status: 'NOT_RUN' },
+      TEMPORAL_CUSTODIAN: { status: 'NOT_RUN' }
+    },
+    ...overrides
+  };
+}
+
+test('T-AUTH-01: View-model contains no mutate/send/sign methods', () => {
+  const snapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  const vm = deriveLoomGateViewModel(snapshot);
+
+  assert.equal(typeof vm.send, 'undefined');
+  assert.equal(typeof vm.mutate, 'undefined');
+  assert.equal(typeof vm.sign, 'undefined');
+  assert.equal(typeof vm.admit, 'undefined');
+  assert.equal(typeof vm.advanceHead, 'undefined');
+  assert.equal(vm.authority.head_advanced, false);
+  assert.equal(vm.authority.foreign_enforcement_proved, false);
+  assert.equal(vm.authority.empirical_credit, 0);
+});
+
+test('T-AUTH-02: Modifying authority properties throws TypeError on frozen view-model', () => {
+  const snapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  const vm = deriveLoomGateViewModel(snapshot);
+
+  assert.throws(() => {
+    vm.authority.head_advanced = true;
+  }, TypeError);
+
+  assert.throws(() => {
+    vm.authority.empirical_credit = 1;
+  }, TypeError);
+
+  assert.throws(() => {
+    vm.status = 'TAMPERED_STATUS';
+  }, TypeError);
+
+  assert.equal(vm.authority.head_advanced, false);
+  assert.equal(vm.authority.empirical_credit, 0);
+});
+
+test('T-EXPORT-01: sanitizePublicContinuation strips canaries, prompts, solutions, and keys', () => {
+  const sensitiveContinuation = {
+    schema: 'td613.loom.continuation/v0.1',
+    request_id: 'req-12345',
+    session_root_ref: VALID_HEX_64,
+    anchor_work_unit_ref: VALID_HEX_REF_1,
+    phase: 'DONE',
+    status: 'ADMITTED',
+    raw_prompt_body: 'CONFIDENTIAL: internal business secret',
+    canary_strings: ['CANARY_SECRET_ALPHA', 'CANARY_SECRET_BETA'],
+    signing_key: 'PRIVATE_ED25519_KEY_BYTES',
+    challenge_solution: 'SECRET_CHALLENGE_PREIMAGE',
+    selected_file_bodies: [{ name: 'payroll.csv', content: 'SECRET_PAYROLL_DATA' }]
+  };
+
+  const sanitized = sanitizePublicContinuation(sensitiveContinuation);
+
+  assert.equal(sanitized.request_id, 'req-12345');
+  assert.equal(sanitized.session_root_ref, VALID_HEX_64);
+  assert.equal(sanitized.anchor_work_unit_ref, VALID_HEX_REF_1);
+  assert.equal(sanitized.phase, 'DONE');
+  assert.equal(sanitized.status, 'ADMITTED');
+  assert.equal(typeof sanitized.raw_prompt_body, 'undefined');
+  assert.equal(typeof sanitized.canary_strings, 'undefined');
+  assert.equal(typeof sanitized.signing_key, 'undefined');
+  assert.equal(typeof sanitized.challenge_solution, 'undefined');
+  assert.equal(typeof sanitized.selected_file_bodies, 'undefined');
+  assert.equal(sanitized.authority.empirical_credit, 0);
+  assert.equal(sanitized.authority.head_advanced, false);
+
+  assert.throws(() => {
+    sanitized.phase = 'TAMPERED';
+  }, TypeError);
+});
+
+test('F-CLEAN-PASS-01: Clean bounded challenge pass view-model', () => {
+  const snapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  const vm = deriveLoomGateViewModel(snapshot);
+
+  assert.equal(vm.status, 'BOUNDED_CHALLENGE_PASSED');
+  assert.equal(vm.customer_presentation.what_happened, 'All declared checks passed on captured surfaces. Selected file commitments remain local.');
+  assert.ok(vm.customer_presentation.what_remains_unknown.includes('hidden activations remain unobserved'));
+  assert.equal(vm.six_field_contract.next_action, 'REVIEW_CAPTURE_COVERAGE_BEFORE_CONTINUING');
+  assert.equal(vm.authority.empirical_credit, 0);
+  assert.equal(vm.authority.foreign_enforcement_proved, false);
+  assert.equal(vm.gate_verification_status, 'UNVERIFIED_DECLARATION');
+});
+
+test('F-CANARY-EXPOSURE-02: Canary exposure alert view-model', () => {
+  const snapshot = createBaseSnapshot('OBSERVED_EXPOSURE');
+  const vm = deriveLoomGateViewModel(snapshot);
+
+  assert.equal(vm.status, 'OBSERVED_EXPOSURE');
+  assert.ok(vm.customer_presentation.what_happened.includes('Alert · exposure detected'));
+  assert.equal(vm.six_field_contract.next_action, 'HOLD_REVIEW_EXPOSURE_AND_REGISTERED_SCOPE');
+  assert.equal(vm.authority.empirical_credit, 0);
+  assert.equal(vm.drawer.coverage.disclosed_targets, 1);
+});
+
+test('F-MISSING-CHANNEL-03: Missing channel incomplete observation view-model', () => {
+  const snapshot = createBaseSnapshot('HELD_INCOMPLETE_OBSERVATION');
+  const vm = deriveLoomGateViewModel(snapshot);
+
+  assert.equal(vm.status, 'HELD_INCOMPLETE_OBSERVATION');
+  assert.ok(vm.customer_presentation.what_happened.includes('HOLD · incomplete observation'));
+  assert.equal(vm.six_field_contract.next_action, 'HOLD_REPAIR_BINDING_OR_MISSING_CAPTURE');
+  assert.equal(vm.authority.empirical_credit, 0);
+  assert.equal(vm.drawer.coverage.missing_required_channels, 1);
+  assert.equal(vm.drawer.coverage.missing_attempts, 2);
+});
+
+test('F-TAMPERED-SUMMARY-04: Structural authority contract violation throws contract error', () => {
+  const forgedCreditSnapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  forgedCreditSnapshot.native_gate_report.authority.empirical_credit = 1;
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(forgedCreditSnapshot);
+  }, /Loom Gate snapshot authority contract violation/);
+
+  const forgedEnforcementSnapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  forgedEnforcementSnapshot.native_gate_report.authority.foreign_enforcement_proved = true;
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(forgedEnforcementSnapshot);
+  }, /Loom Gate snapshot authority contract violation/);
+
+  const forgedHeadSnapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  forgedHeadSnapshot.native_gate_report.authority.head_advanced = true;
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(forgedHeadSnapshot);
+  }, /Loom Gate snapshot authority contract violation/);
+});
+
+test('Native digest tampering is caught by inspectPortableLoomGateReport with native error', async () => {
+  // Construct a structurally valid report with genuine digest
+  const validReportBody = {
+    schema: PORTABLE_LOOM_GATE_SCHEMA,
+    action: 'CHECK_LOOM_GATE',
+    label: '米 Check Loom Gate',
+    href: 'https://td613.com/dome-world/holonomy-loom.html#loomGate',
+    session_root_ref: VALID_HEX_64,
+    anchor_work_unit_ref: VALID_HEX_REF_1,
+    policy_commitment: VALID_HEX_REF_2,
+    challenge_ref: VALID_HEX_REF_1,
+    verification_ref: VALID_HEX_REF_2,
+    verification_schema: PORTABLE_LOOM_CHALLENGE_VERIFICATION_SCHEMA,
+    status: 'BOUNDED_CHALLENGE_PASSED',
+    evidence_class: 'OFFLINE_TEST',
+    reference_match: { challenge: true, session: true, work_unit: true, policy: true },
+    coverage: {
+      captured_channels: 2,
+      missing_required_channels: 0,
+      checked_targets: 5,
+      disclosed_targets: 0,
+      declared_reconstruction_attempts: 10,
+      measured_reconstruction_attempts: 10,
+      successful_reconstruction_attempts: 0,
+      missing_attempts: 0
+    },
+    joining: { observed: 0, incomplete: 0 },
+    conversation_leakage_fraction: null,
+    measurement: 'COUNTS_OF_DECLARED_TARGETS_AND_ATTEMPTS_ON_CAPTURED_SURFACES',
+    receipt_scope: 'ORIGIN_COMPUTED_SUMMARY_REQUIRES_LOCAL_PRIVATE_RECORD_FOR_RECOMPUTATION',
+    next_action: 'REVIEW_CAPTURE_COVERAGE_BEFORE_CONTINUING',
+    authority: { head_advanced: false, foreign_enforcement_proved: false, empirical_credit: 0 }
+  };
+
+  const genuineRef = await portableLoomCoreDigest(validReportBody);
+  const genuineReport = { ...validReportBody, ref: genuineRef };
+
+  // Native inspection passes for untampered report
+  const inspected = await inspectPortableLoomGateReport(genuineReport);
+  assert.equal(inspected.status, 'CARRIED_SUMMARY_INTEGRITY');
+
+  // Tamper a field without updating ref -> throws native integrity error
+  const tamperedReport = { ...genuineReport, status: 'OBSERVED_EXPOSURE', next_action: 'HOLD_REVIEW_EXPOSURE_AND_REGISTERED_SCOPE' };
+  await assert.rejects(async () => {
+    await inspectPortableLoomGateReport(tamperedReport);
+  }, /Loom Gate summary integrity changed\./);
+});
+
+test('Caller-supplied serialized verification witness is untrusted and never promotes verification status', () => {
+  const snapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED', {
+    verification_witness: {
+      status: 'CARRIED_SUMMARY_INTEGRITY',
+      foreign_capture_authenticated: true,
+      timestamp: '2026-10-24T00:00:00.000Z'
+    }
+  });
+
+  const vm = deriveLoomGateViewModel(snapshot);
+
+  // Even with injected witness claiming CARRIED_SUMMARY_INTEGRITY, adapter defaults strictly to UNVERIFIED_DECLARATION
+  assert.equal(vm.gate_verification_status, 'UNVERIFIED_DECLARATION');
+  assert.equal(vm.drawer.verification_status, 'UNVERIFIED_DECLARATION');
+  assert.equal(vm.drawer.local_private_recomputation_required, true);
+});
+
+test('validateLoomGateSnapshot rejects prototype pollution', () => {
+  const maliciousProto = Object.create({ malicious: true });
+  maliciousProto.schema = LOOM_GATE_SNAPSHOT_SCHEMA;
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(maliciousProto);
+  }, /Loom Gate snapshot prototype must be plain Object or null\./);
+});
+
+test('validateLoomGateSnapshot rejects cyclic references', () => {
+  const cyclicSnapshot = createBaseSnapshot();
+  cyclicSnapshot.self = cyclicSnapshot;
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(cyclicSnapshot);
+  }, /Loom Gate snapshot contains cyclic references\./);
+});
+
+test('validateLoomGateSnapshot rejects executable functions in snapshot', () => {
+  const fnSnapshot = createBaseSnapshot();
+  fnSnapshot.exploit = () => { return 'pwned'; };
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(fnSnapshot);
+  }, /Loom Gate snapshot contains executable function/);
+});
+
+test('validateLoomGateSnapshot rejects impossible or negative counts', () => {
+  const invalidSnapshot1 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  invalidSnapshot1.native_gate_report.coverage.disclosed_targets = 10;
+  invalidSnapshot1.native_gate_report.coverage.checked_targets = 5; // disclosed > checked
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(invalidSnapshot1);
+  }, /disclosed_targets cannot exceed checked_targets/);
+
+  const invalidSnapshot2 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  invalidSnapshot2.native_gate_report.coverage.captured_channels = -1; // negative count
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(invalidSnapshot2);
+  }, /must be a safe non-negative integer/);
+});
+
+test('Customer UI presentation strictly omits internal research cast names (Issue #1592)', () => {
+  const snapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  const vm = deriveLoomGateViewModel(snapshot);
+
+  const customerText = JSON.stringify(vm.customer_presentation);
+  const researchCast = ['Dollhouse', 'Pedagogue', 'Aperture', 'Atlas', 'FADT', 'Temporal Custodian', 'Orchestrator'];
+
+  for (const castMember of researchCast) {
+    assert.equal(
+      customerText.includes(castMember),
+      false,
+      `Customer presentation leaked internal research cast name '${castMember}'`
+    );
+  }
+
+  // Allowed customer-facing terms must be present
+  assert.equal(vm.label, '米 Check Loom Gate');
+  assert.ok(typeof vm.customer_presentation.what_happened === 'string');
+  assert.ok(typeof vm.customer_presentation.what_was_checked === 'string');
+  assert.ok(typeof vm.customer_presentation.what_remains_unknown === 'string');
+  assert.ok(typeof vm.customer_presentation.what_happens_next === 'string');
+  assert.equal(vm.drawer.label, 'How do I know? 下');
+});
