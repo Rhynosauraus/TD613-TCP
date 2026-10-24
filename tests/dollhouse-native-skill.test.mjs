@@ -679,7 +679,7 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     assert.equal(callerFinding.defect_class, 'CALLER_SUPPLIED_MATHEMATICAL_VIOLATION');
     assert.equal(callerFinding.is_synthetic_injection, false);
 
-    // 2. Authentic source-bound defect with inspected code witness
+    // 2. Caller-authored source-bound flags and unverified snippets cannot manufacture a source-observed defect.
     const authenticDefect = await runDollhouseSkillAudit({
       evidence_class: 'SOURCE_CODE_AUDIT',
       evidence_references: ['app/engine/dollhouse-skill-dispatcher.js'],
@@ -696,7 +696,7 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
 
     const observedFinding = authenticDefect.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
     assert.equal(observedFinding.verdict, 'HELD');
-    assert.equal(observedFinding.defect_class, 'OBSERVED_SOURCE_DEFECT');
+    assert.equal(observedFinding.defect_class, 'CALLER_SUPPLIED_MATHEMATICAL_VIOLATION');
     assert.equal(observedFinding.is_synthetic_injection, false);
 
     // 3. Synthetic fault injection fixture
