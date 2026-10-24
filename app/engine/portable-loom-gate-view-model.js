@@ -389,17 +389,6 @@ export function validateLoomGateSnapshot(snapshot) {
         }
       }
 
-      // Native assay cardinality compatibility:
-      // The native engine permits bounded assays with distinct combinations of canaries, probes,
-      // and finite-channel models. An unused assay category may have a zero count, but at least
-      // one bounded assay must have been actively measured.
-      const hasCanaryAssay = c.checked_targets > 0 && c.captured_channels > 0;
-      const hasReconstructionAssay = c.measured_reconstruction_attempts > 0;
-
-      if (!hasCanaryAssay && !hasReconstructionAssay) {
-        throw new Error('Snapshot native_gate_report claims BOUNDED_CHALLENGE_PASSED but lacks any active bounded assay measurements (must have checked_targets with captured_channels >= 1, or measured_reconstruction_attempts >= 1).');
-      }
-
       // Clean PASS requires zero disclosures and zero recovered protected targets
       if (c.disclosed_targets > 0) {
         throw new Error('Contradictory report: status is BOUNDED_CHALLENGE_PASSED but disclosed_targets is nonzero.');
@@ -521,10 +510,17 @@ export function deriveLoomGateViewModel(snapshot, options = {}) {
     whatHappensNext = 'HOLD · Review exposure and registered scope before taking any further action.';
     nextAction = 'HOLD_REVIEW_EXPOSURE_AND_REGISTERED_SCOPE';
   } else if (declaredSourceStatus === 'BOUNDED_CHALLENGE_PASSED') {
-    whatHappened = 'Unverified declaration · declared checks passed on captured surfaces; local recomputation required before reliance.';
-    whatWasChecked = `${checkedTargets} canary targets declared checked across ${capturedChannels} captured channels; ${disclosedTargets} disclosed. ${measuredAttempts} reconstruction probes declared measured; ${successfulAttempts} recovered. Verification status: unverified declaration.`;
-    whatHappensNext = 'HOLD · Verify capture integrity locally before continuing.';
-    nextAction = 'HOLD_RECOMPUTE_LOCAL_GATE_INTEGRITY';
+    if (checkedTargets === 0 && measuredAttempts === 0) {
+      whatHappened = 'Unverified declaration · declared checks passed with zero canary and reconstruction probe counts; local recomputation required before reliance.';
+      whatWasChecked = 'Zero canary targets checked and zero reconstruction attempts recorded. The carried summary does not establish which assay supplied the underlying challenge (such as a synthetic finite-channel model or an unmeasured declaration). Verification status: unverified declaration.';
+      whatHappensNext = 'HOLD · Verify challenge definition and assay integrity locally before continuing.';
+      nextAction = 'HOLD_RECOMPUTE_LOCAL_GATE_INTEGRITY';
+    } else {
+      whatHappened = 'Unverified declaration · declared checks passed on captured surfaces; local recomputation required before reliance.';
+      whatWasChecked = `${checkedTargets} canary targets declared checked across ${capturedChannels} captured channels; ${disclosedTargets} disclosed. ${measuredAttempts} reconstruction probes declared measured; ${successfulAttempts} recovered. Verification status: unverified declaration.`;
+      whatHappensNext = 'HOLD · Verify capture integrity locally before continuing.';
+      nextAction = 'HOLD_RECOMPUTE_LOCAL_GATE_INTEGRITY';
+    }
   } else if (declaredSourceStatus === 'HELD_INCOMPLETE_OBSERVATION') {
     whatHappened = 'HOLD · incomplete observation. Required channels or probe attempts are missing.';
     whatWasChecked = `${missingChannels} required channels missing. ${missingAttempts} reconstruction attempts missing out of ${declaredAttempts} declared.`;

@@ -6,6 +6,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { webcrypto } from 'node:crypto';
 import {
   LOOM_GATE_SNAPSHOT_SCHEMA,
   LOOM_GATE_VIEW_MODEL_SCHEMA,
@@ -16,12 +17,18 @@ import {
   sanitizePublicContinuation
 } from '../app/engine/portable-loom-gate-view-model.js';
 import {
-  inspectPortableLoomGateReport
+  inspectPortableLoomGateReport,
+  createPortableLoomGateReport
 } from '../app/engine/portable-loom-gate.js';
 import {
-  PORTABLE_LOOM_CHALLENGE_VERIFICATION_SCHEMA
+  PORTABLE_LOOM_CHALLENGE_VERIFICATION_SCHEMA,
+  createPortableLoomReceiverChallenge,
+  PORTABLE_LOOM_CHALLENGE_RETURN_SCHEMA
 } from '../app/engine/portable-loom-challenge.js';
 import { portableLoomCoreDigest } from '../app/engine/portable-loom-core.js';
+import { createLoomAiGovernance, createPortableLoomAiPacket } from '../app/dome-world/holonomy-loom/ai-handoff-base.js';
+import { createPortableLoomSession, createPortableLoomWorkUnit, admitPortableLoomWorkUnitResult } from '../app/engine/portable-loom-session.js';
+import { getObserverCase } from '../app/dome-world/holonomy-loom/observer-cases.js';
 
 const VALID_HEX_64 = 'a'.repeat(64);
 const VALID_HEX_REF_1 = '1'.repeat(64);
@@ -646,16 +653,137 @@ test('Erratum 5: Contradictory positive disclosure or missingness counts in BOUN
   assert.throws(() => validateLoomGateSnapshot(s6), /joining incomplete observation is nonzero/);
 });
 
-test('Erratum 6: BOUNDED_CHALLENGE_PASSED with zero measurements across both assays is rejected', () => {
-  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
-  s.native_gate_report.coverage.checked_targets = 0;
-  s.native_gate_report.coverage.captured_channels = 0;
-  s.native_gate_report.coverage.declared_reconstruction_attempts = 0;
-  s.native_gate_report.coverage.measured_reconstruction_attempts = 0;
+test('Third-Assay Native Witness: Genuine native finite-channel-only challenge produces report with zero canary and probe counts, accepted without rejection and presented as HELD_UNVERIFIED_DECLARATION', async () => {
+  const env = { crypto: webcrypto };
+  const input = {
+    task: 'Review finite channel synthetic route.',
+    documents: [{ id: 'selected', name: 'selected.md', text: 'fictional text' }],
+    rules: ['finite test rule']
+  };
+  input.governance = await createLoomAiGovernance(input, { withheldDocumentCount: 1 }, env);
+  const packet = createPortableLoomAiPacket(input);
+  const root = await createPortableLoomSession(packet, {
+    session_id: 'native_third_assay_session',
+    source_revision: 'c'.repeat(40),
+    created_at: 1
+  }, env);
+  const prepared = await createPortableLoomWorkUnit(root, {
+    work_unit_id: 'native_third_unit',
+    request_id: 'req_third_assay',
+    task: input.task,
+    documents: input.documents,
+    add_rules: [],
+    withheld_document_count: 1
+  }, env);
+  const admitted = await admitPortableLoomWorkUnitResult(prepared.session, prepared.work_unit, {
+    schema: 'td613.loom.ai-task-result/v0.1',
+    request_id: 'req_third_assay',
+    status: 'completed',
+    answer: 'synthetic completed',
+    used_document_ids: ['selected'],
+    missing_information: [],
+    suggested_next_step: 'inspect'
+  }, env);
 
-  assert.throws(() => {
-    validateLoomGateSnapshot(s);
-  }, /lacks any active bounded assay measurements/);
+  // Construct a finite-channel-model-only challenge (canaries: [], probes: [])
+  const bundle = await createPortableLoomReceiverChallenge(admitted.session, admitted.session.work_units[0], {
+    challenge_id: 'native_third_assay_challenge',
+    evidence_class: 'OFFLINE_TEST',
+    observer_scope: {
+      receiver: 'synthetic foreign declaration fixture',
+      horizon: 'structured reply and visible error channel only',
+      channels: []
+    },
+    canaries: [],
+    probes: [],
+    finite_channel_model: getObserverCase('parity'),
+    finite_channel_selected: ['first', 'second', 'third']
+  }, env);
+
+  const returned = {
+    schema: PORTABLE_LOOM_CHALLENGE_RETURN_SCHEMA,
+    challenge_id: bundle.public_challenge.challenge_id,
+    session_root_ref: bundle.public_challenge.session_root_ref,
+    work_unit_ref: bundle.public_challenge.work_unit_ref,
+    policy_commitment: bundle.public_challenge.policy_commitment,
+    answers: [],
+    receiver_declaration: { tools_used: 'UNKNOWN', network_used: 'UNKNOWN', memory_used: 'UNKNOWN', notes: 'Synthetic declaration only.' }
+  };
+  const capture = { evidence_class: 'OFFLINE_TEST', surfaces: [] };
+
+  // Create real native Gate report
+  const nativeReport = await createPortableLoomGateReport(bundle, returned, capture, env);
+
+  // Assert native report properties
+  assert.equal(nativeReport.status, 'BOUNDED_CHALLENGE_PASSED');
+  assert.equal(nativeReport.coverage.checked_targets, 0);
+  assert.equal(nativeReport.coverage.measured_reconstruction_attempts, 0);
+  assert.equal(nativeReport.coverage.declared_reconstruction_attempts, 0);
+  assert.equal(nativeReport.coverage.captured_channels, 0);
+
+  // Verify native digest integrity
+  const inspectResult = await inspectPortableLoomGateReport(nativeReport, env);
+  assert.equal(inspectResult.status, 'CARRIED_SUMMARY_INTEGRITY');
+
+  // Exercise adapter on the actual native-produced report
+  const snapshot = {
+    schema: LOOM_GATE_SNAPSHOT_SCHEMA,
+    session: {
+      session_root_ref: nativeReport.session_root_ref,
+      anchor_work_unit_ref: nativeReport.anchor_work_unit_ref
+    },
+    native_gate_report: nativeReport
+  };
+
+  assert.equal(validateLoomGateSnapshot(snapshot), true, 'Native finite-channel report must not be rejected');
+  const vm = deriveLoomGateViewModel(snapshot);
+
+  // Assertions mandated by Amari:
+  // 1. No fabricated measurement
+  assert.equal(vm.drawer.coverage.checked_targets, 0);
+  assert.equal(vm.drawer.coverage.measured_reconstruction_attempts, 0);
+  assert.equal(vm.drawer.coverage.captured_channels, 0);
+  // 2. No verification promotion
+  assert.equal(vm.gate_verification_status, 'UNVERIFIED_DECLARATION');
+  assert.equal(vm.status, 'HELD_UNVERIFIED_DECLARATION');
+  // 3. No false empirical credit
+  assert.equal(vm.authority.empirical_credit, 0);
+  assert.equal(vm.authority.head_advanced, false);
+  assert.equal(vm.authority.foreign_enforcement_proved, false);
+  // 4. No unqualified customer PASS
+  assert.equal(vm.six_field_contract.measurement_status, 'UNVERIFIED_DECLARED_MEASUREMENT');
+  assert.match(vm.customer_presentation.what_happened, /Unverified declaration/);
+  // 5. Explicit held presentation & disclaimer
+  assert.match(vm.customer_presentation.what_was_checked, /Zero canary targets checked and zero reconstruction attempts recorded/);
+  assert.match(vm.customer_presentation.what_was_checked, /The carried summary does not establish which assay supplied the underlying challenge/);
+  assert.equal(vm.customer_presentation.what_happens_next, 'HOLD · Verify challenge definition and assay integrity locally before continuing.');
+  assert.equal(vm.six_field_contract.next_action, 'HOLD_RECOMPUTE_LOCAL_GATE_INTEGRITY');
+});
+
+test('Third-Assay Hostile Witness: Hostile all-zero caller declaration shares summary structure, held unverified without promotion', () => {
+  const hostileSnapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  // Hostile caller supplies all zeros claiming PASS without executing assays:
+  hostileSnapshot.native_gate_report.coverage.checked_targets = 0;
+  hostileSnapshot.native_gate_report.coverage.captured_channels = 0;
+  hostileSnapshot.native_gate_report.coverage.disclosed_targets = 0;
+  hostileSnapshot.native_gate_report.coverage.missing_required_channels = 0;
+  hostileSnapshot.native_gate_report.coverage.declared_reconstruction_attempts = 0;
+  hostileSnapshot.native_gate_report.coverage.measured_reconstruction_attempts = 0;
+  hostileSnapshot.native_gate_report.coverage.successful_reconstruction_attempts = 0;
+  hostileSnapshot.native_gate_report.coverage.missing_attempts = 0;
+
+  assert.equal(validateLoomGateSnapshot(hostileSnapshot), true);
+  const vm = deriveLoomGateViewModel(hostileSnapshot);
+
+  // Both genuine finite-channel reports and hostile all-zero declarations present identically
+  // as HELD_UNVERIFIED_DECLARATION because the carried summary cannot distinguish them
+  // without upstream cryptographic recomputation.
+  assert.equal(vm.status, 'HELD_UNVERIFIED_DECLARATION');
+  assert.equal(vm.declared_source_status, 'BOUNDED_CHALLENGE_PASSED');
+  assert.equal(vm.gate_verification_status, 'UNVERIFIED_DECLARATION');
+  assert.equal(vm.authority.empirical_credit, 0);
+  assert.equal(vm.authority.head_advanced, false);
+  assert.match(vm.customer_presentation.what_was_checked, /The carried summary does not establish which assay supplied the underlying challenge/);
 });
 
 // ============================================================================
