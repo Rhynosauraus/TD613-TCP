@@ -659,11 +659,11 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
   });
 
   // -------------------------------------------------------------------------
-  // 26. Strict distinction between synthetic fault injection and observed source defects (Redline Item 7)
+  // 26. Strict distinction between synthetic fault injection and observed source defects
   // -------------------------------------------------------------------------
   await t.test('26. Strict distinction between synthetic fault injection and observed source defects', async () => {
-    // Authentic domain calculation defect under declared source code audit
-    const authenticDefect = await runDollhouseSkillAudit({
+    // 1. Caller-supplied mathematical violation under declared SOURCE_CODE_AUDIT without source-bound witness
+    const callerSuppliedDefect = await runDollhouseSkillAudit({
       evidence_class: 'SOURCE_CODE_AUDIT',
       evidence_references: ['app/engine/dollhouse-skill-dispatcher.js'],
       domain_inputs: {
@@ -674,12 +674,32 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
       }
     });
 
+    const callerFinding = callerSuppliedDefect.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
+    assert.equal(callerFinding.verdict, 'HELD');
+    assert.equal(callerFinding.defect_class, 'CALLER_SUPPLIED_MATHEMATICAL_VIOLATION');
+    assert.equal(callerFinding.is_synthetic_injection, false);
+
+    // 2. Authentic source-bound defect with inspected code witness
+    const authenticDefect = await runDollhouseSkillAudit({
+      evidence_class: 'SOURCE_CODE_AUDIT',
+      evidence_references: ['app/engine/dollhouse-skill-dispatcher.js'],
+      domain_inputs: {
+        ...ALL_BENIGN_DOMAIN_INPUTS,
+        APERTURE: {
+          source_bound: true,
+          source_file: 'app/engine/dollhouse-skill-dispatcher.js',
+          code_witness: 'const op = [[1.0, 0.0], [1.0, 1e-5]];',
+          current_operator: [[1.0, 0.0], [1.0, 1e-5]]
+        }
+      }
+    });
+
     const observedFinding = authenticDefect.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
     assert.equal(observedFinding.verdict, 'HELD');
     assert.equal(observedFinding.defect_class, 'OBSERVED_SOURCE_DEFECT');
     assert.equal(observedFinding.is_synthetic_injection, false);
 
-    // Synthetic fault injection fixture
+    // 3. Synthetic fault injection fixture
     const syntheticDefect = await runDollhouseSkillAudit({
       domain_inputs: {
         ...ALL_BENIGN_DOMAIN_INPUTS,
@@ -1031,5 +1051,157 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     }
 
     assert.equal(brokenLinks, 0, `All links in .agents/ must resolve to existing files. Broken: ${brokenList.join('; ')}`);
+  });
+
+  // =========================================================================
+  // ARTIFACT 40 RETURN NOTES PRE-MERGE ADMISSION TESTS (3 REQUIRED CASES)
+  // =========================================================================
+
+  // -------------------------------------------------------------------------
+  // 39. (Artifact 40 C1) Canonical Orchestrator veto preserves DIVERGENT_ROLE_OBSERVATION_CONFLICT in both Orchestrator and standalone modes
+  // -------------------------------------------------------------------------
+  await t.test('39. (Artifact 40 C1) Canonical Orchestrator veto preserves DIVERGENT_ROLE_OBSERVATION_CONFLICT in both Orchestrator and standalone modes', async () => {
+    // Divergent Pedagogue observations using keys PEDAGOGUE and pedagogue
+    const divergentInput = {
+      roles: ['PEDAGOGUE', 'ORCHESTRATOR'],
+      domain_inputs: {
+        PEDAGOGUE: {
+          events: [
+            { type: 'NOTICE', payload: 'Notice 1' },
+            { type: 'ACT', payload: 'Act 1' }
+          ]
+        },
+        pedagogue: {
+          events: [
+            { type: 'ACT', payload: 'Act Divergent' }
+          ]
+        }
+      }
+    };
+
+    // 1. With Orchestrator enabled
+    const resOrch = await runDollhouseSkillAudit(divergentInput);
+    assert.equal(resOrch.exit_code, 1);
+    assert.equal(resOrch.machine_receipt.orchestrator.decision, 'HELD');
+    assert.ok(resOrch.machine_receipt.detected_infractions.includes('DIVERGENT_ROLE_OBSERVATION_CONFLICT'));
+    assert.equal(resOrch.machine_receipt.orchestrator.replication_status, 'DIVERGENT_OBSERVATION_REJECTED');
+
+    // 2. Standalone mode (without Orchestrator)
+    const resStandalone = await runDollhouseSkillAudit({
+      ...divergentInput,
+      roles: ['PEDAGOGUE'],
+      include_orchestrator: false
+    });
+    assert.equal(resStandalone.exit_code, 1);
+    assert.ok(resStandalone.machine_receipt.detected_infractions.includes('DIVERGENT_ROLE_OBSERVATION_CONFLICT'));
+    const pedagogueFinding = resStandalone.machine_receipt.specialist_findings.find(f => f.role === 'PEDAGOGUE');
+    assert.equal(pedagogueFinding.verdict, 'HELD');
+  });
+
+  // -------------------------------------------------------------------------
+  // 40. (Artifact 40 C2) Source-observed evidence requires source-bound observation; historical commit distinguished from exact checkout
+  // -------------------------------------------------------------------------
+  await t.test('40. (Artifact 40 C2) Source-observed evidence requires source-bound observation; historical commit distinguished from exact checkout', async () => {
+    // 1. Unrelated Aperture matrix under SOURCE_CODE_AUDIT does not claim OBSERVED_SOURCE_DEFECT
+    const resUnrelated = await runDollhouseSkillAudit({
+      evidence_class: 'SOURCE_CODE_AUDIT',
+      evidence_references: ['app/engine/dollhouse-skill-dispatcher.js'],
+      domain_inputs: {
+        ...ALL_BENIGN_DOMAIN_INPUTS,
+        APERTURE: {
+          current_operator: [[1.0, 0.0], [1.0, 1e-5]]
+        }
+      }
+    });
+
+    const apertureFinding = resUnrelated.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
+    assert.equal(apertureFinding.verdict, 'HELD');
+    assert.equal(apertureFinding.defect_class, 'CALLER_SUPPLIED_MATHEMATICAL_VIOLATION');
+    assert.notEqual(apertureFinding.defect_class, 'OBSERVED_SOURCE_DEFECT');
+
+    // 2. Historical commit exists in git history but differs from executing checkout
+    const historicalCommit = 'b24f72c973ef7eb0c5d2de52639dc43020f1bb0b';
+    const resHistory = await runDollhouseSkillAudit({
+      source_revision: historicalCommit,
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(resHistory.machine_receipt.source_revision, historicalCommit);
+    assert.equal(resHistory.machine_receipt.git_commit_verified, true);
+    assert.equal(resHistory.machine_receipt.is_exact_checkout_match, false);
+    assert.equal(resHistory.machine_receipt.exact_checkout_verified, false);
+    assert.equal(resHistory.machine_receipt.is_historical_commit_only, true);
+  });
+
+  // -------------------------------------------------------------------------
+  // 41. (Artifact 40 C3) Complete evidence and output-file custody: directories fail byte verification; path escape, symlink components and untrusted JSON overwrite rejected
+  // -------------------------------------------------------------------------
+  await t.test('41. (Artifact 40 C3) Complete evidence and output-file custody: directories fail byte verification; path escape, symlink components and untrusted JSON overwrite rejected', async () => {
+    // 1. Existing directory cannot establish byte-verifiable evidence
+    const resDir = await runDollhouseSkillAudit({
+      evidence_references: ['tests'],
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(resDir.machine_receipt.evidence_manifest[0].byte_digest_verified, false);
+    assert.equal(resDir.machine_receipt.evidence_manifest[0].reason, 'NOT_A_REGULAR_FILE');
+    assert.ok(resDir.machine_receipt.detected_infractions.includes('HOLD_NON_REGULAR_FILE_REFERENCE'));
+
+    // 2. Output destination custody: cannot write receipt into protected source file (e.g. package.json)
+    await assert.rejects(
+      async () => {
+        await writeReceiptArtifact('package.json', { test: 1 }, '# Receipt', {
+          operator_authorized_overwrite: true
+        });
+      },
+      /HOLD_ARTIFACT_DESTINATION_NOT_AUTHORIZED/
+    );
+
+    // 3. Output destination custody: cannot write into app/ source directory
+    await assert.rejects(
+      async () => {
+        await writeReceiptArtifact('app/engine/fake-receipt.json', { test: 1 }, '# Receipt');
+      },
+      /HOLD_ARTIFACT_DESTINATION_NOT_AUTHORIZED/
+    );
+
+    // 4. Symlink directory component rejected along path
+    const tempDir = join(tmpdir(), `td613-dollhouse-symlink-dir-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+    const realSubDir = join(tempDir, 'real-subdir');
+    mkdirSync(realSubDir, { recursive: true });
+    const symlinkDir = join(tempDir, 'symlink-subdir');
+
+    let symlinkDirCreated = false;
+    try {
+      const { symlinkSync } = await import('node:fs');
+      symlinkSync(realSubDir, symlinkDir, 'junction');
+      symlinkDirCreated = true;
+    } catch {}
+
+    if (symlinkDirCreated) {
+      const targetInSymlinkDir = join(symlinkDir, 'receipt.json');
+      await assert.rejects(
+        async () => {
+          await writeReceiptArtifact(targetInSymlinkDir, { test: 1 }, '# Receipt');
+        },
+        /HOLD_ARTIFACT_SYMLINK_REDIRECTION_REJECTED/
+      );
+    }
+
+    // 5. Untrusted caller JSON allow_overwrite cannot grant independent authorization
+    const targetFile = join(tempDir, 'existing.json');
+    writeFileSync(targetFile, JSON.stringify({ protected: true }), 'utf8');
+
+    const resUntrusted = await runDollhouseSkillAudit({
+      artifact_path: targetFile,
+      allow_overwrite: true,
+      options: { untrusted_caller_json: true },
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(resUntrusted.exit_code, 1);
+    assert.ok(resUntrusted.machine_receipt.detected_infractions.includes('HOLD_ARTIFACT_WRITE_FAILED'));
+    assert.ok(resUntrusted.machine_receipt.artifact_write_error.includes('HOLD_ARTIFACT_EXISTS_OVERWRITE_PREVENTED'));
   });
 });

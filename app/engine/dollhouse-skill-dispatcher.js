@@ -142,13 +142,38 @@ export function verifySourceRevision(sourceRev, options = {}) {
   if (child_process?.execFileSync) {
     try {
       child_process.execFileSync('git', ['cat-file', '-e', `${trimmed}^{commit}`], { stdio: ['ignore', 'ignore', 'ignore'] });
+      const isExactCheckout = (trimmed.toLowerCase() === checkoutRev.toLowerCase());
+      const exactMatch = isExactCheckout && (checkoutRev !== 'WORKING_TREE_UNCOMMITTED');
+
+      if (options.require_exact_checkout === true && !exactMatch) {
+        return {
+          verified: false,
+          git_commit_verified: true,
+          in_local_git_history: true,
+          is_exact_checkout_match: false,
+          exact_checkout_verified: false,
+          is_historical_commit_only: true,
+          is_working_tree: false,
+          declared_revision: trimmed,
+          executing_checkout_revision: checkoutRev,
+          reason: 'HISTORICAL_COMMIT_NOT_EXACT_CHECKOUT',
+          infraction: 'HOLD_HISTORICAL_COMMIT_NOT_EXACT_CHECKOUT',
+          status: 'HISTORICAL_COMMIT_VERIFIED_NON_EQUIVALENT',
+          source_revision: trimmed
+        };
+      }
+
       return {
         verified: true,
         git_commit_verified: true,
         in_local_git_history: true,
-        is_working_tree: (trimmed === checkoutRev),
+        is_exact_checkout_match: isExactCheckout,
+        exact_checkout_verified: exactMatch,
+        is_historical_commit_only: !isExactCheckout,
+        is_working_tree: isExactCheckout,
         declared_revision: trimmed,
         executing_checkout_revision: checkoutRev,
+        status: isExactCheckout ? 'EXACT_CHECKOUT_VERIFIED' : 'HISTORICAL_COMMIT_VERIFIED_NON_EQUIVALENT',
         source_revision: trimmed
       };
     } catch {
@@ -156,11 +181,15 @@ export function verifySourceRevision(sourceRev, options = {}) {
         verified: false,
         git_commit_verified: false,
         in_local_git_history: false,
+        is_exact_checkout_match: false,
+        exact_checkout_verified: false,
+        is_historical_commit_only: false,
         is_working_tree: false,
         declared_revision: trimmed,
         executing_checkout_revision: checkoutRev,
         reason: 'COMMIT_NOT_IN_LOCAL_HISTORY',
         infraction: 'HOLD_SOURCE_REVISION_NOT_IN_LOCAL_HISTORY',
+        status: 'UNVERIFIED_SOURCE_REVISION',
         source_revision: trimmed
       };
     }
@@ -191,58 +220,15 @@ export function verifyEvidenceReferences(references = [], options = {}) {
 
   const manifest = [];
   const infractions = [];
+  const repoRoot = resolve(process.cwd());
+  const tempDir = resolve(globalThis.process?.env?.TEMP || globalThis.process?.env?.TMPDIR || '/tmp');
 
   for (const ref of references) {
     if (ref == null) continue;
 
-    // Object reference { path, sha256 }
-    if (typeof ref === 'object') {
-      const filePath = ref.path || ref.file || ref.reference;
-      const expectedSha = ref.sha256 || ref.digest || ref.hash;
-      if (!filePath) {
-        manifest.push({
-          reference: JSON.stringify(ref),
-          type: 'INVALID_OBJECT_REFERENCE',
-          verified: false,
-          reason: 'MISSING_FILE_PATH'
-        });
-        infractions.push('UNVERIFIED_EVIDENCE_REFERENCE');
-        continue;
-      }
-      const fullPath = resolve(filePath);
-      if (!existsSync(fullPath)) {
-        manifest.push({
-          reference: filePath,
-          type: 'WORKSPACE_FILE',
-          verified: false,
-          reason: 'FILE_NOT_FOUND'
-        });
-        infractions.push('UNVERIFIED_EVIDENCE_REFERENCE');
-        continue;
-      }
-      let actualDigest = null;
-      try {
-        const bytes = readFileSync(fullPath);
-        actualDigest = createHash('sha256').update(bytes).digest('hex');
-      } catch {}
-      const digestMatches = expectedSha ? (actualDigest?.toLowerCase() === expectedSha.toLowerCase()) : true;
-      manifest.push({
-        reference: filePath,
-        type: 'WORKSPACE_FILE',
-        verified: digestMatches,
-        byte_digest_verified: Boolean(expectedSha && digestMatches),
-        sha256: actualDigest,
-        reason: digestMatches ? undefined : 'BYTE_DIGEST_MISMATCH'
-      });
-      if (!digestMatches) infractions.push('EVIDENCE_BYTE_DIGEST_MISMATCH');
-      continue;
-    }
-
-    const strRef = String(ref).trim();
-    if (!strRef) continue;
-
-    // Check if standalone 64-character hex digest without file bytes
-    if (/^[a-f0-9]{64}$/i.test(strRef)) {
+    // 1. Check if standalone 64-character hex digest without file bytes
+    if (typeof ref === 'string' && /^[a-f0-9]{64}$/i.test(ref.trim())) {
+      const strRef = ref.trim();
       manifest.push({
         reference: strRef,
         type: 'STANDALONE_CONTENT_DIGEST',
@@ -255,8 +241,9 @@ export function verifyEvidenceReferences(references = [], options = {}) {
       continue;
     }
 
-    // Check if git commit SHA (40 hex chars)
-    if (/^[a-f0-9]{40}$/i.test(strRef)) {
+    // 2. Check if git commit SHA (40 hex chars)
+    if (typeof ref === 'string' && /^[a-f0-9]{40}$/i.test(ref.trim())) {
+      const strRef = ref.trim();
       const child_process = globalThis.process?.getBuiltinModule?.('node:child_process');
       let commitFound = false;
       if (child_process?.execFileSync) {
@@ -272,35 +259,147 @@ export function verifyEvidenceReferences(references = [], options = {}) {
         type: 'COMMIT_SHA',
         verified: commitFound,
         in_local_git_history: commitFound,
+        byte_digest_verified: false,
         reason: commitFound ? undefined : 'COMMIT_NOT_IN_LOCAL_HISTORY'
       });
       if (!commitFound) infractions.push('UNVERIFIED_EVIDENCE_REFERENCE');
       continue;
     }
 
-    // Treat as workspace file path
-    const fullPath = resolve(strRef);
-    if (existsSync(fullPath)) {
-      let actualDigest = null;
-      try {
-        const bytes = readFileSync(fullPath);
-        actualDigest = createHash('sha256').update(bytes).digest('hex');
-      } catch {}
-      manifest.push({
-        reference: strRef,
-        type: 'WORKSPACE_FILE',
-        verified: true,
-        byte_digest: actualDigest,
-        byte_digest_verified: Boolean(actualDigest)
-      });
+    // 3. File reference (object or string)
+    let filePath;
+    let expectedSha = null;
+    if (typeof ref === 'object') {
+      filePath = ref.path || ref.file || ref.reference;
+      expectedSha = ref.sha256 || ref.digest || ref.hash;
+      if (!filePath) {
+        manifest.push({
+          reference: JSON.stringify(ref),
+          type: 'INVALID_OBJECT_REFERENCE',
+          verified: false,
+          byte_digest_verified: false,
+          reason: 'MISSING_FILE_PATH'
+        });
+        infractions.push('UNVERIFIED_EVIDENCE_REFERENCE');
+        continue;
+      }
     } else {
+      filePath = String(ref).trim();
+    }
+
+    if (!filePath) continue;
+
+    const fullPath = resolve(filePath);
+
+    // Path escape check: must be inside repository or temp subtrees
+    const relRepo = relative(repoRoot, fullPath);
+    const relTemp = relative(tempDir, fullPath);
+    const isInsideRepo = !relRepo.startsWith('..') && !isAbsolute(relRepo);
+    const isInsideTemp = !relTemp.startsWith('..') && !isAbsolute(relTemp);
+
+    if (!isInsideRepo && !isInsideTemp) {
       manifest.push({
-        reference: strRef,
+        reference: filePath,
+        type: 'ESCAPED_PATH',
+        verified: false,
+        byte_digest_verified: false,
+        reason: 'PATH_ESCAPE_OUTSIDE_WORKSPACE'
+      });
+      infractions.push('HOLD_EVIDENCE_REFERENCE_PATH_ESCAPE');
+      continue;
+    }
+
+    // Existence check
+    if (!existsSync(fullPath)) {
+      manifest.push({
+        reference: filePath,
         type: 'WORKSPACE_FILE',
         verified: false,
+        byte_digest_verified: false,
         reason: 'FILE_NOT_FOUND'
       });
       infractions.push('UNVERIFIED_EVIDENCE_REFERENCE');
+      continue;
+    }
+
+    // Symlink check
+    try {
+      const lst = lstatSync(fullPath);
+      if (lst.isSymbolicLink()) {
+        manifest.push({
+          reference: filePath,
+          type: 'SYMBOLIC_LINK',
+          verified: false,
+          byte_digest_verified: false,
+          reason: 'SYMLINK_EVIDENCE_REFERENCE_REJECTED'
+        });
+        infractions.push('HOLD_EVIDENCE_SYMLINK_REJECTED');
+        continue;
+      }
+    } catch {}
+
+    // Regular file check (directories or non-regular files cannot establish byte evidence)
+    let st;
+    try {
+      st = statSync(fullPath);
+    } catch (err) {
+      manifest.push({
+        reference: filePath,
+        type: 'WORKSPACE_FILE',
+        verified: false,
+        byte_digest_verified: false,
+        reason: 'STAT_ERROR',
+        error: err.message
+      });
+      infractions.push('UNVERIFIED_EVIDENCE_REFERENCE');
+      continue;
+    }
+
+    if (!st.isFile()) {
+      manifest.push({
+        reference: filePath,
+        type: st.isDirectory() ? 'DIRECTORY' : 'NON_REGULAR_FILE',
+        verified: false,
+        byte_digest_verified: false,
+        reason: 'NOT_A_REGULAR_FILE',
+        detail: 'An existing directory or unreadable file cannot establish byte-verifiable evidence'
+      });
+      infractions.push('HOLD_NON_REGULAR_FILE_REFERENCE');
+      continue;
+    }
+
+    // Read bytes & compute SHA-256
+    let bytes;
+    try {
+      bytes = readFileSync(fullPath);
+    } catch (err) {
+      manifest.push({
+        reference: filePath,
+        type: 'WORKSPACE_FILE',
+        verified: false,
+        byte_digest_verified: false,
+        reason: 'UNREADABLE_FILE_BYTES',
+        error: err.message
+      });
+      infractions.push('UNVERIFIED_EVIDENCE_REFERENCE');
+      continue;
+    }
+
+    const actualDigest = createHash('sha256').update(bytes).digest('hex');
+    const digestMatches = expectedSha ? (actualDigest.toLowerCase() === expectedSha.toLowerCase()) : true;
+
+    manifest.push({
+      reference: filePath,
+      type: 'WORKSPACE_FILE',
+      verified: digestMatches,
+      byte_digest: actualDigest,
+      byte_digest_verified: digestMatches,
+      sha256: actualDigest,
+      reason: digestMatches ? undefined : 'BYTE_DIGEST_MISMATCH'
+    });
+
+    if (!digestMatches) {
+      infractions.push('EVIDENCE_BYTE_DIGEST_MISMATCH');
     }
   }
 
@@ -561,6 +660,69 @@ Sealed ⟐
 }
 
 /**
+ * Determines whether an observation is an authentic source-bound defect supported by code inspection.
+ */
+function isSourceBoundWitness(roleInput, evidence_class) {
+  if (evidence_class !== 'SOURCE_CODE_AUDIT') return false;
+  if (!roleInput || typeof roleInput !== 'object') return false;
+
+  // Must have explicit source binding or inspected code witness
+  if (
+    roleInput.source_bound === true ||
+    roleInput.inspected_code_witness === true ||
+    roleInput.witness_type === 'SOURCE_CODE_WITNESS' ||
+    roleInput.witness_class === 'SOURCE_CODE_WITNESS'
+  ) {
+    return true;
+  }
+
+  const hasSourceFileRef = Boolean(
+    typeof roleInput.source_file === 'string' ||
+    typeof roleInput.target_file === 'string' ||
+    typeof roleInput.inspected_file === 'string'
+  );
+
+  const hasCodeContent = Boolean(
+    typeof roleInput.source_code === 'string' ||
+    typeof roleInput.code_witness === 'string' ||
+    typeof roleInput.source_snippet === 'string' ||
+    typeof roleInput.ast_finding === 'object'
+  );
+
+  return hasSourceFileRef && hasCodeContent;
+}
+
+/**
+ * Classifies specialist defect into conservative categories:
+ * - SYNTHETIC_FAULT_INJECTION
+ * - SYNTHETIC_MATHEMATICAL_VIOLATION
+ * - OBSERVED_SOURCE_DEFECT
+ * - CALLER_SUPPLIED_MATHEMATICAL_VIOLATION
+ */
+function classifySpecialistDefect(roleInput, evalResult, evidence_class, options = {}) {
+  const isSyntheticInjection = Boolean(
+    evalResult?.is_synthetic_injection ||
+    roleInput?.fixture_class === 'SYNTHETIC_FAULT_INJECTION' ||
+    roleInput?.is_synthetic_injection === true ||
+    (options.allow_synthetic_fault_injection === true && (evalResult?.is_synthetic_injection || roleInput?.fixture_class === 'SYNTHETIC_FAULT_INJECTION'))
+  );
+
+  if (isSyntheticInjection) {
+    return 'SYNTHETIC_FAULT_INJECTION';
+  }
+
+  if (evidence_class === 'SYNTHETIC_TEST_FIXTURE' || evidence_class === 'SYNTHETIC') {
+    return 'SYNTHETIC_MATHEMATICAL_VIOLATION';
+  }
+
+  if (isSourceBoundWitness(roleInput, evidence_class)) {
+    return 'OBSERVED_SOURCE_DEFECT';
+  }
+
+  return 'CALLER_SUPPLIED_MATHEMATICAL_VIOLATION';
+}
+
+/**
  * Main programmatic dispatcher for the TD613 Dollhouse Native Antigravity Skill.
  *
  * @param {Object} input - Invocation contract payload
@@ -700,272 +862,329 @@ export async function runDollhouseSkillAudit(input = {}) {
     return { machine_receipt, human_receipt, exit_code: 1 };
   }
 
-  // 4. Execute each requested specialist role and evaluate extensions
+  // 4. Normalization of domain inputs & divergence check (Artifact 40 Return Note 1)
+  let normalized_domain_inputs = {};
+  let normalization_conflict = null;
+  try {
+    normalized_domain_inputs = normalizeRoleObservations(domain_inputs);
+  } catch (err) {
+    if (err.code === 'DIVERGENT_ROLE_OBSERVATION_CONFLICT' || err.message?.includes('DIVERGENT_ROLE_OBSERVATION_CONFLICT')) {
+      normalization_conflict = err;
+    } else {
+      throw err;
+    }
+  }
+
+  if (normalization_conflict) {
+    detected_infractions_set.add('DIVERGENT_ROLE_OBSERVATION_CONFLICT');
+    unresolved_questions.push(normalization_conflict.message);
+  }
+
+  // 5. Execute each requested specialist role and evaluate extensions
   const specialist_findings = [];
   const missing_inputs = [];
   const roles_executed = [];
 
-  for (const role of specialist_roles) {
-    roles_executed.push(role);
-    const roleInput = domain_inputs[role] ?? domain_inputs[role.toLowerCase()] ?? null;
-
-    if (roleInput === null || roleInput === undefined) {
-      missing_inputs.push(role);
+  if (normalization_conflict) {
+    for (const role of specialist_roles) {
+      roles_executed.push(role);
+      const isConflictingRole = normalization_conflict.role === role || normalization_conflict.message?.includes(role);
       specialist_findings.push({
         role,
         jurisdiction: DOLLHOUSE_AGENT_REGISTRY.agents[role]?.role || 'unspecified',
-        verdict: 'NOT_EVALUATED',
-        status: 'INPUT_MISSING',
-        defect_class: 'NONE',
-        claim: `No observation input supplied for ${role}`,
-        infractions: [],
+        verdict: 'HELD',
+        status: 'DIVERGENT_ROLE_OBSERVATION_CONFLICT',
+        defect_class: 'CALLER_SUPPLIED_MATHEMATICAL_VIOLATION',
+        claim: isConflictingRole
+          ? normalization_conflict.message
+          : `Audit held due to divergent observation conflict in ${normalization_conflict.role || 'domain input'}`,
+        infractions: ['DIVERGENT_ROLE_OBSERVATION_CONFLICT'],
         is_synthetic_injection: false,
         extensions: null
       });
-      continue;
     }
+  } else {
+    for (const role of specialist_roles) {
+      roles_executed.push(role);
+      const roleInput = normalized_domain_inputs[role] ?? null;
 
-    // Call canonical harness specialist executor
-    const evalResult = executeSpecialistRole(role, roleInput, options);
-    const extensions = executeSpecialistExtensions(role, roleInput, options);
-
-    let activeVerdict = evalResult.verdict;
-    let activeStatus = evalResult.status;
-    let activeClaim = evalResult.concern || `Invariants verified by ${role}`;
-    let activeInfractions = Array.isArray(evalResult.infractions) ? [...evalResult.infractions] : [];
-
-    // If richer domain extensions are executed, they represent valid domain schemas and supersede MALFORMED_OBSERVATION_SCHEMA
-    if (extensions && activeStatus === 'MALFORMED_OBSERVATION_SCHEMA') {
-      activeVerdict = 'SUPPORTED';
-      activeStatus = 'NO_VIOLATION_DETECTED';
-      activeClaim = `Invariants verified by ${role}`;
-      activeInfractions = activeInfractions.filter(i => i !== 'MALFORMED_OBSERVATION_SCHEMA');
-    }
-
-    // Evaluate Extension Failures (Redline Item 1)
-    if (extensions) {
-      if (extensions.extension_error) {
-        activeVerdict = 'HELD';
-        activeStatus = 'EXTENSION_ERROR';
-        activeClaim = `Extension execution failed: ${extensions.extension_error}`;
-        activeInfractions.push('EXTENSION_EXECUTION_FAILURE');
+      if (roleInput === null || roleInput === undefined) {
+        missing_inputs.push(role);
+        specialist_findings.push({
+          role,
+          jurisdiction: DOLLHOUSE_AGENT_REGISTRY.agents[role]?.role || 'unspecified',
+          verdict: 'NOT_EVALUATED',
+          status: 'INPUT_MISSING',
+          defect_class: 'NONE',
+          claim: `No observation input supplied for ${role}`,
+          infractions: [],
+          is_synthetic_injection: false,
+          extensions: null
+        });
+        continue;
       }
 
-      // Pedagogue extensions
-      if (extensions.cadence_audit) {
-        if (extensions.cadence_audit.verdict === 'HELD' || extensions.cadence_audit.canonical_order_satisfied === false) {
+      // Call canonical harness specialist executor
+      const evalResult = executeSpecialistRole(role, roleInput, options);
+      const extensions = executeSpecialistExtensions(role, roleInput, options);
+
+      let activeVerdict = evalResult.verdict;
+      let activeStatus = evalResult.status;
+      let activeClaim = evalResult.concern || `Invariants verified by ${role}`;
+      let activeInfractions = Array.isArray(evalResult.infractions) ? [...evalResult.infractions] : [];
+
+      // If richer domain extensions are executed, they represent valid domain schemas and supersede MALFORMED_OBSERVATION_SCHEMA
+      if (extensions && activeStatus === 'MALFORMED_OBSERVATION_SCHEMA') {
+        activeVerdict = 'SUPPORTED';
+        activeStatus = 'NO_VIOLATION_DETECTED';
+        activeClaim = `Invariants verified by ${role}`;
+        activeInfractions = activeInfractions.filter(i => i !== 'MALFORMED_OBSERVATION_SCHEMA');
+      }
+
+      // Evaluate Extension Failures (Redline Item 1)
+      if (extensions) {
+        if (extensions.extension_error) {
           activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = 'Dromological sequence violation detected in cadence audit';
-          (extensions.cadence_audit.violations || []).forEach(v => {
-            activeInfractions.push(v.type || v.code || 'CADENCE_VIOLATION');
-          });
+          activeStatus = 'EXTENSION_ERROR';
+          activeClaim = `Extension execution failed: ${extensions.extension_error}`;
+          activeInfractions.push('EXTENSION_EXECUTION_FAILURE');
         }
-      }
-      if (extensions.institutional_time_audit) {
-        if (extensions.institutional_time_audit.acts_before_counts || extensions.institutional_time_audit.verdict === 'HELD') {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = 'Institutional time violation: acts precede counts';
-          activeInfractions.push('ACTS_BEFORE_COUNTS');
-        }
-      }
 
-      // Aperture extensions
-      if (extensions.epistemic_deficit) {
-        const disp = extensions.epistemic_deficit.disposition;
-        const deficit = extensions.epistemic_deficit.deficit_class;
-        if (disp === 'REJECT' || disp === 'ABSTAIN' || deficit === 'NUMERICAL_STABILITY_DEFICIT') {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = `Aperture deficit detected: ${deficit}`;
-          activeInfractions.push(deficit);
+        // Pedagogue extensions
+        if (extensions.cadence_audit) {
+          if (extensions.cadence_audit.verdict === 'HELD' || extensions.cadence_audit.canonical_order_satisfied === false) {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = 'Dromological sequence violation detected in cadence audit';
+            (extensions.cadence_audit.violations || []).forEach(v => {
+              activeInfractions.push(v.type || v.code || 'CADENCE_VIOLATION');
+            });
+          }
         }
-      }
-      if (extensions.matrix_svd) {
-        if (extensions.matrix_svd.condition_number > 1e3) {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = `Matrix condition number ${extensions.matrix_svd.condition_number} exceeds stability ceiling 1,000`;
-          activeInfractions.push('NUMERICAL_STABILITY_DEFICIT');
+        if (extensions.institutional_time_audit) {
+          if (extensions.institutional_time_audit.acts_before_counts || extensions.institutional_time_audit.verdict === 'HELD') {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = 'Institutional time violation: acts precede counts';
+            activeInfractions.push('ACTS_BEFORE_COUNTS');
+          }
         }
-      }
 
-      // Atlas extensions
-      if (extensions.holonomy_parity) {
-        if (extensions.holonomy_parity.disposition !== 'PASS') {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = extensions.holonomy_parity.reason || 'Atlas holonomy history parity failed';
-          activeInfractions.push(extensions.holonomy_parity.hold_reason || 'HOLD_HOLONOMY_HISTORY_PARITY_FAILED');
+        // Aperture extensions
+        if (extensions.epistemic_deficit) {
+          const disp = extensions.epistemic_deficit.disposition;
+          const deficit = extensions.epistemic_deficit.deficit_class;
+          if (disp === 'REJECT' || disp === 'ABSTAIN' || deficit === 'NUMERICAL_STABILITY_DEFICIT') {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = `Aperture deficit detected: ${deficit}`;
+            activeInfractions.push(deficit);
+          }
         }
-      }
-      if (extensions.phason_custody_diff) {
-        const pStatus = extensions.phason_custody_diff.status;
-        if (pStatus && pStatus.startsWith('HOLD_')) {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = extensions.phason_custody_diff.reason || `Atlas Phason custody hold: ${pStatus}`;
-          activeInfractions.push(pStatus);
-        } else if (pStatus === 'SEAM_DETECTED' || pStatus === 'OPEN' || pStatus === 'PASS_CROSS_INSTRUMENT_BRIDGE_VERIFIED') {
-          if (activeVerdict !== 'HELD') {
-            activeVerdict = 'SUPPORTED';
-            activeStatus = pStatus;
-            activeClaim = extensions.phason_custody_diff.decision || `Atlas Phason custody diff recorded: ${pStatus}`;
+        if (extensions.matrix_svd) {
+          if (extensions.matrix_svd.condition_number > 1e3) {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = `Matrix condition number ${extensions.matrix_svd.condition_number} exceeds stability ceiling 1,000`;
+            activeInfractions.push('NUMERICAL_STABILITY_DEFICIT');
+          }
+        }
+
+        // Atlas extensions
+        if (extensions.holonomy_parity) {
+          if (extensions.holonomy_parity.disposition !== 'PASS') {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = extensions.holonomy_parity.reason || 'Atlas holonomy history parity failed';
+            activeInfractions.push(extensions.holonomy_parity.hold_reason || 'HOLD_HOLONOMY_HISTORY_PARITY_FAILED');
+          }
+        }
+        if (extensions.phason_custody_diff) {
+          const pStatus = extensions.phason_custody_diff.status;
+          if (pStatus && pStatus.startsWith('HOLD_')) {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = extensions.phason_custody_diff.reason || `Atlas Phason custody hold: ${pStatus}`;
+            activeInfractions.push(pStatus);
+          } else if (pStatus === 'SEAM_DETECTED' || pStatus === 'OPEN' || pStatus === 'PASS_CROSS_INSTRUMENT_BRIDGE_VERIFIED') {
+            if (activeVerdict !== 'HELD') {
+              activeVerdict = 'SUPPORTED';
+              activeStatus = pStatus;
+              activeClaim = extensions.phason_custody_diff.decision || `Atlas Phason custody diff recorded: ${pStatus}`;
+            }
+          }
+        }
+
+        // FADT extensions
+        if (extensions.fiber_bounds) {
+          if (extensions.fiber_bounds.irreducible_gap_cardinality > 0 && roleInput.attempts_unconditioned_action) {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = 'FADT irreducible gap: action grant exposed under erased conditioning';
+            activeInfractions.push('ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING');
+          }
+        }
+        if (extensions.coordinate_recovery) {
+          const cStatus = extensions.coordinate_recovery.status;
+          if (cStatus === 'UNSUPPORTED_SEARCH_SIZE') {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = extensions.coordinate_recovery.reason || 'FADT coordinate recovery exceeded finite search budget (10,000 evaluations ceiling)';
+            activeInfractions.push('UNSUPPORTED_SEARCH_SIZE');
+          } else if (cStatus === 'NO_EXACT_RESTORING_COORDINATE_FOUND') {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = 'No exact restoring coordinate found for colliding fiber';
+            activeInfractions.push('NO_EXACT_RESTORING_COORDINATE_FOUND');
+          } else if (cStatus === 'RESTORING_COORDINATE_EXTENSION_FOUND' || cStatus === 'ALREADY_EXACT_NO_RECOVERY_NEEDED') {
+            if (activeVerdict !== 'HELD') {
+              activeVerdict = 'SUPPORTED';
+              activeStatus = cStatus;
+              activeClaim = `FADT coordinate recovery verified: ${cStatus}`;
+            }
+          }
+        }
+        if (extensions.discrepancy_identity) {
+          if (extensions.discrepancy_identity.unlawful_widening === true || extensions.discrepancy_identity.identity_verified === false) {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = extensions.discrepancy_identity.recommendation || 'FADT discrepancy identity: unlawful widening detected';
+            activeInfractions.push(extensions.discrepancy_identity.disposition || 'REJECT_UNLAWFUL_WIDENING');
+          }
+        }
+
+        // Temporal Custodian extensions
+        if (extensions.journey_chronology) {
+          if (extensions.journey_chronology.verdict !== 'PASS') {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = extensions.journey_chronology.rationale || 'Temporal chronology sequence violation';
+            (extensions.journey_chronology.violations || []).forEach(v => {
+              activeInfractions.push(v.code || v.type || 'HOLD_CHRONOLOGY_BACKWARD');
+            });
+          }
+        }
+        if (extensions.temporal_audit) {
+          if (extensions.temporal_audit.verdict !== 'PASS' || extensions.temporal_audit.input_valid === false) {
+            activeVerdict = 'HELD';
+            activeStatus = 'VIOLATION_DETECTED';
+            activeClaim = extensions.temporal_audit.violations?.[0]?.message || 'Temporal audit failed: chronology or ledger defect';
+            (extensions.temporal_audit.violations || []).forEach(v => {
+              activeInfractions.push(v.type || v.code || 'TEMPORAL_AUDIT_VIOLATION');
+            });
           }
         }
       }
 
-      // FADT extensions
-      if (extensions.fiber_bounds) {
-        if (extensions.fiber_bounds.irreducible_gap_cardinality > 0 && roleInput.attempts_unconditioned_action) {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = 'FADT irreducible gap: action grant exposed under erased conditioning';
-          activeInfractions.push('ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING');
-        }
-      }
-      if (extensions.coordinate_recovery) {
-        const cStatus = extensions.coordinate_recovery.status;
-        if (cStatus === 'UNSUPPORTED_SEARCH_SIZE') {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = extensions.coordinate_recovery.reason || 'FADT coordinate recovery exceeded finite search budget (10,000 evaluations ceiling)';
-          activeInfractions.push('UNSUPPORTED_SEARCH_SIZE');
-        } else if (cStatus === 'NO_EXACT_RESTORING_COORDINATE_FOUND') {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = 'No exact restoring coordinate found for colliding fiber';
-          activeInfractions.push('NO_EXACT_RESTORING_COORDINATE_FOUND');
-        } else if (cStatus === 'RESTORING_COORDINATE_EXTENSION_FOUND' || cStatus === 'ALREADY_EXACT_NO_RECOVERY_NEEDED') {
-          if (activeVerdict !== 'HELD') {
-            activeVerdict = 'SUPPORTED';
-            activeStatus = cStatus;
-            activeClaim = `FADT coordinate recovery verified: ${cStatus}`;
-          }
-        }
-      }
-      if (extensions.discrepancy_identity) {
-        if (extensions.discrepancy_identity.unlawful_widening === true || extensions.discrepancy_identity.identity_verified === false) {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = extensions.discrepancy_identity.recommendation || 'FADT discrepancy identity: unlawful widening detected';
-          activeInfractions.push(extensions.discrepancy_identity.disposition || 'REJECT_UNLAWFUL_WIDENING');
-        }
+      // Determine conservative defect classification (Artifact 40 Return Note 2)
+      let defectClass = 'NONE';
+      if (activeVerdict === 'HELD') {
+        defectClass = classifySpecialistDefect(roleInput, evalResult, evidence_class, options);
       }
 
-      // Temporal Custodian extensions
-      if (extensions.journey_chronology) {
-        if (extensions.journey_chronology.verdict !== 'PASS') {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = extensions.journey_chronology.rationale || 'Temporal chronology sequence violation';
-          (extensions.journey_chronology.violations || []).forEach(v => {
-            activeInfractions.push(v.code || v.type || 'HOLD_CHRONOLOGY_BACKWARD');
-          });
-        }
-      }
-      if (extensions.temporal_audit) {
-        if (extensions.temporal_audit.verdict !== 'PASS' || extensions.temporal_audit.input_valid === false) {
-          activeVerdict = 'HELD';
-          activeStatus = 'VIOLATION_DETECTED';
-          activeClaim = extensions.temporal_audit.violations?.[0]?.message || 'Temporal audit failed: chronology or ledger defect';
-          (extensions.temporal_audit.violations || []).forEach(v => {
-            activeInfractions.push(v.type || v.code || 'TEMPORAL_AUDIT_VIOLATION');
-          });
-        }
-      }
+      const isSyntheticInjection = defectClass === 'SYNTHETIC_FAULT_INJECTION';
+
+      specialist_findings.push({
+        role,
+        jurisdiction: evalResult.jurisdiction || DOLLHOUSE_AGENT_REGISTRY.agents[role]?.role || 'unspecified',
+        verdict: activeVerdict,
+        status: activeStatus,
+        defect_class: defectClass,
+        claim: activeClaim,
+        infractions: activeInfractions,
+        is_synthetic_injection: isSyntheticInjection,
+        extensions
+      });
+
+      activeInfractions.forEach(i => detected_infractions_set.add(i));
     }
-
-    // Determine synthetic vs observed defect classification
-    const isSyntheticInjection = Boolean(
-      evalResult.is_synthetic_injection ||
-      roleInput.fixture_class === 'SYNTHETIC_FAULT_INJECTION' ||
-      (options.allow_synthetic_fault_injection === true && (evalResult.is_synthetic_injection || roleInput.fixture_class === 'SYNTHETIC_FAULT_INJECTION'))
-    );
-
-    let defectClass = 'NONE';
-    if (activeVerdict === 'HELD') {
-      if (isSyntheticInjection) {
-        defectClass = 'SYNTHETIC_FAULT_INJECTION';
-      } else if (evidence_class === 'SOURCE_CODE_AUDIT') {
-        defectClass = 'OBSERVED_SOURCE_DEFECT';
-      } else {
-        defectClass = 'SYNTHETIC_MATHEMATICAL_VIOLATION';
-      }
-    }
-
-    specialist_findings.push({
-      role,
-      jurisdiction: evalResult.jurisdiction || DOLLHOUSE_AGENT_REGISTRY.agents[role]?.role || 'unspecified',
-      verdict: activeVerdict,
-      status: activeStatus,
-      defect_class: defectClass,
-      claim: activeClaim,
-      infractions: activeInfractions,
-      is_synthetic_injection: isSyntheticInjection,
-      extensions
-    });
-
-    activeInfractions.forEach(i => detected_infractions_set.add(i));
   }
 
-  // 5. Orchestrator Governance & Adjudication (Redline Item 1)
-  // Executed specialist findings and extension failures strictly govern the Orchestrator disposition
+  // 6. Orchestrator Governance & Adjudication (Artifact 40 Return Note 1)
+  // Preserves all canonical Orchestrator holds, normalization conflicts, replication objections, and missingness findings
   let orchestrator = null;
   if (shouldOrchestrate) {
-    const hasSpecialistHeld = specialist_findings.some(f => f.verdict === 'HELD');
-    const hasSpecialistMissing = specialist_findings.some(f => f.verdict === 'NOT_EVALUATED');
-
-    // Run baseline harness decision for replication and consensus accounting
-    const orchResult = runOrchestrationDecision(specialist_roles, domain_inputs, {
-      ...options,
-      orchestrator_governance: true,
-      condition_name: specialist_roles.length === 0 ? 'ORCHESTRATOR_ALONE' : 'SKILL_INVOCATION'
-    });
-
-    let adjudicatedDecision;
-    let adjudicatedConsensus;
-
-    if (specialist_roles.length === 0) {
-      adjudicatedDecision = 'HELD_NO_ACTIVE_SPECIALISTS';
-      adjudicatedConsensus = 'ABSTAIN_NO_SPECIALIST_SENSES';
-    } else if (hasSpecialistHeld) {
-      adjudicatedDecision = 'HELD';
-      adjudicatedConsensus = specialist_findings.every(f => f.verdict === 'HELD')
-        ? 'UNANIMOUS_HOLD'
-        : 'HELD_DISSENT';
-    } else if (hasSpecialistMissing || missing_inputs.length > 0) {
-      adjudicatedDecision = 'HELD_MISSING_OBSERVATION';
-      adjudicatedConsensus = 'INCOMPLETE_OBSERVATION';
+    if (normalization_conflict) {
+      orchestrator = {
+        decision: 'HELD',
+        consensus: 'NONE',
+        replication_status: 'DIVERGENT_OBSERVATION_REJECTED',
+        empirical_replication_count: 0,
+        active_roles: specialist_roles,
+        findings_count: specialist_findings.length,
+        detected_infractions: [...detected_infractions_set],
+        release_authority: false,
+        deployment_authority: false,
+        human_closure_required: true
+      };
     } else {
-      adjudicatedDecision = 'SUPPORTED';
-      adjudicatedConsensus = specialist_roles.length === FIVE_ROLES.length
-        ? 'UNANIMOUS_SUPPORT'
-        : 'PARTIAL_ROLE_SUPPORT';
-    }
+      const hasSpecialistHeld = specialist_findings.some(f => f.verdict === 'HELD');
+      const hasSpecialistMissing = specialist_findings.some(f => f.verdict === 'NOT_EVALUATED');
 
-    orchestrator = {
-      decision: adjudicatedDecision,
-      consensus: adjudicatedConsensus,
-      replication_status: orchResult.replication_status,
-      empirical_replication_count: orchResult.empirical_replication_count,
-      active_roles: specialist_roles,
-      findings_count: specialist_findings.length,
-      detected_infractions: [...detected_infractions_set],
-      release_authority: false,
-      deployment_authority: false,
-      human_closure_required: true
-    };
+      // Run baseline harness decision for replication and consensus accounting
+      const orchResult = runOrchestrationDecision(specialist_roles, normalized_domain_inputs, {
+        ...options,
+        orchestrator_governance: true,
+        condition_name: specialist_roles.length === 0 ? 'ORCHESTRATOR_ALONE' : 'SKILL_INVOCATION'
+      });
+
+      // Preserve all canonical Orchestrator infractions
+      (orchResult.detected_infractions || []).forEach(i => detected_infractions_set.add(i));
+
+      let adjudicatedDecision;
+      let adjudicatedConsensus;
+
+      if (specialist_roles.length === 0) {
+        adjudicatedDecision = 'HELD_NO_ACTIVE_SPECIALISTS';
+        adjudicatedConsensus = 'ABSTAIN_NO_SPECIALIST_SENSES';
+      } else if (hasSpecialistHeld || orchResult.decision === 'HELD' || (orchResult.decision && orchResult.decision.startsWith('HELD'))) {
+        adjudicatedDecision = orchResult.decision !== 'SUPPORTED' ? orchResult.decision : 'HELD';
+        if (specialist_findings.every(f => f.verdict === 'HELD')) {
+          adjudicatedConsensus = 'UNANIMOUS_HOLD';
+        } else if (hasSpecialistHeld) {
+          adjudicatedConsensus = 'HELD_DISSENT';
+        } else {
+          adjudicatedConsensus = (orchResult.consensus && !orchResult.consensus.includes('SUPPORT') && orchResult.consensus !== 'NONE')
+            ? orchResult.consensus
+            : 'HELD_DISSENT';
+        }
+      } else if (hasSpecialistMissing || missing_inputs.length > 0 || orchResult.decision === 'HELD_MISSING_OBSERVATION') {
+        adjudicatedDecision = 'HELD_MISSING_OBSERVATION';
+        adjudicatedConsensus = 'INCOMPLETE_OBSERVATION';
+      } else if (detected_infractions_set.size > 0 || orchResult.decision !== 'SUPPORTED') {
+        adjudicatedDecision = 'HELD';
+        adjudicatedConsensus = 'HELD_DISSENT';
+      } else {
+        adjudicatedDecision = 'SUPPORTED';
+        adjudicatedConsensus = specialist_roles.length === FIVE_ROLES.length
+          ? 'UNANIMOUS_SUPPORT'
+          : 'PARTIAL_ROLE_SUPPORT';
+      }
+
+      orchestrator = {
+        decision: adjudicatedDecision,
+        consensus: adjudicatedConsensus,
+        replication_status: orchResult.replication_status,
+        empirical_replication_count: orchResult.empirical_replication_count,
+        active_roles: specialist_roles,
+        findings_count: specialist_findings.length,
+        detected_infractions: [...detected_infractions_set],
+        release_authority: false,
+        deployment_authority: false,
+        human_closure_required: true
+      };
+    }
   }
 
-  // 6. Standalone Elimination of False SUPPORTED (Redline Item 2)
+  // 7. Standalone & Overall Decision Determination (Artifact 40 Return Note 1)
   let overallDecision;
   if (orchestrator) {
     overallDecision = orchestrator.decision;
   } else {
-    // Standalone mode: must fail-closed if empty, held, or missing
-    if (specialist_roles.length === 0) {
+    // Standalone mode: must fail-closed if conflict, empty, held, or missing
+    if (normalization_conflict) {
+      overallDecision = 'HELD';
+    } else if (specialist_roles.length === 0) {
       overallDecision = 'HELD_NO_ACTIVE_SPECIALISTS';
     } else if (specialist_findings.some(f => f.verdict === 'HELD')) {
       overallDecision = 'HELD';
@@ -1033,6 +1252,11 @@ export async function runDollhouseSkillAudit(input = {}) {
     timestamp: new Date().toISOString(),
     source_revision,
     source_revision_verified: sourceValidation.verified,
+    git_commit_verified: Boolean(sourceValidation.git_commit_verified),
+    executing_checkout_revision: sourceValidation.executing_checkout_revision,
+    is_exact_checkout_match: Boolean(sourceValidation.is_exact_checkout_match),
+    exact_checkout_verified: Boolean(sourceValidation.exact_checkout_verified),
+    is_historical_commit_only: Boolean(sourceValidation.is_historical_commit_only),
     task_scope,
     evidence_class,
     evidence_references,
@@ -1105,6 +1329,48 @@ export async function writeReceiptArtifact(targetPath, machineReceipt, humanRece
 
   if (!isInsideRepo && !isInsideTemp) {
     throw new Error(`HOLD_ARTIFACT_DESTINATION_NOT_AUTHORIZED: Destination path (${resolved}) is outside approved repository or temporary subtrees`);
+  }
+
+  // Constrain receipt writing to explicit audit-output destinations in repository:
+  // Reject attempts to write into executable code directories (app/, scripts/, src/) or repo root configuration (package.json)
+  if (isInsideRepo) {
+    const normalizedRel = relRepo.replace(/\\/g, '/');
+    const isProtectedSourceCode =
+      normalizedRel === 'package.json' ||
+      normalizedRel === 'package-lock.json' ||
+      normalizedRel.startsWith('app/') ||
+      normalizedRel.startsWith('scripts/') ||
+      normalizedRel.startsWith('.git/') ||
+      normalizedRel.startsWith('.github/');
+
+    if (isProtectedSourceCode && options.authorized_output_destination !== true) {
+      throw new Error(`HOLD_ARTIFACT_DESTINATION_NOT_AUTHORIZED: Cannot write receipt artifact into protected source directory or file (${normalizedRel})`);
+    }
+  }
+
+  // Protect all directory path components against symlink redirection (Artifact 40 Return Note 3)
+  let currentDir = resolve(resolved, '..');
+  const dirsToCheck = [];
+  while (true) {
+    dirsToCheck.push(currentDir);
+    const parent = resolve(currentDir, '..');
+    if (parent === currentDir) break;
+    currentDir = parent;
+  }
+  dirsToCheck.reverse();
+  for (const d of dirsToCheck) {
+    if (existsSync(d)) {
+      try {
+        const lst = lstatSync(d);
+        if (lst.isSymbolicLink()) {
+          throw new Error(`HOLD_ARTIFACT_SYMLINK_REDIRECTION_REJECTED: Path component (${d}) is a symbolic link`);
+        }
+      } catch (err) {
+        if (err.message.includes('HOLD_ARTIFACT_SYMLINK_REDIRECTION_REJECTED')) {
+          throw err;
+        }
+      }
+    }
   }
 
   // Check overwrite authorization and symlink safety
