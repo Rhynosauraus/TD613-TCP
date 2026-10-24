@@ -58,65 +58,76 @@ function validateReportsContainer(reports) {
   return safeList;
 }
 
+function buildStructuralHoldViewModel() {
+  return Object.freeze({
+    schema: LOOM_GATE_VIEW_MODEL_SCHEMA,
+    action: 'CHECK_LOOM_GATE',
+    label: LOOM_GATE_LABEL,
+    href: LOOM_GATE_HREF,
+    declared_source_status: 'MALFORMED_DECLARATION',
+    status: 'HELD_STRUCTURAL_CONTRACT_VIOLATION',
+    gate_verification_status: 'UNVERIFIED_DECLARATION',
+    customer_presentation: Object.freeze({
+      what_happened: 'HOLD · carried gate report failed structural validation.',
+      what_was_checked: 'Carried summary violated structural contract rules; contents untrusted.',
+      what_remains_unknown: 'The model provider’s internal reasoning and hidden activations remain unobserved. Downstream retention, fine-tuning use, or training storage is not measured. Conversation leakage fraction is unmeasured (null).',
+      what_happens_next: 'HOLD · repair or regenerate valid challenge report before relying on gate status.'
+    }),
+    six_field_contract: Object.freeze({
+      source: 'UNTRUSTED_CARRIED_PAYLOAD',
+      scope: 'STRUCTURAL_CONTRACT_VIOLATION',
+      evidence_class: 'DECLARATION',
+      measurement_status: 'REJECTED_MALFORMED_DECLARATION',
+      limitation: 'STRUCTURAL_VALIDATION_FAILED',
+      next_action: 'HOLD_REPAIR_BINDING_OR_MISSING_CAPTURE'
+    }),
+    authority: Object.freeze({
+      head_advanced: false,
+      foreign_enforcement_proved: false,
+      empirical_credit: 0
+    }),
+    drawer: Object.freeze({
+      id: 'loomGateHow',
+      label: 'How do I know? 下',
+      native_report_ref: null,
+      verification_status: 'UNVERIFIED_DECLARATION',
+      local_private_recomputation_required: true,
+      coverage: null,
+      joining: null,
+      specialist_jurisdictions: Object.freeze([]),
+      mechanisms_reference: 'PORTABLE_LOOM_MECHANISMS_v0.1',
+      public_continuation: null
+    }),
+    claim_ceiling: 'fail-closed-structural-hold'
+  });
+}
+
+function deriveNoReportViewModel(phase) {
+  const normalizedPhase = normalizePhaseForSnapshot(phase);
+  const snapshot = {
+    schema: LOOM_GATE_SNAPSHOT_SCHEMA,
+    session: { phase: normalizedPhase }
+  };
+  return deriveLoomGateViewModel(snapshot);
+}
+
 /**
- * Safely derives a Slice 1 view-model from an individual carried report or returns a schema-valid NOT_RUN
- * view-model when no report is present. If the report fails structural validation, emits an explicit
- * HELD_STRUCTURAL_CONTRACT_VIOLATION with null coverage rather than fake zeros (R1-01, R1-04).
+ * Safely derives a Slice 1 view-model from an individual carried report or returns an explicit
+ * structural hold view-model when an entry is invalid, null, undefined, or malformed (R2-01).
+ * Property accesses on report are protected by validateStructureDeep before inspection.
  */
 function deriveIndividualReportViewModel(report, phase) {
   const normalizedPhase = normalizePhaseForSnapshot(phase);
-  if (!report) {
-    const snapshot = {
-      schema: LOOM_GATE_SNAPSHOT_SCHEMA,
-      session: { phase: normalizedPhase }
-    };
-    return deriveLoomGateViewModel(snapshot);
-  }
-  if (report.malformed) {
-    return Object.freeze({
-      schema: LOOM_GATE_VIEW_MODEL_SCHEMA,
-      action: 'CHECK_LOOM_GATE',
-      label: LOOM_GATE_LABEL,
-      href: LOOM_GATE_HREF,
-      declared_source_status: 'MALFORMED_DECLARATION',
-      status: 'HELD_STRUCTURAL_CONTRACT_VIOLATION',
-      gate_verification_status: 'UNVERIFIED_DECLARATION',
-      customer_presentation: Object.freeze({
-        what_happened: 'HOLD · carried gate report failed structural validation.',
-        what_was_checked: 'Carried summary violated structural contract rules; contents untrusted.',
-        what_remains_unknown: 'The model provider’s internal reasoning and hidden activations remain unobserved. Downstream retention, fine-tuning use, or training storage is not measured. Conversation leakage fraction is unmeasured (null).',
-        what_happens_next: 'HOLD · repair or regenerate valid challenge report before relying on gate status.'
-      }),
-      six_field_contract: Object.freeze({
-        source: 'UNTRUSTED_CARRIED_PAYLOAD',
-        scope: 'STRUCTURAL_CONTRACT_VIOLATION',
-        evidence_class: 'DECLARATION',
-        measurement_status: 'REJECTED_MALFORMED_DECLARATION',
-        limitation: 'STRUCTURAL_VALIDATION_FAILED',
-        next_action: 'HOLD_REPAIR_BINDING_OR_MISSING_CAPTURE'
-      }),
-      authority: Object.freeze({
-        head_advanced: false,
-        foreign_enforcement_proved: false,
-        empirical_credit: 0
-      }),
-      drawer: Object.freeze({
-        id: 'loomGateHow',
-        label: 'How do I know? 下',
-        native_report_ref: null,
-        verification_status: 'UNVERIFIED_DECLARATION',
-        local_private_recomputation_required: true,
-        coverage: null,
-        joining: null,
-        specialist_jurisdictions: Object.freeze([]),
-        mechanisms_reference: 'PORTABLE_LOOM_MECHANISMS_v0.1',
-        public_continuation: null
-      }),
-      claim_ceiling: 'fail-closed-structural-hold'
-    });
+  if (report == null || typeof report !== 'object') {
+    return buildStructuralHoldViewModel();
   }
   try {
     validateStructureDeep(report);
+    const malformedDesc = Object.getOwnPropertyDescriptor(report, 'malformed');
+    const schemaDesc = Object.getOwnPropertyDescriptor(report, 'schema');
+    if (malformedDesc?.value === true || schemaDesc?.value === 'td613.loom.malformed-gate-report/v0.1') {
+      return buildStructuralHoldViewModel();
+    }
     const snapshot = {
       schema: LOOM_GATE_SNAPSHOT_SCHEMA,
       session: { phase: normalizedPhase },
@@ -124,47 +135,7 @@ function deriveIndividualReportViewModel(report, phase) {
     };
     return deriveLoomGateViewModel(snapshot);
   } catch (_err) {
-    return Object.freeze({
-      schema: LOOM_GATE_VIEW_MODEL_SCHEMA,
-      action: 'CHECK_LOOM_GATE',
-      label: LOOM_GATE_LABEL,
-      href: LOOM_GATE_HREF,
-      declared_source_status: 'MALFORMED_DECLARATION',
-      status: 'HELD_STRUCTURAL_CONTRACT_VIOLATION',
-      gate_verification_status: 'UNVERIFIED_DECLARATION',
-      customer_presentation: Object.freeze({
-        what_happened: 'HOLD · carried gate report failed structural validation.',
-        what_was_checked: 'Carried summary violated structural contract rules; contents untrusted.',
-        what_remains_unknown: 'The model provider’s internal reasoning and hidden activations remain unobserved. Downstream retention, fine-tuning use, or training storage is not measured. Conversation leakage fraction is unmeasured (null).',
-        what_happens_next: 'HOLD · repair or regenerate valid challenge report before relying on gate status.'
-      }),
-      six_field_contract: Object.freeze({
-        source: 'UNTRUSTED_CARRIED_PAYLOAD',
-        scope: 'STRUCTURAL_CONTRACT_VIOLATION',
-        evidence_class: 'DECLARATION',
-        measurement_status: 'REJECTED_MALFORMED_DECLARATION',
-        limitation: 'STRUCTURAL_VALIDATION_FAILED',
-        next_action: 'HOLD_REPAIR_BINDING_OR_MISSING_CAPTURE'
-      }),
-      authority: Object.freeze({
-        head_advanced: false,
-        foreign_enforcement_proved: false,
-        empirical_credit: 0
-      }),
-      drawer: Object.freeze({
-        id: 'loomGateHow',
-        label: 'How do I know? 下',
-        native_report_ref: null,
-        verification_status: 'UNVERIFIED_DECLARATION',
-        local_private_recomputation_required: true,
-        coverage: null,
-        joining: null,
-        specialist_jurisdictions: Object.freeze([]),
-        mechanisms_reference: 'PORTABLE_LOOM_MECHANISMS_v0.1',
-        public_continuation: null
-      }),
-      claim_ceiling: 'fail-closed-structural-hold'
-    });
+    return buildStructuralHoldViewModel();
   }
 }
 
@@ -174,7 +145,7 @@ function deriveIndividualReportViewModel(report, phase) {
  */
 function buildPublicAggregateReceipt(itemViewModels, reportsLength, phase) {
   if (itemViewModels.length === 0) {
-    const emptyVm = deriveIndividualReportViewModel(null, phase);
+    const emptyVm = deriveNoReportViewModel(phase);
     return Object.freeze({
       schema: LOOM_GATE_DISCLOSURE_PUBLIC_RECEIPT_SCHEMA,
       basis: 'NOT_RUN',
@@ -346,6 +317,7 @@ function buildPublicAggregateReceipt(itemViewModels, reportsLength, phase) {
         declared_source_status: vm.declared_source_status,
         status: vm.status,
         gate_verification_status: vm.gate_verification_status,
+        customer_presentation: vm.customer_presentation,
         ref: vm.drawer?.native_report_ref ?? null,
         coverage: vm.drawer?.coverage ?? null,
         joining: vm.drawer?.joining ?? null

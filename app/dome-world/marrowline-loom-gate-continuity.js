@@ -4,7 +4,6 @@ export const MARROWLINE_LOOM_GATE_CONTINUITY_PUBLIC_PROJECTION_SCHEMA =
 
 import { loomEvidenceHoldSummary } from './holonomy-loom/ai-evidence-diagnostic.js';
 import { marrowlineProviderUsage } from './marrowline-provider-budget.js';
-import { describePortableLoomGateReport } from '../engine/portable-loom-gate.js';
 import { createLoomGateDisclosure } from './loom-gate-disclosure.js';
 import { openMarrowlineLoomGate } from './marrowline-loom-footer.js';
 import { validateStructureDeep } from '../engine/portable-loom-gate-view-model.js';
@@ -28,6 +27,33 @@ const digestShort = value =>
 function parseNonNegativeInt(val) {
   if (typeof val === 'number' && Number.isInteger(val) && val >= 0) return val;
   return null;
+}
+
+/**
+ * Renders customer-safe alert copy from a validated public gate report item (R2-02).
+ * Operates strictly on validated view-model properties without evaluating external getters or raw payloads.
+ */
+function formatPublicGateAlert(item) {
+  if (!item || item.status === 'HELD_STRUCTURAL_CONTRACT_VIOLATION' || item.declared_source_status === 'MALFORMED_DECLARATION') {
+    return 'HOLD · carried gate report failed structural or semantic validation; contents untrusted.';
+  }
+  const c = item.coverage || {};
+  const j = item.joining || {};
+  const countsText = `${c.disclosed_targets ?? 0} of ${c.checked_targets ?? 0} declared protected targets appeared in ${c.captured_channels ?? 0} captured channels. ${c.successful_reconstruction_attempts ?? 0} of ${c.declared_reconstruction_attempts ?? 0} reconstruction attempts recovered their declared target; ${j.observed ?? 0} joined recoveries. ${c.missing_required_channels ?? 0} required channels and ${c.missing_attempts ?? 0} attempts are missing. These counts describe the checked capture; a percentage of the whole conversation has not been measured.`;
+
+  if (item.status === 'OBSERVED_EXPOSURE' || item.declared_source_status === 'OBSERVED_EXPOSURE') {
+    return `Alert · exposure detected in carried report summary. Declared protected targets appeared on captured surfaces; local recomputation required before reliance. ${countsText} This carried summary has not been independently verified locally.`;
+  }
+  if (item.status === 'HELD_UNVERIFIED_DECLARATION' || item.declared_source_status === 'BOUNDED_CHALLENGE_PASSED') {
+    return `Unverified declaration · declared checks passed on captured surfaces; local recomputation required before reliance. ${countsText}`;
+  }
+  if (item.status === 'HELD_INCOMPLETE_OBSERVATION' || item.declared_source_status === 'HELD_INCOMPLETE_OBSERVATION') {
+    return `HOLD · incomplete observation declared in carried report summary; required channels or probe attempts are missing. ${countsText}`;
+  }
+  if (item.status === 'HOLD_REFERENCE_MISMATCH' || item.declared_source_status === 'HOLD_REFERENCE_MISMATCH') {
+    return `HOLD · reference mismatch declared; carried capture does not match current activation. ${countsText}`;
+  }
+  return 'HOLD · carried gate report failed structural or semantic validation; contents untrusted.';
 }
 
 /**
@@ -544,13 +570,11 @@ export function installMarrowlineLoomGateContinuity({
       el(doc, 'h4', 'Portable Loom Gate alerts'),
       el(doc, 'p', current.portableGovernanceRef ? `Canonical governance ${digestShort(current.portableGovernanceRef)}.` : 'Legacy transfer: no canonical portable governance record.')
     );
-    if (current.portableGateReports.length) {
-      for (const report of current.portableGateReports) {
-        if (report && !report.malformed && report.coverage && typeof report.coverage === 'object' && typeof report.coverage.disclosed_targets === 'number') {
-          portableAlerts.append(el(doc, 'p', describePortableLoomGateReport(report)));
-        } else {
-          portableAlerts.append(el(doc, 'p', 'HOLD · carried gate report failed structural or semantic validation; contents untrusted.'));
-        }
+    const publicReceipt = disclosure.getPublicReceipt();
+    const publicItems = publicReceipt?.reports_summary?.items || [];
+    if (publicItems.length) {
+      for (const item of publicItems) {
+        portableAlerts.append(el(doc, 'p', formatPublicGateAlert(item)));
       }
     } else {
       portableAlerts.append(el(doc, 'p', 'No captured disclosure or reconstruction result traveled with this handoff. Check Loom Gate to inspect captured evidence; this stage does not measure leakage from the whole conversation.'));

@@ -607,3 +607,186 @@ test('T-REPAIR-08 (R1-04): Mixed-report with two distinct native references cann
   assert.equal(receipt.drawer.coverage.declared_report_totals, true);
   assert.match(receipt.customer_presentation.what_happened, /Alert · exposure detected in carried report summary/);
 });
+
+test('T-REPAIR-09 (R2-01): Accessor on report.malformed never executes', () => {
+  const { doc } = setupDom();
+  let getterExecuted = false;
+  const hostileReport = {};
+  Object.defineProperty(hostileReport, 'malformed', {
+    get() {
+      getterExecuted = true;
+      throw new Error('MALFORMED_GETTER_FIRED');
+    },
+    enumerable: true,
+    configurable: true
+  });
+
+  const disclosure = createLoomGateDisclosure(doc);
+  assert.doesNotThrow(() => disclosure.update([hostileReport], 'ACTIVE'));
+  assert.equal(getterExecuted, false, 'Accessor on report.malformed must NEVER execute');
+
+  const receipt = disclosure.getPublicReceipt();
+  assert.equal(receipt.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+  assert.equal(receipt.drawer.coverage, null);
+
+  // Also via open(report)
+  assert.doesNotThrow(() => disclosure.open(hostileReport));
+  assert.equal(getterExecuted, false, 'Accessor on report.malformed must NEVER execute on open()');
+});
+
+test('T-REPAIR-10 (R2-01): [null], [undefined], and sparse report entries produce explicit structural HOLD classifications rather than NOT_RUN or PASS', () => {
+  const { doc } = setupDom();
+  const disclosure = createLoomGateDisclosure(doc);
+
+  // [null] entry
+  disclosure.update([null], 'ACTIVE');
+  let receipt = disclosure.getPublicReceipt();
+  assert.equal(receipt.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION', '[null] must not be classified as NOT_RUN');
+  assert.equal(receipt.reports_summary.total_reports, 1);
+  assert.equal(receipt.reports_summary.items[0].status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+  assert.notEqual(receipt.status, 'NOT_RUN');
+
+  // [undefined] entry
+  disclosure.update([undefined], 'ACTIVE');
+  receipt = disclosure.getPublicReceipt();
+  assert.equal(receipt.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION', '[undefined] must not be classified as NOT_RUN');
+  assert.equal(receipt.reports_summary.total_reports, 1);
+  assert.equal(receipt.reports_summary.items[0].status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+
+  // Sparse array (hole)
+  const sparseArray = new Array(1); // sparse hole at index 0
+  disclosure.update(sparseArray, 'ACTIVE');
+  receipt = disclosure.getPublicReceipt();
+  assert.equal(receipt.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION', 'Sparse array must not be classified as NOT_RUN');
+  assert.equal(receipt.reports_summary.total_reports, 1);
+  assert.equal(receipt.reports_summary.items[0].status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+
+  // In contrast, empty array [] is truly NOT_RUN
+  disclosure.update([], 'ACTIVE');
+  receipt = disclosure.getPublicReceipt();
+  assert.equal(receipt.status, 'NOT_RUN');
+  assert.equal(receipt.reports_summary.total_reports, 0);
+});
+
+test('T-REPAIR-11 (R2-01): Valid internal malformed placeholders retain HOLD classifications and mixed-report exposure dominance survives', () => {
+  const { doc } = setupDom();
+  const disclosure = createLoomGateDisclosure(doc);
+  const internalPlaceholder = { schema: 'td613.loom.malformed-gate-report/v0.1', malformed: true, index: 0 };
+  const exposure = createExposureReport();
+
+  // Internal placeholder alone
+  disclosure.update([internalPlaceholder], 'ACTIVE');
+  let receipt = disclosure.getPublicReceipt();
+  assert.equal(receipt.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+  assert.equal(receipt.reports_summary.items[0].status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+  assert.equal(receipt.reports_summary.items[0].coverage, null);
+
+  // Mixed: internal placeholder followed by exposure report -> exposure dominates
+  disclosure.update([internalPlaceholder, exposure], 'ACTIVE');
+  receipt = disclosure.getPublicReceipt();
+  assert.equal(receipt.status, 'OBSERVED_EXPOSURE', 'Exposure must dominate over internal malformed placeholder');
+  assert.equal(receipt.reports_summary.items[0].status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+  assert.equal(receipt.reports_summary.items[1].status, 'OBSERVED_EXPOSURE');
+
+  // Mixed: exposure report followed by null invalid entry -> exposure dominates
+  disclosure.update([exposure, null], 'ACTIVE');
+  receipt = disclosure.getPublicReceipt();
+  assert.equal(receipt.status, 'OBSERVED_EXPOSURE', 'Exposure must dominate over null invalid entry');
+  assert.equal(receipt.reports_summary.items[0].status, 'OBSERVED_EXPOSURE');
+  assert.equal(receipt.reports_summary.items[1].status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+});
+
+test('T-REPAIR-12 (R2-02): Report with coverage: { disclosed_targets: 0 } but no joining cannot crash Marrowline rendering', () => {
+  const { doc, root } = setupDom();
+  // Report with partial coverage but NO joining property and no status
+  const incompleteReport = {
+    coverage: { disclosed_targets: 0 }
+  };
+  const packet = {
+    loom_gate_reports: [incompleteReport]
+  };
+
+  assert.doesNotThrow(() => {
+    const continuity = installMarrowlineLoomGateContinuity({ doc, root, packet });
+    continuity.update({ phase: 'ARRIVED' });
+  });
+
+  const alerts = doc.getElementById('loomPortableGateAlerts');
+  assert.ok(alerts);
+  assert.match(alerts.textContent, /HOLD · carried gate report failed structural or semantic validation/);
+
+  const globalObj = root.__TD613_MARROWLINE_LOOM_GATE_CONTINUITY__;
+  assert.equal(globalObj.gate_disclosure.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+});
+
+test('T-REPAIR-13 (R2-02): Semantically incomplete reports produce structural HOLD alerts', () => {
+  const { doc, root } = setupDom();
+  // Report claims BOUNDED_CHALLENGE_PASSED but lacks mandatory count fields
+  const semanticallyIncomplete = {
+    schema: PORTABLE_LOOM_GATE_SCHEMA,
+    status: 'BOUNDED_CHALLENGE_PASSED',
+    coverage: {
+      captured_channels: 1
+      // missing required fields: checked_targets, disclosed_targets, declared_reconstruction_attempts, etc.
+    }
+  };
+  const packet = {
+    loom_gate_reports: [semanticallyIncomplete]
+  };
+
+  const continuity = installMarrowlineLoomGateContinuity({ doc, root, packet });
+  continuity.update({ phase: 'ARRIVED' });
+
+  const alerts = doc.getElementById('loomPortableGateAlerts');
+  assert.match(alerts.textContent, /HOLD · carried gate report failed structural or semantic validation; contents untrusted\./);
+
+  const globalObj = root.__TD613_MARROWLINE_LOOM_GATE_CONTINUITY__;
+  assert.equal(globalObj.gate_disclosure.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+});
+
+test('T-REPAIR-14 (R2-02): Declared PASS is described as unverified pending local recomputation', () => {
+  const { doc, root } = setupDom();
+  const validPass = createMockReport();
+  const packet = {
+    loom_gate_reports: [validPass]
+  };
+
+  const continuity = installMarrowlineLoomGateContinuity({ doc, root, packet });
+  continuity.update({ phase: 'ARRIVED' });
+
+  const alerts = doc.getElementById('loomPortableGateAlerts');
+  // Must describe PASS as unverified pending local recomputation
+  assert.match(alerts.textContent, /Unverified declaration · declared checks passed on captured surfaces; local recomputation required before reliance\./);
+  // Must not claim unqualified authoritative pass
+  assert.doesNotMatch(alerts.textContent, /^Captured checks passed\.$/m);
+
+  const globalObj = root.__TD613_MARROWLINE_LOOM_GATE_CONTINUITY__;
+  assert.equal(globalObj.gate_disclosure.status, 'HELD_UNVERIFIED_DECLARATION');
+});
+
+test('T-REPAIR-15 (R2-02): Reported exposure remains prominently flagged and explicitly attributed to an unverified carried summary; raw payloads never leak into alert text', () => {
+  const { doc, root } = setupDom();
+  const rawPayloadCanary = 'SECRET_INTERNAL_PAYLOAD_TOKEN_ABC123';
+  const exposureReport = createExposureReport({
+    raw_debug_payload: rawPayloadCanary,
+    secret_solution_key: 'KEY_VALUE_MUST_NOT_APPEAR'
+  });
+  const packet = {
+    loom_gate_reports: [exposureReport]
+  };
+
+  const continuity = installMarrowlineLoomGateContinuity({ doc, root, packet });
+  continuity.update({ phase: 'ARRIVED' });
+
+  const alerts = doc.getElementById('loomPortableGateAlerts');
+  // Prominently flagged and explicitly attributed to unverified carried summary
+  assert.match(alerts.textContent, /Alert · exposure detected in carried report summary\. Declared protected targets appeared on captured surfaces; local recomputation required before reliance\./);
+  assert.match(alerts.textContent, /This carried summary has not been independently verified locally\./);
+
+  // Raw report payloads never enter public alert text
+  assert.equal(alerts.textContent.includes(rawPayloadCanary), false, 'Raw payload canary must not appear in alerts text');
+  assert.equal(alerts.textContent.includes('KEY_VALUE_MUST_NOT_APPEAR'), false, 'Secret solution key must not appear in alerts text');
+
+  const globalObj = root.__TD613_MARROWLINE_LOOM_GATE_CONTINUITY__;
+  assert.equal(globalObj.gate_disclosure.status, 'OBSERVED_EXPOSURE');
+});
