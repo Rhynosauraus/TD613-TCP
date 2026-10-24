@@ -1269,4 +1269,24 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     assert.ok(res.machine_receipt.detected_infractions.includes('SOURCE_CODE_AUDIT_MISSING_EVIDENCE_REFERENCES'));
   });
 
+  // 46. A dangling symlink is an existing filesystem object even when existsSync returns false.
+  await t.test('46. Dangling symlink target cannot redirect receipt write', async () => {
+    const { symlinkSync } = await import('node:fs');
+    const dir = join(tmpdir(), `td613-dollhouse-dangling-link-${Date.now()}`);
+    mkdirSync(dir, { recursive: true });
+    const linkPath = join(dir, 'receipt.json');
+    const missingTarget = join(dir, 'missing-outside-target.json');
+    try {
+      symlinkSync(missingTarget, linkPath);
+    } catch (err) {
+      if (process.platform === 'win32' && (err.code === 'EPERM' || err.code === 'EACCES')) return;
+      throw err;
+    }
+    await assert.rejects(
+      () => writeReceiptArtifact(linkPath, { test: true }, '# Receipt', { operator_authorized_overwrite: true }),
+      /HOLD_ARTIFACT_SYMLINK_REDIRECTION_REJECTED/
+    );
+    assert.ok(!existsSync(missingTarget));
+  });
+
 });
