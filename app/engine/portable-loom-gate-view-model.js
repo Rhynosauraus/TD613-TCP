@@ -2,21 +2,22 @@
  * @file app/engine/portable-loom-gate-view-model.js
  * @description Pure read-only view-model presentation adapter for the customer-facing Loom Gate (Issue #1592).
  *
- * GOVERNING LAWS & CONTRACTS (Artifact 45-R2 / Artifact 46-R1):
+ * GOVERNING LAWS & CONTRACTS (Artifact 45-R2 / Artifact 46-R1 / Artifact 46-R2):
  * 1. PURE PRESENTATION ADAPTER: Pure functions only; zero platform (node:fs, node:crypto) dependencies.
  * 2. DETERMINISTIC PURITY: Identical accepted inputs deterministically map to identical public output.
  *    No internal new Date() or non-deterministic generators.
  * 3. AUTHORITY CEILINGS: head_advanced: false, foreign_enforcement_proved: false, empirical_credit: 0.
- * 4. TRUST BOUNDARY: Serialized caller-supplied witnesses are untrusted declarations. Within Slice 1,
- *    gate_verification_status defaults strictly to 'UNVERIFIED_DECLARATION'. An unverified report
- *    never produces an unqualified customer-facing PASS.
- * 5. CONTRADICTORY REPORT REJECTION: Contradictory combinations (e.g. PASS with nonzero disclosure,
- *    EXPOSURE with zero disclosure/recovery) fail closed in validation.
- * 6. CUSTOMER UI VS EXPERT SEPARATION: Internal research cast names (Dollhouse, Pedagogue, Aperture,
- *    Atlas, FADT, Temporal Custodian, Orchestrator) remain confined to expert drawer / machine schemas,
- *    never in customer-facing titles, buttons, or default presentation text.
- * 7. DEEP VALUE-LEVEL SAFETY: Recursive structural validation without getter evaluation; explicit field
- *    allowlists; deep-frozen output for local client runtime safety.
+ * 4. MACHINE-READABLE CLAIM CEILINGS (Correction A): Caller-declared PASS must never become an
+ *    unqualified authoritative PASS in viewModel.status or measurement_status. An unverified pass
+ *    maps to status: 'HELD_UNVERIFIED_DECLARATION' and measurement_status: 'UNVERIFIED_DECLARED_MEASUREMENT'.
+ *    The raw declaration is preserved in declared_source_status.
+ * 5. PUBLIC-DATA & ACCESSOR SAFETY (Correction B): Caller-supplied request_id is not exported to prevent
+ *    marker leakage. Structural validation inspects property descriptors across objects AND array indices
+ *    without evaluating untrusted getter functions. Traversal is bounded by a total node budget.
+ * 6. REPORT COMPLETENESS & ALIAS COLLISION (Correction C): Simultaneous native_gate_report and gate_report
+ *    aliases are rejected fail-closed. BOUNDED_CHALLENGE_PASSED requires mandatory non-zero coverage evidence.
+ * 7. CUSTOMER UI VS EXPERT SEPARATION: Internal research cast names (Dollhouse, Pedagogue, Aperture,
+ *    Atlas, FADT, Temporal Custodian, Orchestrator) remain confined to expert drawer / machine schemas.
  */
 
 export const LOOM_GATE_SNAPSHOT_SCHEMA = 'td613.loom.gate-snapshot/v0.1';
@@ -27,15 +28,15 @@ export const LOOM_GATE_LABEL = '米 Check Loom Gate';
 export const LOOM_GATE_HREF = 'https://td613.com/dome-world/holonomy-loom.html#loomGate';
 
 const HEX64_REGEX = /^[a-f0-9]{64}$/;
-const REQUEST_ID_REGEX = /^[a-zA-Z0-9_\-\.]{1,128}$/;
 
-// Maximum structural resource bounds
+// Maximum structural resource bounds (Correction B)
 const MAX_DEPTH = 10;
 const MAX_KEYS = 50;
 const MAX_ARRAY_LENGTH = 1000;
 const MAX_STRING_LENGTH = 2048;
+const MAX_TOTAL_NODES = 5000;
 
-// Strict Value-Level Allowlists (R1-02)
+// Strict Value-Level Allowlists
 export const RECEIPT_SCOPE_ALLOWLIST = Object.freeze([
   'ORIGIN_COMPUTED_SUMMARY_REQUIRES_LOCAL_PRIVATE_RECORD_FOR_RECOMPUTATION',
   'ORIGIN_COMPUTED_SUMMARY_LOCAL_PRIVATE_RECORD_REQUIRED'
@@ -118,13 +119,20 @@ function deepFreeze(obj, seen = new WeakSet()) {
 /**
  * Deep structural validation verifying finite resource bounds, non-plain objects,
  * prototypes, cyclic references, and accessors (getters/setters) WITHOUT invoking getters.
+ * Evaluates property descriptors across plain objects AND array index properties.
  *
  * @param {unknown} node
  * @param {string} [path='']
  * @param {number} [depth=0]
  * @param {Set<object>} [visited]
+ * @param {{ nodeCount: number }} [state]
  */
-function validateStructureDeep(node, path = '', depth = 0, visited = new Set()) {
+export function validateStructureDeep(node, path = '', depth = 0, visited = new Set(), state = { nodeCount: 0 }) {
+  state.nodeCount += 1;
+  if (state.nodeCount > MAX_TOTAL_NODES) {
+    throw new Error(`Loom Gate snapshot exceeds maximum total structural traversal budget of ${MAX_TOTAL_NODES}.`);
+  }
+
   if (depth > MAX_DEPTH) {
     throw new Error(`Loom Gate snapshot exceeds maximum nesting depth of ${MAX_DEPTH} at ${path || 'root'}.`);
   }
@@ -173,15 +181,25 @@ function validateStructureDeep(node, path = '', depth = 0, visited = new Set()) 
       if (node.length > MAX_ARRAY_LENGTH) {
         throw new Error(`Loom Gate snapshot array exceeds maximum length of ${MAX_ARRAY_LENGTH} at ${path || 'root'}.`);
       }
-      for (let i = 0; i < node.length; i++) {
-        validateStructureDeep(node[i], `${path}[${i}]`, depth + 1, visited);
+
+      // Inspect array property descriptors (including indices) to catch accessors WITHOUT invoking them
+      const descriptors = Object.getOwnPropertyDescriptors(node);
+      const keys = Object.keys(descriptors);
+
+      for (const key of keys) {
+        if (key === 'length') continue;
+        const desc = descriptors[key];
+        if (desc.get !== undefined || desc.set !== undefined) {
+          throw new Error(`Loom Gate snapshot contains accessor property (getter/setter) on array at ${path ? `${path}[${key}]` : `[${key}]`}.`);
+        }
+        validateStructureDeep(desc.value, path ? `${path}[${key}]` : `[${key}]`, depth + 1, visited, state);
       }
     } else {
       if (proto !== Object.prototype && proto !== null) {
         throw new Error(`Loom Gate snapshot contains non-plain object or custom prototype at ${path || 'root'}.`);
       }
 
-      // Inspect property descriptors to catch accessors (getters/setters) WITHOUT invoking them
+      // Inspect object property descriptors to catch accessors WITHOUT invoking them
       const descriptors = Object.getOwnPropertyDescriptors(node);
       const keys = Object.keys(descriptors);
 
@@ -194,8 +212,7 @@ function validateStructureDeep(node, path = '', depth = 0, visited = new Set()) 
         if (desc.get !== undefined || desc.set !== undefined) {
           throw new Error(`Loom Gate snapshot contains accessor property (getter/setter) at ${path ? `${path}.${key}` : key}.`);
         }
-        // desc.value is safe to inspect because it is a direct data property
-        validateStructureDeep(desc.value, path ? `${path}.${key}` : key, depth + 1, visited);
+        validateStructureDeep(desc.value, path ? `${path}.${key}` : key, depth + 1, visited, state);
       }
     }
 
@@ -206,7 +223,7 @@ function validateStructureDeep(node, path = '', depth = 0, visited = new Set()) 
 /**
  * Validates the syntactic, structural, and value-level integrity of an incoming Loom Gate snapshot.
  * Rejects prototypes, cyclic references, missing mandatory keys, negative counts,
- * contradictory reports, executable functions, or unauthorized authority claims.
+ * contradictory reports, alias collisions, executable functions, or unauthorized authority claims.
  *
  * @param {unknown} snapshot
  * @returns {boolean} True if structurally valid; throws Error on contract violation.
@@ -216,11 +233,16 @@ export function validateLoomGateSnapshot(snapshot) {
     throw new Error('Loom Gate snapshot must be a non-null plain object.');
   }
 
-  // Deep recursive validation without invoking getters (R1-03)
+  // Deep recursive validation without invoking getters (Correction B)
   validateStructureDeep(snapshot);
 
   if (snapshot.schema !== LOOM_GATE_SNAPSHOT_SCHEMA) {
     throw new Error(`Invalid snapshot schema: expected '${LOOM_GATE_SNAPSHOT_SCHEMA}', got '${snapshot.schema}'.`);
+  }
+
+  // Reject alias collision (Correction C)
+  if (snapshot.native_gate_report !== undefined && snapshot.gate_report !== undefined) {
+    throw new Error('Alias collision: snapshot cannot specify both native_gate_report and gate_report.');
   }
 
   // Inspect session metadata if provided
@@ -247,7 +269,7 @@ export function validateLoomGateSnapshot(snapshot) {
     }
   }
 
-  // Inspect specialist summaries if present (R1-02)
+  // Inspect specialist summaries if present
   if (snapshot.specialist_summaries !== undefined) {
     if (snapshot.specialist_summaries === null || typeof snapshot.specialist_summaries !== 'object' || Array.isArray(snapshot.specialist_summaries)) {
       throw new Error('Snapshot specialist_summaries must be an object.');
@@ -266,7 +288,7 @@ export function validateLoomGateSnapshot(snapshot) {
   }
 
   // Inspect native gate report if present
-  const report = snapshot.native_gate_report || snapshot.gate_report;
+  const report = snapshot.native_gate_report !== undefined ? snapshot.native_gate_report : snapshot.gate_report;
   if (report !== undefined) {
     if (report === null || typeof report !== 'object' || Array.isArray(report)) {
       throw new Error('Snapshot native_gate_report must be an object.');
@@ -332,7 +354,7 @@ export function validateLoomGateSnapshot(snapshot) {
       throw new Error('Snapshot native_gate_report conversation_leakage_fraction must be null.');
     }
 
-    // Value-level enum allowlist checks (R1-02)
+    // Value-level enum allowlist checks
     if (report.status !== undefined && !GATE_STATUS_ALLOWLIST.includes(report.status)) {
       throw new Error(`Snapshot native_gate_report status contains unrecognized value: '${report.status}'.`);
     }
@@ -343,8 +365,14 @@ export function validateLoomGateSnapshot(snapshot) {
       throw new Error(`Snapshot native_gate_report receipt_scope contains unrecognized value: '${report.receipt_scope}'.`);
     }
 
-    // Reject contradictory reports (R1-01)
+    // Reject contradictory reports & enforce mandatory coverage evidence (Correction C)
     if (report.status === 'BOUNDED_CHALLENGE_PASSED') {
+      if (!report.coverage || typeof report.coverage !== 'object') {
+        throw new Error('Snapshot native_gate_report claims BOUNDED_CHALLENGE_PASSED but lacks mandatory coverage evidence object.');
+      }
+      if ((c.checked_targets ?? 0) < 1 || (c.captured_channels ?? 0) < 1 || (c.measured_reconstruction_attempts ?? 0) < 1) {
+        throw new Error('Snapshot native_gate_report claims BOUNDED_CHALLENGE_PASSED but lacks mandatory coverage evidence (checked_targets, captured_channels, and measured_reconstruction_attempts must be >= 1).');
+      }
       if ((c.disclosed_targets ?? 0) > 0) {
         throw new Error('Contradictory report: status is BOUNDED_CHALLENGE_PASSED but disclosed_targets is nonzero.');
       }
@@ -393,11 +421,12 @@ export function validateLoomGateSnapshot(snapshot) {
  * Pure derivation adapter mapping an immutable Loom Gate snapshot into a customer-legible,
  * 6-dimensional presentation view-model.
  *
- * TRUST BOUNDARY GUARANTEE (R1-01 / Amari Guard):
- * Serialized caller-supplied witnesses in the snapshot are untrusted declarations.
- * Within Slice 1's pure adapter scope, gate_verification_status defaults strictly to
- * 'UNVERIFIED_DECLARATION'. An unverified report NEVER produces an unqualified customer-facing PASS.
- * Zero invented verification, foreign enforcement, or empirical credit.
+ * TRUST BOUNDARY GUARANTEE (Correction A / Amari Redpen):
+ * An unverified report NEVER produces an unqualified authoritative PASS through a machine-readable field.
+ * - declared_source_status: exact declared status from the source report.
+ * - status: presentation/admission posture; an unverified pass maps to 'HELD_UNVERIFIED_DECLARATION'.
+ * - measurement_status: 'UNVERIFIED_DECLARED_MEASUREMENT' for unverified reports.
+ * - gate_verification_status: 'UNVERIFIED_DECLARATION'.
  *
  * @param {object} snapshot - Validated Loom Gate snapshot.
  * @param {object} [options={}] - Presentation options.
@@ -406,11 +435,16 @@ export function validateLoomGateSnapshot(snapshot) {
 export function deriveLoomGateViewModel(snapshot, options = {}) {
   validateLoomGateSnapshot(snapshot);
 
-  const report = snapshot.native_gate_report || snapshot.gate_report || {};
+  const report = snapshot.native_gate_report !== undefined
+    ? snapshot.native_gate_report
+    : snapshot.gate_report !== undefined
+      ? snapshot.gate_report
+      : {};
+
   const coverage = report.coverage || {};
   const joining = report.joining || {};
 
-  const status = report.status || 'NOT_RUN';
+  const declaredSourceStatus = report.status || 'NOT_RUN';
   const evidenceClass = report.evidence_class && EVIDENCE_CLASS_ALLOWLIST.includes(report.evidence_class)
     ? report.evidence_class
     : 'DECLARATION';
@@ -428,6 +462,16 @@ export function deriveLoomGateViewModel(snapshot, options = {}) {
   // Within Slice 1, gate_verification_status defaults strictly to 'UNVERIFIED_DECLARATION'.
   const gateVerificationStatus = 'UNVERIFIED_DECLARATION';
 
+  // MACHINE-READABLE CLAIM CEILINGS (Correction A):
+  // An unverified BOUNDED_CHALLENGE_PASSED declaration must NEVER become an unqualified authoritative PASS
+  // in viewModel.status or measurement_status.
+  let admissionStatus = declaredSourceStatus;
+  let measurementStatus = declaredSourceStatus === 'NOT_RUN' ? 'NOT_RUN' : 'UNVERIFIED_DECLARED_MEASUREMENT';
+
+  if (declaredSourceStatus === 'BOUNDED_CHALLENGE_PASSED') {
+    admissionStatus = 'HELD_UNVERIFIED_DECLARATION';
+  }
+
   // Customer UI wording (Strictly customer-legible, zero internal research cast names)
   let whatHappened = 'Loom arrived locally. No receiver checks have been run.';
   let whatWasChecked = 'No captured challenge surfaces checked yet.';
@@ -435,23 +479,22 @@ export function deriveLoomGateViewModel(snapshot, options = {}) {
   let whatHappensNext = 'Review your local files and attachments before an explicit send gesture.';
   let nextAction = 'REVIEW_LOCAL_STAGING_BEFORE_SEND';
 
-  if (status === 'OBSERVED_EXPOSURE') {
+  if (declaredSourceStatus === 'OBSERVED_EXPOSURE') {
     whatHappened = 'Alert · exposure detected. Declared protected targets appeared on captured surfaces.';
     whatWasChecked = `${checkedTargets} canary targets checked across ${capturedChannels} captured channels; ${disclosedTargets} disclosed. ${declaredAttempts} reconstruction attempts declared; ${successfulAttempts} recovered.`;
     whatHappensNext = 'HOLD · Review exposure and registered scope before taking any further action.';
     nextAction = 'HOLD_REVIEW_EXPOSURE_AND_REGISTERED_SCOPE';
-  } else if (status === 'BOUNDED_CHALLENGE_PASSED') {
-    // R1-01: An unverified report cannot produce an unqualified PASS presentation
+  } else if (declaredSourceStatus === 'BOUNDED_CHALLENGE_PASSED') {
     whatHappened = 'Unverified declaration · declared checks passed on captured surfaces; local recomputation required before reliance.';
     whatWasChecked = `${checkedTargets} canary targets declared checked across ${capturedChannels} captured channels; ${disclosedTargets} disclosed. ${measuredAttempts} reconstruction probes declared measured; ${successfulAttempts} recovered. Verification status: unverified declaration.`;
     whatHappensNext = 'HOLD · Verify capture integrity locally before continuing.';
     nextAction = 'HOLD_RECOMPUTE_LOCAL_GATE_INTEGRITY';
-  } else if (status === 'HELD_INCOMPLETE_OBSERVATION') {
+  } else if (declaredSourceStatus === 'HELD_INCOMPLETE_OBSERVATION') {
     whatHappened = 'HOLD · incomplete observation. Required channels or probe attempts are missing.';
     whatWasChecked = `${missingChannels} required channels missing. ${missingAttempts} reconstruction attempts missing out of ${declaredAttempts} declared.`;
     whatHappensNext = 'HOLD · Repair binding or capture coverage before attempting continuation.';
     nextAction = 'HOLD_REPAIR_BINDING_OR_MISSING_CAPTURE';
-  } else if (status === 'HOLD_REFERENCE_MISMATCH') {
+  } else if (declaredSourceStatus === 'HOLD_REFERENCE_MISMATCH') {
     whatHappened = 'HOLD · reference mismatch. Challenge, session, or work-unit references require review.';
     whatWasChecked = 'Carried reference commitments do not match current session root or anchor work unit.';
     whatHappensNext = 'HOLD · Review session bindings and reference commitments.';
@@ -469,7 +512,8 @@ export function deriveLoomGateViewModel(snapshot, options = {}) {
     action: 'CHECK_LOOM_GATE',
     label: LOOM_GATE_LABEL,
     href: LOOM_GATE_HREF,
-    status,
+    declared_source_status: declaredSourceStatus,
+    status: admissionStatus,
     gate_verification_status: gateVerificationStatus,
     customer_presentation: {
       what_happened: whatHappened,
@@ -481,7 +525,7 @@ export function deriveLoomGateViewModel(snapshot, options = {}) {
       source: 'LOCAL_PORTABLE_SESSION_AND_CAPTURED_CHALLENGE',
       scope: receiptScope,
       evidence_class: evidenceClass,
-      measurement_status: status === 'NOT_RUN' ? 'NOT_RUN' : 'MEASURED',
+      measurement_status: measurementStatus,
       limitation: 'UNMEASURED_CONVERSATION_LEAKAGE_AND_ZERO_FOREIGN_ENFORCEMENT',
       next_action: nextAction
     },
@@ -529,12 +573,13 @@ export function deriveLoomGateViewModel(snapshot, options = {}) {
 }
 
 /**
- * Sanitizes a continuation payload for public export (Requirement R04 / Test T-EXPORT-01 / Repair R1-04).
- * Strips private canaries, prompt bodies, challenge solutions, and secret keys.
+ * Sanitizes a continuation payload for public export (Requirement R04 / Test T-EXPORT-01 / Correction B).
+ * Strips private canaries, prompt bodies, challenge solutions, secret keys, and caller-supplied
+ * request_id strings to prevent sensitive marker leakage.
  *
- * DETERMINISTIC PURITY (R1-04):
- * Strictly deterministic pure function. Does not call new Date(). Identical inputs map
- * to identical outputs across all execution environments.
+ * GETTER SAFETY & DETERMINISTIC PURITY (Correction B & R1-04):
+ * Examines property descriptors before accessing values, ensuring accessors are rejected without evaluation.
+ * Strictly deterministic pure function. Does not call new Date().
  *
  * @param {object} continuation - Continuation return payload to sanitize.
  * @returns {Readonly<object>} Deeply frozen, public-safe continuation record.
@@ -544,10 +589,8 @@ export function sanitizePublicContinuation(continuation) {
     throw new Error('Continuation must be a non-null object.');
   }
 
-  // Validate value-level attributes against allowlists (R1-02)
-  const requestId = typeof continuation.request_id === 'string' && REQUEST_ID_REGEX.test(continuation.request_id)
-    ? continuation.request_id
-    : null;
+  // Pre-validate input structure without invoking getters (Correction B)
+  validateStructureDeep(continuation);
 
   const sessionRootRef = typeof continuation.session_root_ref === 'string' && HEX64_REGEX.test(continuation.session_root_ref)
     ? continuation.session_root_ref
@@ -565,10 +608,11 @@ export function sanitizePublicContinuation(continuation) {
     ? continuation.status
     : 'HELD';
 
-  // Construct public export strictly from allowlisted non-sensitive fields
+  // Construct public export strictly from allowlisted non-sensitive fields.
+  // request_id is omitted / set to null in unverified presentation adapter to prevent canary reflection.
   const publicRecord = {
     schema: 'td613.loom.public-continuation/v0.1',
-    request_id: requestId,
+    request_id: null,
     session_root_ref: sessionRootRef,
     anchor_work_unit_ref: anchorWorkUnitRef,
     phase,
