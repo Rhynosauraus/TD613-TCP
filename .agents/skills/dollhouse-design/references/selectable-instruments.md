@@ -118,7 +118,7 @@ The inventory of the Thinkers Bin is preserved in full across its three canonica
 25. **César Hidalgo:** Physical information, complexity, and how information grows in social and economic structures.
 26. **Edmund Husserl:** Phenomenological epoché—a rendered screen is fundamentally distinct from the lived, intentional experience of encountering it.
 27. **William Bialek:** Methodological discipline in biological perception, biophysical measurement, variability, and information limits.
-28. **Tiago P. Peixoto (or Pereira):** Network geometry, modularity, and structural inference across complex relational topologies.
+28. **Fernando Pereira:** Computational linguistics, grammatical inference, constraint-based grammar formalisms, and distribution-based semantic structure across complex language topologies.
 
 ---
 

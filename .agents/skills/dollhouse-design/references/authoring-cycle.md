@@ -69,3 +69,15 @@ The engine analyzes the pair:
 
 ## 8. Return (Human Rest)
 The engine presents the materialized work, its refractive counterpart, and the comparative analysis to the human operator. The system rests; human selection and closure remain required.
+
+---
+
+## 9. The Five Epistemic Registers of Authorship
+
+To preserve scientific and artistic integrity, the system distinguishes five operational registers:
+1. **Deterministic Commission Analysis:** Heuristic keyword and cluster matching (`analyzeSeedSemantics`) identifying semantic tensions in the input seed.
+2. **Structural Composition Receipt:** Conductor output (`runDollhouseDesignCycle`) declaring formal propositions, human coordinate pairings, and explicit causal contracts.
+3. **Creative Agent Materialization:** The downstream implementation of executable code (HTML, CSS, JS) or prose that embodies the structural receipt.
+4. **Executed Causal Mechanisms:** Operative mathematical parameters that measurably alter layout, geometry, typography, or grammar, falsifiable by perturbation probes (distinguished from decorative telemetry).
+5. **Experimental Observations & Human Artistic Judgments:** Empirical inspection of browser execution and sovereign human choice (Palate remains unborn).
+

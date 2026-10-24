@@ -123,17 +123,17 @@ test('TD613 Dollhouse Design Conductor v0.2 - Causally Consequential Instrumenta
   assert.deepEqual(phasonicContract.target_domains, ['GEOMETRY', 'MOTION', 'GRAMMAR']);
   assert.ok(phasonicContract.causal_bindings.length >= 2);
 
-  const strainBinding = phasonicContract.causal_bindings.find(b => b.parameter === 'quasiperiodic_strain_u');
-  assert.ok(strainBinding);
-  assert.equal(strainBinding.target_component, 'spatial_lattice_geometry');
-  assert.ok(strainBinding.transfer_law.includes('cos'));
-  assert.ok(strainBinding.falsification_probe.includes('u = 0.0'));
+  const latticeBinding = phasonicContract.causal_bindings.find(b => b.target_component === 'spatial_lattice_geometry');
+  assert.ok(latticeBinding);
+  assert.equal(latticeBinding.parameter, 'scalar_interference_H');
+  assert.ok(latticeBinding.transfer_law.includes('24.0 * H(u)'));
+  assert.ok(latticeBinding.falsification_probe.includes('H = 0.0000'));
 
-  const syntaxBinding = phasonicContract.causal_bindings.find(b => b.parameter === 'scalar_interference_H');
+  const syntaxBinding = phasonicContract.causal_bindings.find(b => b.target_component === 'clause_syntax_selection');
   assert.ok(syntaxBinding);
-  assert.equal(syntaxBinding.target_component, 'clause_syntax_selection');
-  assert.ok(syntaxBinding.transfer_law.includes('syntax_state = H'));
-  assert.ok(syntaxBinding.falsification_probe.includes('H = 0.0'));
+  assert.equal(syntaxBinding.parameter, 'scalar_interference_H');
+  assert.ok(syntaxBinding.transfer_law.includes('H >= 1.30'));
+  assert.ok(syntaxBinding.falsification_probe.includes('Forcing H = 0.0000 resets syntax_state'));
 
   const caroContract = buildInstrumentCausalContract('CARO_INSTITUTIONAL_RECONSTRUCTION', 'SCHOLARLY');
   assert.equal(caroContract.causality_class, 'OPERATIVE_TRANSFER');

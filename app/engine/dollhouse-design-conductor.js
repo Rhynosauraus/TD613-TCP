@@ -143,16 +143,16 @@ export function buildInstrumentCausalContract(instrumentId, medium, seedTerms = 
       target_domains: ['GEOMETRY', 'MOTION', 'GRAMMAR'],
       causal_bindings: [
         {
-          parameter: 'quasiperiodic_strain_u',
+          parameter: 'scalar_interference_H',
           target_component: 'spatial_lattice_geometry',
-          transfer_law: 'v_distorted(k) = v_0(k) + u * [cos(2*pi*phi*k), sin(2*pi*phi*k)]',
-          falsification_probe: 'u = 0.0 must yield unperturbed D₃ periodic triangular lattice'
+          transfer_law: 'dx(k) = 24.0 * H(u) * cos(2*pi*phi*k*0.05); dy(k) = 24.0 * H(u) * sin(2*pi*phi*k*0.05); where H(u) = 0.5*(1 - cos(2*pi*u)) + 0.5*(1 - cos(2*pi*phi*u))',
+          falsification_probe: 'H = 0.0000 collapses all vertex displacement to 0.00px, restoring unperturbed D3 equilateral triangular mesh'
         },
         {
           parameter: 'scalar_interference_H',
           target_component: 'clause_syntax_selection',
-          transfer_law: 'syntax_state = H >= 0.8 ? SUBORDINATE_EQUIPOLLENCE : (H >= 0.5 ? PARENTHETICAL_SHEAR : (H >= 0.2 ? SUSPENSION : PERIODIC_ASSERTION))',
-          falsification_probe: 'H = 0.0 must lock clause selection into uninflected baseline state'
+          transfer_law: 'syntax_state = H >= 1.30 ? SEMICOLON_EQUIPOLLENCE : (H >= 0.75 ? EM_DASH_SHEAR : (H >= 0.25 ? COLON_SUSPENSION : PERIODIC_BASELINE))',
+          falsification_probe: 'Forcing H = 0.0000 resets syntax_state to PERIODIC_BASELINE ("The king arrived.") and font weight to 400'
         }
       ],
       causality_class: 'OPERATIVE_TRANSFER'
@@ -329,6 +329,29 @@ export function deriveCommissionCandidates(commission) {
 }
 
 /**
+ * Infers a context-sensitive default instrument from the semantic seed when omitted.
+ * @param {string} seed
+ * @returns {Array<string>}
+ */
+export function inferContextualInstruments(seed = '') {
+  const analysis = analyzeSeedSemantics(seed);
+  if (analysis.detected_clusters.institutional.length > 0) {
+    return ['CARO_INSTITUTIONAL_RECONSTRUCTION'];
+  }
+  if (analysis.detected_clusters.textual.some(w => ['syntax', 'grammar', 'letters', 'words', 'marks'].includes(w)) &&
+      analysis.detected_clusters.relational.some(w => ['slip', 'reiterate', 'change', 'subvert'].includes(w))) {
+    return ['BUTLER_PERFORMATIVE_ITERATION'];
+  }
+  if (analysis.detected_clusters.relational.some(w => ['dissolve', 'beside', 'affective', 'care', 'texture'].includes(w))) {
+    return ['SEDGWICK_REPARATIVE_TEXTURE'];
+  }
+  if (analysis.detected_clusters.relational.some(w => ['differ', 'separate', 'tension', 'dispute', 'antithesis', 'oppose'].includes(w))) {
+    return ['DIALECTICAL_TENSION'];
+  }
+  return ['PHASONIC_COUNTERPOINT'];
+}
+
+/**
  * Normalizes and validates the incoming design commission.
  */
 export function normalizeCommission(raw = {}) {
@@ -350,13 +373,12 @@ export function normalizeCommission(raw = {}) {
     why: String(rawHc.why || rawHc.WHY || 'Teleological & consequential purpose').trim()
   });
 
-  let selectedInstruments = Array.isArray(raw.instruments)
-    ? raw.instruments.map(i => String(i).trim().toUpperCase())
-    : ['PHASONIC_COUNTERPOINT'];
+  let selectedInstruments = Array.isArray(raw.instruments) && raw.instruments.length > 0
+    ? raw.instruments.map(i => String(i).trim().toUpperCase()).filter(id => AVAILABLE_INSTRUMENTS[id])
+    : [];
 
-  selectedInstruments = selectedInstruments.filter(id => AVAILABLE_INSTRUMENTS[id]);
   if (selectedInstruments.length === 0) {
-    selectedInstruments = ['PHASONIC_COUNTERPOINT'];
+    selectedInstruments = inferContextualInstruments(seed);
   }
 
   return Object.freeze({
