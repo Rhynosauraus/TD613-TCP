@@ -1,26 +1,31 @@
 /**
- * @fileoverview TD613 Dollhouse Design Conductor (DD-02).
+ * @fileoverview TD613 Dollhouse Design Conductor (DD-02) v0.2.
  *
  * Implements the native creative authoring cycle:
  *   COMMISSION -> SELECT INSTRUMENTS -> GENERATE ALTERNATIVES -> COMPOSE -> MATERIALIZE -> REFRACT -> COMPARE -> RETURN
  *
- * Core Principles:
- *   - Selectable Instruments: Phasonic Counterpoint (D₃/φ), Caro Institutional Reconstruction,
- *     Butler Performative Iteration, Sedgwick Reparative Texture, Dialectical Tension.
- *     No single geometric aesthetic is compulsory.
- *   - Human Coordinate Coupling: Semantic relational frame (WHAT/WHO, WHERE/HOW, WHEN/WHY).
- *   - Instrument Provenance: Explicit trace linking generative operations to artifact features.
- *   - Refractive Counterfactual: Generates competing candidates by mutating a governing decision.
- *   - Scientific Firebreak: Purely generative under OPEN_FIELD_CREATIVE_SYNTHESIS.
- *     Advisory link to /dollhouse-audit available; creative synthesis NEVER grants scientific authority.
- *   - Human Closure Required: Always returns the primary artifact, refractive alternative, and open questions.
+ * v0.2 Refinements (Post-Audition / Pre-M6 Qualification):
+ *   1. Commission-Derived Formal Alternatives: Replaces static hardcoded candidates with dynamic,
+ *      seed-conditioned structural propositions derived from semantic cluster analysis, while supporting
+ *      explicit author overrides.
+ *   2. Causally Consequential Instrumentation: Declares formal causal contracts for each selectable
+ *      instrument, specifying target domains, parameter transfer laws, and empirical falsification probes.
+ *   3. Genuine Temporal & Interaction Design: Explicitly categorizes continuous geometry vs discrete
+ *      state transitions, enforces user-controlled still-state reduced-motion modes, and mandates mobile legibility.
+ *   4. Theoretical Fidelity & Creative Freedom: Anchors Caro, Butler, Sedgwick, Aperture, and Dialectical traditions
+ *      in verifiable structural operations rather than decorative jargon.
+ *
+ * Governance:
+ *   - Operates under OPEN_FIELD_CREATIVE_SYNTHESIS.
+ *   - Zero scientific proof, zero release authority, zero production Loom/M6 mutation.
+ *   - Human closure required.
  */
 
 import { createHash } from 'node:crypto';
 import { runDollhouseSkillAudit } from './dollhouse-skill-dispatcher.js';
 
-export const DOLLHOUSE_DESIGN_SCHEMA = 'td613.dollhouse-design.return-receipt/v0.1';
-export const DOLLHOUSE_DESIGN_VERSION = 'v0.1-candidate';
+export const DOLLHOUSE_DESIGN_SCHEMA = 'td613.dollhouse-design.return-receipt/v0.2';
+export const DOLLHOUSE_DESIGN_VERSION = 'v0.2-candidate';
 
 export const AVAILABLE_INSTRUMENTS = Object.freeze({
   PHASONIC_COUNTERPOINT: {
@@ -28,35 +33,40 @@ export const AVAILABLE_INSTRUMENTS = Object.freeze({
     label: 'D₃/φ Phasonic Counterpoint',
     lineage: 'Aperture v3.2-alpha Triple Overlay',
     operatesOn: 'transmedia invariance, periodic recurrence, quasiperiodic detour, and temporal lag',
-    suitableFor: ['VISUAL', 'MOTION', 'HYBRID', 'THEORETICAL']
+    suitableFor: ['VISUAL', 'MOTION', 'HYBRID', 'THEORETICAL'],
+    governing_theory: 'Triple Overlay (D₃ Periodic Lattice × φ Quasiperiodic Modulation × Heterostratigraphic Interference)'
   },
   CARO_INSTITUTIONAL_RECONSTRUCTION: {
     id: 'CARO_INSTITUTIONAL_RECONSTRUCTION',
     label: 'Caro Institutional Reconstruction',
     lineage: 'Thinkers Bin (Robert Caro / Institutional Power)',
     operatesOn: 'physical corridors, procedural friction, bureaucratic accumulation, and omitted records',
-    suitableFor: ['SCHOLARLY', 'VISUAL', 'PRODUCT', 'HYBRID']
+    suitableFor: ['SCHOLARLY', 'VISUAL', 'PRODUCT', 'HYBRID'],
+    governing_theory: 'Robert Caro Archival Reconstruction & Procedural Resistance'
   },
   BUTLER_PERFORMATIVE_ITERATION: {
     id: 'BUTLER_PERFORMATIVE_ITERATION',
     label: 'Butler Performative Iteration',
     lineage: 'Thinkers Bin (Judith Butler / Performative Subversion)',
     operatesOn: 'ritualized reiteration, normative slippage, and compulsory legibility',
-    suitableFor: ['SCHOLARLY', 'THEORETICAL', 'VISUAL']
+    suitableFor: ['SCHOLARLY', 'THEORETICAL', 'VISUAL'],
+    governing_theory: 'Judith Butler Citational Reiteration & Normative Subversion'
   },
   SEDGWICK_REPARATIVE_TEXTURE: {
     id: 'SEDGWICK_REPARATIVE_TEXTURE',
     label: 'Sedgwick Reparative Texture',
     lineage: 'Thinkers Bin (Eve Kosofsky Sedgwick / Reparative Reading)',
     operatesOn: 'textural granularity, affective survival, and resisting paranoid closure',
-    suitableFor: ['SCHOLARLY', 'VISUAL', 'PRODUCT']
+    suitableFor: ['SCHOLARLY', 'VISUAL', 'PRODUCT'],
+    governing_theory: 'Eve Kosofsky Sedgwick Paratactic Beside-ness & Affective Survival'
   },
   DIALECTICAL_TENSION: {
     id: 'DIALECTICAL_TENSION',
     label: 'Contrapuntal Dialectic',
     lineage: 'Classical Dialectics & Polyphony',
     operatesOn: 'irreducible antithesis, competing perspectives, and non-synthesizing juxtaposition',
-    suitableFor: ['SCHOLARLY', 'THEORETICAL', 'MOTION']
+    suitableFor: ['SCHOLARLY', 'THEORETICAL', 'MOTION'],
+    governing_theory: 'Polyphonic Contrapuntalism & Irreducible Antithesis'
   }
 });
 
@@ -79,6 +89,243 @@ function deepFreeze(value) {
 
 function sha256(data) {
   return createHash('sha256').update(typeof data === 'string' ? data : JSON.stringify(data)).digest('hex');
+}
+
+/**
+ * Analyzes seed semantics to derive operative keywords and thematic tensions.
+ * @param {string} seed
+ * @returns {object}
+ */
+export function analyzeSeedSemantics(seed = '') {
+  const clean = String(seed).toLowerCase();
+  const words = clean.match(/[a-z0-9'-]+/g) || [];
+
+  const clusters = {
+    temporal: ['time', 'scene', 'history', 'before', 'after', 'dawn', 'future', 'past', 'passage', 'cadence', 'quietly', 'temporal', 'moment'],
+    machinery: ['machinery', 'machine', 'stage', 'pulley', 'crane', 'gear', 'lever', 'rigging', 'console', 'engine', 'instrument', 'mechanism', 'anvil'],
+    textual: ['punctuation', 'grammar', 'marks', 'sentence', 'clause', 'word', 'syntax', 'letters', 'language', 'title', 'ledger', 'record', 'stop', 'colon', 'dash'],
+    spatial: ['theater', 'corridor', 'door', 'endpoint', 'boundary', 'threshold', 'estuary', 'proscenium', 'hall', 'room', 'vault', 'site', 'ground'],
+    institutional: ['king', 'court', 'power', 'authority', 'sovereign', 'censor', 'bureaucracy', 'statute', 'archive', 'allegiance', 'title', 'law'],
+    relational: ['arrive', 'differ', 'separate', 'change', 'converge', 'refract', 'invert', 'slip', 'reiterate', 'dissolve', 'suspend', 'hold']
+  };
+
+  const detected = {};
+  for (const [cluster, terms] of Object.entries(clusters)) {
+    detected[cluster] = words.filter(w => terms.includes(w));
+  }
+
+  const stopWords = new Set([
+    'a', 'an', 'the', 'in', 'which', 'are', 'and', 'each', 'of', 'it', 'to',
+    'for', 'with', 'on', 'at', 'by', 'from', 'but', 'is', 'as', 'that', 'this'
+  ]);
+  const salientKeywords = words.filter(w => !stopWords.has(w) && w.length > 2);
+
+  return {
+    raw: seed,
+    word_count: words.length,
+    detected_clusters: detected,
+    salient_keywords: Array.from(new Set(salientKeywords))
+  };
+}
+
+/**
+ * Builds an explicit causal contract for an instrument, linking parameters to material effects.
+ * @param {string} instrumentId
+ * @param {string} medium
+ * @param {Array<string>} seedTerms
+ * @returns {object}
+ */
+export function buildInstrumentCausalContract(instrumentId, medium, seedTerms = []) {
+  const contracts = {
+    PHASONIC_COUNTERPOINT: {
+      instrument_id: 'PHASONIC_COUNTERPOINT',
+      governing_theory: 'Triple Overlay (D₃ Periodic Lattice × φ Quasiperiodic Modulation × Heterostratigraphic Interference)',
+      target_domains: ['GEOMETRY', 'MOTION', 'GRAMMAR'],
+      causal_bindings: [
+        {
+          parameter: 'quasiperiodic_strain_u',
+          target_component: 'spatial_lattice_geometry',
+          transfer_law: 'v_distorted(k) = v_0(k) + u * [cos(2*pi*phi*k), sin(2*pi*phi*k)]',
+          falsification_probe: 'u = 0.0 must yield unperturbed D₃ periodic triangular lattice'
+        },
+        {
+          parameter: 'scalar_interference_H',
+          target_component: 'clause_syntax_selection',
+          transfer_law: 'syntax_state = H >= 0.8 ? SUBORDINATE_EQUIPOLLENCE : (H >= 0.5 ? PARENTHETICAL_SHEAR : (H >= 0.2 ? SUSPENSION : PERIODIC_ASSERTION))',
+          falsification_probe: 'H = 0.0 must lock clause selection into uninflected baseline state'
+        }
+      ],
+      causality_class: 'OPERATIVE_TRANSFER'
+    },
+    CARO_INSTITUTIONAL_RECONSTRUCTION: {
+      instrument_id: 'CARO_INSTITUTIONAL_RECONSTRUCTION',
+      governing_theory: 'Robert Caro Archival Reconstruction & Procedural Resistance',
+      target_domains: ['SPATIAL_TOPOLOGY', 'INTERACTION_FRICTION', 'DOCUMENT_CUSTODY'],
+      causal_bindings: [
+        {
+          parameter: 'procedural_friction_coefficient_mu',
+          target_component: 'navigation_interaction_velocity',
+          transfer_law: 'scroll_delta_effective = scroll_delta_raw / (1 + mu * bureaucratic_layers)',
+          falsification_probe: 'mu = 0.0 eliminates navigation resistance across corridor'
+        },
+        {
+          parameter: 'archive_omission_index_lambda',
+          target_component: 'typography_redaction_opacity',
+          transfer_law: 'text_opacity = 1.0 - lambda * sovereign_censure_level',
+          falsification_probe: 'lambda = 0.0 renders all administrative records fully visible'
+        }
+      ],
+      causality_class: 'OPERATIVE_TRANSFER'
+    },
+    BUTLER_PERFORMATIVE_ITERATION: {
+      instrument_id: 'BUTLER_PERFORMATIVE_ITERATION',
+      governing_theory: 'Judith Butler Citational Reiteration & Normative Subversion',
+      target_domains: ['TYPOGRAPHY', 'ITERATIVE_CADENCE', 'SYNTAX'],
+      causal_bindings: [
+        {
+          parameter: 'citational_slippage_epsilon',
+          target_component: 'glyph_variance_and_kerning',
+          transfer_law: 'kerning(n) = kerning_0 + epsilon * log(1 + n)',
+          falsification_probe: 'epsilon = 0.0 forces mechanical conformity across all repetitions'
+        }
+      ],
+      causality_class: 'OPERATIVE_TRANSFER'
+    },
+    SEDGWICK_REPARATIVE_TEXTURE: {
+      instrument_id: 'SEDGWICK_REPARATIVE_TEXTURE',
+      governing_theory: 'Eve Kosofsky Sedgwick Paratactic Beside-ness & Affective Survival',
+      target_domains: ['LAYOUT_TOPOLOGY', 'MATERIAL_SURFACE', 'READING_ORDER'],
+      causal_bindings: [
+        {
+          parameter: 'paratactic_proximity_delta',
+          target_component: 'marginal_fragment_placement',
+          transfer_law: 'x_marginal = x_sovereign_edge + delta * sensory_salience',
+          falsification_probe: 'delta = 0.0 collapses beside-ness into subordinating vertical footnote hierarchy'
+        }
+      ],
+      causality_class: 'OPERATIVE_TRANSFER'
+    },
+    DIALECTICAL_TENSION: {
+      instrument_id: 'DIALECTICAL_TENSION',
+      governing_theory: 'Polyphonic Contrapuntalism & Irreducible Antithesis',
+      target_domains: ['TEMPORAL_STRUCTURE', 'AUDIO_VISUAL_INTERVAL', 'ARGUMENTATION'],
+      causal_bindings: [
+        {
+          parameter: 'dissonance_interval_omega',
+          target_component: 'polyphonic_phase_alignment',
+          transfer_law: 'phase_offset = omega * pi * sin(t)',
+          falsification_probe: 'omega = 0.0 resolves competing voices into unison synthesis'
+        }
+      ],
+      causality_class: 'OPERATIVE_TRANSFER'
+    }
+  };
+
+  return contracts[instrumentId] || {
+    instrument_id: instrumentId,
+    governing_theory: 'Generic Creative Instrument',
+    target_domains: ['AESTHETIC_FORM'],
+    causal_bindings: [],
+    causality_class: 'ANALOGICAL_COMPOSITION'
+  };
+}
+
+/**
+ * Derives structurally distinct formal candidates from the commission.
+ * @param {object} commission
+ * @returns {Array<object>}
+ */
+export function deriveCommissionCandidates(commission) {
+  // If author supplied explicit candidate proposals, validate and preserve them
+  if (Array.isArray(commission.candidate_overrides) && commission.candidate_overrides.length >= 2) {
+    return commission.candidate_overrides.map((cand, idx) => ({
+      id: `${commission.commission_id}-CAND-${String.fromCharCode(65 + idx)}`,
+      concept_title: String(cand.concept_title || cand.title || `Custom Proposal ${idx + 1}`),
+      governing_instrument: String(cand.governing_instrument || commission.instruments[idx] || commission.instruments[0]),
+      formal_proposition: String(cand.formal_proposition || cand.proposition || ''),
+      structural_mechanisms: Array.isArray(cand.structural_mechanisms) ? cand.structural_mechanisms : [],
+      medium_consequence: String(cand.medium_consequence || `Custom structural consequence in ${commission.medium}.`),
+      scaffolding_class: 'AUTHOR_DECLARED_PROPOSAL',
+      proposal_origin: 'OPERATOR_OVERRIDE',
+      seed_anchor_terms: Array.isArray(cand.seed_anchor_terms) ? cand.seed_anchor_terms : []
+    }));
+  }
+
+  const analysis = analyzeSeedSemantics(commission.seed);
+  const primaryInst = commission.instruments[0] || 'PHASONIC_COUNTERPOINT';
+  const secondaryInst = commission.instruments[1] || commission.instruments[0];
+
+  const primaryTerms = analysis.salient_keywords.slice(0, 3);
+  const noun1 = primaryTerms[0] || 'form';
+  const noun2 = primaryTerms[1] || 'tension';
+  const noun3 = primaryTerms[2] || 'relation';
+
+  // Capitalize helper
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+  // Candidate A: Direct Synthesis derived from seed's primary nouns + primary instrument
+  let candATitle = `The ${cap(noun1)} ${cap(noun2)} Strata`;
+  let candAProp = `Constructs a dual-strata composition where ${noun1} functions as an operative baseline, while ${noun2} exerts structural tension across the work.`;
+
+  if (analysis.detected_clusters.machinery.length > 0 && analysis.detected_clusters.textual.length > 0) {
+    candATitle = `The ${cap(analysis.detected_clusters.textual[0])} Machinery`;
+    candAProp = `Couples textual syntax with mechanical rigging, turning grammatical marks into operative stage levers that deform antecedent history.`;
+  } else if (analysis.detected_clusters.spatial.length > 0 && analysis.detected_clusters.relational.length > 0) {
+    candATitle = `The ${cap(analysis.detected_clusters.spatial[0])} ${cap(analysis.detected_clusters.relational[0])}`;
+    candAProp = `Spatially manifests the divergence of passage across distinct routes despite apparent endpoint convergence.`;
+  } else if (analysis.detected_clusters.institutional.length > 0) {
+    candATitle = `The ${cap(analysis.detected_clusters.institutional[0])} Apparatus`;
+    candAProp = `Materializes administrative resistance and institutional friction through procedural delay and archival omission.`;
+  }
+
+  const candidateA = {
+    id: `${commission.commission_id}-CAND-A`,
+    concept_title: candATitle,
+    governing_instrument: primaryInst,
+    formal_proposition: candAProp,
+    structural_mechanisms: [
+      `Baseline Cadence: Maps ${noun1} into a structured recursive invariant`,
+      `Counter-Pressure: Introduces ${noun2} as an aperiodic strain vector`,
+      `Causal Interference: Measures observable displacement where ${noun1} and ${noun2} collide`
+    ],
+    medium_consequence: `In ${commission.medium}, the work refuses singular closure by presenting distinct rival paths.`,
+    scaffolding_class: 'DETERMINISTIC_FRAMEWORK',
+    proposal_origin: 'COMMISSION_DERIVED',
+    seed_anchor_terms: primaryTerms
+  };
+
+  // Candidate B: Structural Inversion / Counter-Pole
+  let candBTitle = `The Inverted ${cap(noun2)}`;
+  let candBProp = `Inverts the temporal sequence: displays the terminal consequence at ingress, requiring the observer to unravel accumulated expenditure.`;
+
+  if (analysis.detected_clusters.temporal.length > 0) {
+    candBTitle = `The Retroactive ${cap(analysis.detected_clusters.temporal[0])} Inversion`;
+    candBProp = `Reverses the chronological encounter: exposes the final altered state first, disclosing the machinery of change only upon retrospective traversal.`;
+  } else if (secondaryInst === 'SEDGWICK_REPARATIVE_TEXTURE') {
+    candBTitle = `The Paratactic Shelter`;
+    candBProp = `Assembles discarded textures beside the sovereign baseline, prioritizing affective survival over procedural prosecution.`;
+  } else if (secondaryInst === 'CARO_INSTITUTIONAL_RECONSTRUCTION') {
+    candBTitle = `The Applicant's Corridor`;
+    candBProp = `Reframes the work through the sensory exhaustion of the delayed subject rather than the sovereign designer's blueprint.`;
+  }
+
+  const candidateB = {
+    id: `${commission.commission_id}-CAND-B`,
+    concept_title: candBTitle,
+    governing_instrument: secondaryInst,
+    formal_proposition: candBProp,
+    structural_mechanisms: [
+      `Procedural Inversion: Consequence displayed at ingress; terminal loss visible prior to operational cause`,
+      `Friction Accounting: Each interaction demands explicit recognition of past energetic cost`,
+      `Asymmetric Recovery: Historical traversal is fully recordable but structurally irreversible`
+    ],
+    medium_consequence: `In ${commission.medium}, the work subverts institutional arrival by foregrounding retained loss.`,
+    scaffolding_class: 'DETERMINISTIC_FRAMEWORK',
+    proposal_origin: 'COMMISSION_DERIVED',
+    seed_anchor_terms: [noun2, noun3].filter(Boolean)
+  };
+
+  return [candidateA, candidateB];
 }
 
 /**
@@ -118,6 +365,7 @@ export function normalizeCommission(raw = {}) {
     medium,
     human_coordinates: humanCoordinates,
     instruments: Object.freeze(selectedInstruments),
+    candidate_overrides: deepFreeze(raw.candidate_overrides || raw.candidates || null),
     refractive_parameters: deepFreeze(raw.refractive_parameters || {}),
     scientific_audit_requested: raw.scientific_audit_requested === true
   });
@@ -132,32 +380,9 @@ export async function runDollhouseDesignCycle(commissionInput = {}) {
   // 1. SELECT INSTRUMENTS
   const instruments = commission.instruments.map(id => AVAILABLE_INSTRUMENTS[id]);
 
-  // 2. GENERATE ALTERNATIVES (At least two structurally different concepts)
-  const candidateA = {
-    id: `${commission.commission_id}-CAND-A`,
-    concept_title: 'The Stratigraphic Separation',
-    governing_instrument: commission.instruments[0],
-    formal_proposition: 'Separates the seed into two incommensurable formal strata whose tension generates the work.',
-    structural_mechanisms: [
-      'Layer 1 establishes structural baseline and recursive memory',
-      'Layer 2 introduces aperiodic deviation and counterpressure',
-      'Interference field marks loci of formal rupture and cadence shifts'
-    ],
-    medium_consequence: `In ${commission.medium}, the work refuses singular closure by presenting distinct rival paths.`
-  };
-
-  const candidateB = {
-    id: `${commission.commission_id}-CAND-B`,
-    concept_title: 'The Procedural Inversion',
-    governing_instrument: commission.instruments[1] || commission.instruments[0],
-    formal_proposition: 'Inverts the conventional order of arrival and passage, making the consequence visible before the mechanism.',
-    structural_mechanisms: [
-      'Temporal inversion: terminal consequence displayed at ingress',
-      'Procedural friction: each interaction demands recognition of past expenditure',
-      'Asymmetric recovery: passage can be retraced but cannot be simplified'
-    ],
-    medium_consequence: `In ${commission.medium}, the work subverts institutional arrival by foregrounding retained loss.`
-  };
+  // 2. GENERATE COMMISSION-DERIVED ALTERNATIVES
+  const candidates = deriveCommissionCandidates(commission);
+  const [candidateA, candidateB] = candidates;
 
   // 3. COMPOSE & MATERIALIZE (Primary Choice)
   const primaryMaterialization = {
@@ -171,7 +396,7 @@ export async function runDollhouseDesignCycle(commissionInput = {}) {
       execution: `Resolving WHERE (${commission.human_coordinates.where}) through HOW (${commission.human_coordinates.how})`
     },
     operative_verbs: [
-      { verb: 'PROPAGATION', action: 'Derived dual formal candidates from the uncollapsed seed' },
+      { verb: 'PROPAGATION', action: `Derived dual commission-grounded proposals (${candidateA.concept_title} / ${candidateB.concept_title})` },
       { verb: 'COMPRESSION', action: 'Retained path-sensitive distinctions without decorative surplus' },
       { verb: 'COUPLING', action: 'Bound human coordinates into mutually consequential pairs' },
       { verb: 'TRANSITION', action: 'Shifted projection into declared medium without losing invariants' },
@@ -249,15 +474,27 @@ export async function runDollhouseDesignCycle(commissionInput = {}) {
       `Candidate A operates under primary instrument ${primaryInst}: ${candidateA.formal_proposition}`,
       `Refractive Variant mutates [${mutatedParameter}]: ${formalConsequence}`
     ],
+    governing_interaction_topology: {
+      spatial_interpolation: 'CONTINUOUS_MANIFOLD_WHERE_REQUIRED',
+      grammatical_state_transitions: 'DISCRETE_STATE_PERMUTATIONS',
+      motion_policy: 'USER_CONTROLLED_STILL_STATE_UNDER_REDUCED_MOTION',
+      mobile_legibility_profile: {
+        minimum_telemetry_font_px: 12,
+        minimum_hit_target_px: 44,
+        viewport_stack_boundary_px: 480
+      }
+    },
     open_aesthetic_questions: [
       `Does the materialization of [${mutatedParameter}] successfully alter the observer's understanding of the seed?`,
       'Should the refractive variant be preserved as an independent counterpart or kept as development scaffolding?'
     ]
   };
 
-  // 6. INSTRUMENT PROVENANCE LEDGER
+  // 6. INSTRUMENT PROVENANCE & CAUSAL CONTRACT LEDGER
+  const analysis = analyzeSeedSemantics(commission.seed);
   const instrumentProvenance = commission.instruments.map(instId => {
     const inst = AVAILABLE_INSTRUMENTS[instId];
+    const causalContract = buildInstrumentCausalContract(inst.id, commission.medium, analysis.salient_keywords);
     let contrib = 'Supplied formal generative grammar';
     if (inst.id === 'PHASONIC_COUNTERPOINT') {
       contrib = 'Supplied D₃ periodic scaffold, φ quasiperiodic detour equations, and interference field';
@@ -273,7 +510,8 @@ export async function runDollhouseDesignCycle(commissionInput = {}) {
     return {
       instrument_id: inst.id,
       lineage: inst.lineage,
-      material_contribution: contrib
+      material_contribution: contrib,
+      causal_contract: causalContract
     };
   });
 

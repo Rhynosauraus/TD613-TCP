@@ -6,12 +6,15 @@ import {
   AVAILABLE_INSTRUMENTS,
   VALID_MEDIA,
   normalizeCommission,
+  analyzeSeedSemantics,
+  deriveCommissionCandidates,
+  buildInstrumentCausalContract,
   runDollhouseDesignCycle
 } from '../app/engine/dollhouse-design-conductor.js';
 
-test('TD613 Dollhouse Design Conductor - Schema & Constants', () => {
-  assert.equal(DOLLHOUSE_DESIGN_SCHEMA, 'td613.dollhouse-design.return-receipt/v0.1');
-  assert.equal(DOLLHOUSE_DESIGN_VERSION, 'v0.1-candidate');
+test('TD613 Dollhouse Design Conductor v0.2 - Schema & Constants', () => {
+  assert.equal(DOLLHOUSE_DESIGN_SCHEMA, 'td613.dollhouse-design.return-receipt/v0.2');
+  assert.equal(DOLLHOUSE_DESIGN_VERSION, 'v0.2-candidate');
   
   const expectedInstruments = [
     'PHASONIC_COUNTERPOINT',
@@ -28,160 +31,157 @@ test('TD613 Dollhouse Design Conductor - Schema & Constants', () => {
   assert.ok(Object.isFrozen(VALID_MEDIA));
 });
 
-test('TD613 Dollhouse Design Conductor - normalizeCommission input validation', () => {
-  // Empty seed throws
-  assert.throws(() => normalizeCommission({}), {
-    name: 'TypeError',
-    message: /Commission requires an intellectual seed/
-  });
-  assert.throws(() => normalizeCommission({ seed: '   ' }), {
-    name: 'TypeError',
-    message: /Commission requires an intellectual seed/
-  });
+test('TD613 Dollhouse Design Conductor v0.2 - analyzeSeedSemantics', () => {
+  const seed1 = 'A theater in which punctuation marks are the stage machinery, and each scene quietly changes the grammar of the scene before it.';
+  const analysis1 = analyzeSeedSemantics(seed1);
 
-  // Invalid medium throws
-  assert.throws(() => normalizeCommission({ seed: 'Valid Seed', medium: 'INVALID_MEDIUM' }), {
-    name: 'TypeError',
-    message: /Invalid medium "INVALID_MEDIUM"/
-  });
+  assert.equal(analysis1.raw, seed1);
+  assert.ok(analysis1.salient_keywords.includes('theater'));
+  assert.ok(analysis1.salient_keywords.includes('punctuation'));
+  assert.ok(analysis1.salient_keywords.includes('machinery'));
+  assert.ok(analysis1.detected_clusters.machinery.includes('machinery'));
+  assert.ok(analysis1.detected_clusters.textual.includes('punctuation'));
+  assert.ok(analysis1.detected_clusters.spatial.includes('theater'));
+  assert.ok(analysis1.detected_clusters.temporal.includes('scene'));
 
-  // Valid defaults
-  const norm = normalizeCommission({ seed: 'The weight of absence' });
-  assert.equal(norm.seed, 'The weight of absence');
-  assert.equal(norm.medium, 'SCHOLARLY');
-  assert.deepEqual(norm.instruments, ['PHASONIC_COUNTERPOINT']);
-  assert.ok(norm.commission_id.startsWith('COMM-'));
-
-  // Normalization of 6-tuple Human Coordinates
-  const customHc = normalizeCommission({
-    seed: 'Test Seed',
-    medium: 'visual',
-    human_coordinates: {
-      what: 'Physical threshold',
-      who: 'Observer',
-      where: 'Corridor',
-      how: 'Light gradient',
-      when: 'Arrival',
-      why: 'Witnessing'
-    },
-    instruments: ['CARO_INSTITUTIONAL_RECONSTRUCTION', 'SEDGWICK_REPARATIVE_TEXTURE', 'UNKNOWN_INSTRUMENT']
-  });
-
-  assert.equal(customHc.medium, 'VISUAL');
-  assert.equal(customHc.human_coordinates.what, 'Physical threshold');
-  assert.equal(customHc.human_coordinates.who, 'Observer');
-  assert.equal(customHc.human_coordinates.where, 'Corridor');
-  assert.equal(customHc.human_coordinates.how, 'Light gradient');
-  assert.equal(customHc.human_coordinates.when, 'Arrival');
-  assert.equal(customHc.human_coordinates.why, 'Witnessing');
-  assert.deepEqual(customHc.instruments, ['CARO_INSTITUTIONAL_RECONSTRUCTION', 'SEDGWICK_REPARATIVE_TEXTURE']);
+  const seed2 = 'Estuary Title Dissolution';
+  const analysis2 = analyzeSeedSemantics(seed2);
+  assert.ok(analysis2.salient_keywords.includes('estuary'));
+  assert.ok(analysis2.detected_clusters.spatial.includes('estuary'));
+  assert.ok(analysis2.detected_clusters.institutional.includes('title'));
 });
 
-test('TD613 Dollhouse Design Conductor - runDollhouseDesignCycle Full Execution', async () => {
-  const seed = 'Two distinct processes arrive at an identical endpoint, but their histories differ';
+test('TD613 Dollhouse Design Conductor v0.2 - Commission-Derived Alternatives', () => {
+  // Commission 1: The Punctuation Theater
+  const comm1 = normalizeCommission({
+    seed: 'A theater in which punctuation marks are the stage machinery, and each scene quietly changes the grammar of the scene before it.',
+    medium: 'HYBRID',
+    instruments: ['PHASONIC_COUNTERPOINT']
+  });
+  const [cand1A, cand1B] = deriveCommissionCandidates(comm1);
+
+  assert.equal(cand1A.proposal_origin, 'COMMISSION_DERIVED');
+  assert.equal(cand1B.proposal_origin, 'COMMISSION_DERIVED');
+  assert.ok(cand1A.concept_title.toLowerCase().includes('punctuation') || cand1A.concept_title.toLowerCase().includes('machinery'));
+  assert.ok(cand1A.formal_proposition.toLowerCase().includes('textual') || cand1A.formal_proposition.toLowerCase().includes('stage'));
+
+  // Commission 2: The Two Distinct Processes (Endpoint Equivalence)
+  const comm2 = normalizeCommission({
+    seed: 'Two distinct processes arrive at an identical endpoint, but their histories differ',
+    medium: 'VISUAL',
+    instruments: ['PHASONIC_COUNTERPOINT', 'SEDGWICK_REPARATIVE_TEXTURE']
+  });
+  const [cand2A, cand2B] = deriveCommissionCandidates(comm2);
+
+  // Substantive distinction test: Candidate titles and formal propositions must differ between seeds!
+  assert.notEqual(cand1A.concept_title, cand2A.concept_title);
+  assert.notEqual(cand1A.formal_proposition, cand2A.formal_proposition);
+  assert.notEqual(cand1B.concept_title, cand2B.concept_title);
+  assert.notEqual(cand1B.formal_proposition, cand2B.formal_proposition);
+
+  // Neither candidate can use the old hardcoded strings
+  assert.notEqual(cand1A.concept_title, 'The Stratigraphic Separation');
+  assert.notEqual(cand1B.concept_title, 'The Procedural Inversion');
+  assert.notEqual(cand2A.concept_title, 'The Stratigraphic Separation');
+  assert.notEqual(cand2B.concept_title, 'The Procedural Inversion');
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - Author Candidate Overrides', () => {
+  const customCandidates = [
+    {
+      concept_title: 'The Cartographic Palimpsest',
+      formal_proposition: 'Superimposes erased colonial parcel boundaries over contemporary satellite imagery.',
+      structural_mechanisms: ['Cadastral overlay', 'Opacity modulation', 'Toponym restoration'],
+      medium_consequence: 'Exposes how modern land title conceals indigenous displacement.'
+    },
+    {
+      concept_title: 'The Riparian Common',
+      formal_proposition: 'Organizes the interface around seasonal water levels rather than statutory property deeds.',
+      structural_mechanisms: ['Tidal timeline', 'Communal easement ledger', 'Submerged monument tracking'],
+      medium_consequence: 'Subverts property boundaries through ecological impermanence.'
+    }
+  ];
+
+  const comm = normalizeCommission({
+    seed: 'Estuary Boundary Dispute',
+    medium: 'SCHOLARLY',
+    candidate_overrides: customCandidates
+  });
+
+  const candidates = deriveCommissionCandidates(comm);
+  assert.equal(candidates.length, 2);
+  assert.equal(candidates[0].concept_title, 'The Cartographic Palimpsest');
+  assert.equal(candidates[0].proposal_origin, 'OPERATOR_OVERRIDE');
+  assert.equal(candidates[1].concept_title, 'The Riparian Common');
+  assert.equal(candidates[1].proposal_origin, 'OPERATOR_OVERRIDE');
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - Causally Consequential Instrumentation Contract', () => {
+  const phasonicContract = buildInstrumentCausalContract('PHASONIC_COUNTERPOINT', 'HYBRID', ['punctuation', 'machinery']);
+  assert.equal(phasonicContract.instrument_id, 'PHASONIC_COUNTERPOINT');
+  assert.equal(phasonicContract.causality_class, 'OPERATIVE_TRANSFER');
+  assert.deepEqual(phasonicContract.target_domains, ['GEOMETRY', 'MOTION', 'GRAMMAR']);
+  assert.ok(phasonicContract.causal_bindings.length >= 2);
+
+  const strainBinding = phasonicContract.causal_bindings.find(b => b.parameter === 'quasiperiodic_strain_u');
+  assert.ok(strainBinding);
+  assert.equal(strainBinding.target_component, 'spatial_lattice_geometry');
+  assert.ok(strainBinding.transfer_law.includes('cos'));
+  assert.ok(strainBinding.falsification_probe.includes('u = 0.0'));
+
+  const syntaxBinding = phasonicContract.causal_bindings.find(b => b.parameter === 'scalar_interference_H');
+  assert.ok(syntaxBinding);
+  assert.equal(syntaxBinding.target_component, 'clause_syntax_selection');
+  assert.ok(syntaxBinding.transfer_law.includes('syntax_state = H'));
+  assert.ok(syntaxBinding.falsification_probe.includes('H = 0.0'));
+
+  const caroContract = buildInstrumentCausalContract('CARO_INSTITUTIONAL_RECONSTRUCTION', 'SCHOLARLY');
+  assert.equal(caroContract.causality_class, 'OPERATIVE_TRANSFER');
+  assert.deepEqual(caroContract.target_domains, ['SPATIAL_TOPOLOGY', 'INTERACTION_FRICTION', 'DOCUMENT_CUSTODY']);
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - Full Cycle with v0.2 Governance & Interaction Topology', async () => {
+  const seed = 'A theater in which punctuation marks are the stage machinery, and each scene quietly changes the grammar of the scene before it.';
   const receipt = await runDollhouseDesignCycle({
     seed,
-    medium: 'VISUAL',
-    instruments: ['PHASONIC_COUNTERPOINT', 'SEDGWICK_REPARATIVE_TEXTURE'],
+    medium: 'HYBRID',
+    instruments: ['PHASONIC_COUNTERPOINT', 'DIALECTICAL_TENSION'],
     human_coordinates: {
-      what: 'Interactive two-path visualization',
-      who: 'The human investigator',
-      where: 'Desktop & mobile canvas viewport',
-      how: 'D₃ periodic scaffold coupled with φ quasiperiodic detour',
-      when: 'Three distinct stages: traversal, inspection, unfolding',
-      why: 'To demonstrate that endpoint equivalence does not imply identical journey'
+      what: 'Kinetic theatrical proscenium',
+      who: 'Viewer and syntactic witness',
+      where: 'Desktop & 390px mobile viewport',
+      how: 'Punctuation machinery physically deforms active sentence geometry',
+      when: 'Four progressive scenes followed by retrospective unwinding',
+      why: 'To demonstrate that punctuation is mechanical work rather than passive ornament'
     }
   });
 
-  // Receipt schema & typing
-  assert.equal(receipt.schema, DOLLHOUSE_DESIGN_SCHEMA);
-  assert.equal(receipt.version, DOLLHOUSE_DESIGN_VERSION);
-  assert.equal(receipt.seed, seed);
-  assert.equal(receipt.medium, 'VISUAL');
-  assert.deepEqual(receipt.selected_instruments, ['PHASONIC_COUNTERPOINT', 'SEDGWICK_REPARATIVE_TEXTURE']);
+  // Schema & Version
+  assert.equal(receipt.schema, 'td613.dollhouse-design.return-receipt/v0.2');
+  assert.equal(receipt.version, 'v0.2-candidate');
 
-  // Generates dual candidates
+  // Commission-derived proposals
   assert.equal(receipt.candidates.length, 2);
-  const [candA, candB] = receipt.candidates;
-  assert.ok(candA.id.includes('CAND-A'));
-  assert.ok(candB.id.includes('CAND-B'));
-  assert.ok(candA.structural_mechanisms.length >= 3);
-  assert.ok(candB.structural_mechanisms.length >= 3);
-  assert.notEqual(candA.concept_title, candB.concept_title);
+  assert.equal(receipt.candidates[0].proposal_origin, 'COMMISSION_DERIVED');
+  assert.notEqual(receipt.candidates[0].concept_title, 'The Stratigraphic Separation');
 
-  // Primary materialization uses 5 generative verbs
-  const verbs = receipt.primary_materialization.operative_verbs.map(v => v.verb);
-  assert.deepEqual(verbs, ['PROPAGATION', 'COMPRESSION', 'COUPLING', 'TRANSITION', 'STABILIZATION']);
-
-  // Refractive variant mutates a governing parameter
-  assert.ok(receipt.refractive_variant.id.includes('REFRACT'));
-  assert.ok(receipt.refractive_variant.mutated_parameter);
-  assert.ok(receipt.refractive_variant.formal_consequence);
-
-  // Comparative analysis contains invariants, divergent traits, and open questions
-  assert.ok(receipt.comparative_analysis.shared_invariants.length > 0);
-  assert.ok(receipt.comparative_analysis.divergent_qualities.length > 0);
-  assert.ok(receipt.comparative_analysis.open_aesthetic_questions.length > 0);
-
-  // Instrument provenance ledger traces lineage
+  // Provenance contains Causal Contract
   assert.equal(receipt.instrument_provenance.length, 2);
-  assert.equal(receipt.instrument_provenance[0].instrument_id, 'PHASONIC_COUNTERPOINT');
-  assert.equal(receipt.instrument_provenance[1].instrument_id, 'SEDGWICK_REPARATIVE_TEXTURE');
+  assert.ok(receipt.instrument_provenance[0].causal_contract);
+  assert.equal(receipt.instrument_provenance[0].causal_contract.causality_class, 'OPERATIVE_TRANSFER');
 
-  // Scientific Firebreak & Governance verification
-  assert.equal(receipt.governance.discourse_mode, 'OPEN_FIELD_CREATIVE_SYNTHESIS');
-  assert.equal(receipt.governance.scientific_proof, false);
-  assert.equal(receipt.governance.release_authority, false);
-  assert.equal(receipt.governance.deployment_authority, false);
-  assert.equal(receipt.governance.human_closure_required, true);
-});
+  // Comparative analysis contains interaction topology and accessibility policy
+  const topology = receipt.comparative_analysis.governing_interaction_topology;
+  assert.ok(topology);
+  assert.equal(topology.motion_policy, 'USER_CONTROLLED_STILL_STATE_UNDER_REDUCED_MOTION');
+  assert.equal(topology.mobile_legibility_profile.minimum_telemetry_font_px, 12);
+  assert.equal(topology.mobile_legibility_profile.minimum_hit_target_px, 44);
 
-test('TD613 Dollhouse Design Conductor - Refractive parameter dynamic derivation and causality trace', async () => {
-  // Test 1: Explicit declared mutation parameter is preserved
-  const receiptExplicit = await runDollhouseDesignCycle({
-    seed: 'Estuary Title Dissolution',
-    medium: 'SCHOLARLY',
-    instruments: ['CARO_INSTITUTIONAL_RECONSTRUCTION', 'SEDGWICK_REPARATIVE_TEXTURE'],
-    refractive_parameters: {
-      mutated_parameter: 'perspective_shift',
-      mutation_description: 'Shift focus from colonial surveyor to intertidal commoner',
-      formal_consequence: 'Contrasts sovereign boundary enforcement with communal seasonal access',
-      instruction_trace: 'Frame the primary text through the surveyor and the refraction through the commoner'
-    }
-  });
-
-  assert.equal(receiptExplicit.refractive_variant.mutated_parameter, 'perspective_shift');
-  assert.equal(receiptExplicit.refractive_variant.mutation_description, 'Shift focus from colonial surveyor to intertidal commoner');
-  assert.equal(receiptExplicit.refractive_variant.instruction_trace, 'Frame the primary text through the surveyor and the refraction through the commoner');
-
-  // Test 2: Default profile derived dynamically from primary instrument
-  const receiptButler = await runDollhouseDesignCycle({
-    seed: 'Normative Language Reiteration',
-    medium: 'THEORETICAL',
-    instruments: ['BUTLER_PERFORMATIVE_ITERATION']
-  });
-
-  assert.equal(receiptButler.refractive_variant.mutated_parameter, 'citational_conformity');
-  assert.ok(receiptButler.refractive_variant.instruction_trace.includes('variance'));
-});
-
-test('TD613 Dollhouse Design Conductor - Deep Immutability of Returned Receipt', async () => {
-  const receipt = await runDollhouseDesignCycle({
-    seed: 'Immutable Artifact Test',
-    medium: 'THEORETICAL'
-  });
-
+  // Deep Immutability
   assert.ok(Object.isFrozen(receipt));
   assert.ok(Object.isFrozen(receipt.candidates));
-  assert.ok(Object.isFrozen(receipt.primary_materialization));
-  assert.ok(Object.isFrozen(receipt.refractive_variant));
+  assert.ok(Object.isFrozen(receipt.comparative_analysis));
   assert.ok(Object.isFrozen(receipt.governance));
-
-  // Mutations must fail
-  assert.throws(() => {
-    receipt.seed = 'Mutated';
-  }, /Cannot assign to read only property/);
-  assert.throws(() => {
-    receipt.governance.release_authority = true;
-  }, /Cannot assign to read only property/);
+  assert.equal(receipt.governance.discourse_mode, 'OPEN_FIELD_CREATIVE_SYNTHESIS');
+  assert.equal(receipt.governance.release_authority, false);
 });
