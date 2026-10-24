@@ -342,7 +342,7 @@ test('T-DISC-15 (Guard A / Redline 48-01): Valid empty snapshot constructed via 
   receipt = disclosure.getPublicReceipt();
   assert.equal(receipt.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
   assert.equal(receipt.declared_source_status, 'MALFORMED_DECLARATION');
-  assert.equal(receipt.drawer.coverage.missing_required_channels, 0, 'Must NOT fabricate fake missing channel counts');
+  assert.equal(receipt.drawer.coverage, null, 'Must NOT fabricate fake missing channel counts or measured numerical zeros on malformed report (R1-04)');
   assert.match(receipt.customer_presentation.what_happened, /HOLD · carried gate report failed structural validation/);
 });
 
@@ -445,4 +445,165 @@ test('T-DISC-19 (Guard C / Redline 48-03): Hostile getter injection: accessor pr
   });
 
   assert.equal(getterEvaluated, false, 'Accessor getter must NEVER be evaluated on untrusted carried report');
+});
+
+test('T-REPAIR-01 (R1-01): One malformed report alone produces structural HOLD, never NOT_RUN', () => {
+  const { doc, root } = setupDom();
+  const packet = {
+    loom_gate_reports: [{ schema: 'invalid' }]
+  };
+  const continuity = installMarrowlineLoomGateContinuity({ doc, root, packet });
+  continuity.update({ phase: 'ARRIVED' });
+
+  const globalObj = root.__TD613_MARROWLINE_LOOM_GATE_CONTINUITY__;
+  assert.equal(globalObj.gate_disclosure.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+  assert.notEqual(globalObj.gate_disclosure.status, 'NOT_RUN');
+});
+
+test('T-REPAIR-02 (R1-01): A plain {} report does not crash rendering and records structural HOLD', () => {
+  const { doc, root } = setupDom();
+  const packet = {
+    loom_gate_reports: [{}]
+  };
+  assert.doesNotThrow(() => {
+    const continuity = installMarrowlineLoomGateContinuity({ doc, root, packet });
+    continuity.update({ phase: 'ARRIVED' });
+  });
+
+  const alerts = doc.getElementById('loomPortableGateAlerts');
+  assert.match(alerts.textContent, /HOLD · carried gate report failed structural or semantic validation/);
+
+  const globalObj = root.__TD613_MARROWLINE_LOOM_GATE_CONTINUITY__;
+  assert.equal(globalObj.gate_disclosure.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+});
+
+test('T-REPAIR-03 (R1-01 & R1-04): Malformed plus valid exposure preserves reported exposure and explicitly records malformed item with null coverage', () => {
+  const { doc } = setupDom();
+  const disclosure = createLoomGateDisclosure(doc);
+  const malformed = { schema: 'invalid' };
+  const exposure = createExposureReport();
+
+  disclosure.update([malformed, exposure], 'ACTIVE');
+  const receipt = disclosure.getPublicReceipt();
+
+  assert.equal(receipt.status, 'OBSERVED_EXPOSURE', 'Exposure strictly dominates');
+  assert.equal(receipt.reports_summary.total_reports, 2);
+  assert.equal(receipt.reports_summary.items[0].status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+  assert.equal(receipt.reports_summary.items[0].coverage, null, 'Malformed report coverage must be null, not measured zeros');
+  assert.equal(receipt.reports_summary.items[1].status, 'OBSERVED_EXPOSURE');
+  assert.ok(receipt.reports_summary.items[1].coverage.disclosed_targets > 0);
+});
+
+test('T-REPAIR-04 (R1-01): Reordered reports retain respective classifications and exposure dominance', () => {
+  const { doc } = setupDom();
+  const disclosure = createLoomGateDisclosure(doc);
+  const exposure = createExposureReport();
+  const malformed = { schema: 'invalid' };
+
+  // Exposure first, then malformed
+  disclosure.update([exposure, malformed], 'ACTIVE');
+  const receipt = disclosure.getPublicReceipt();
+
+  assert.equal(receipt.status, 'OBSERVED_EXPOSURE');
+  assert.equal(receipt.reports_summary.items[0].status, 'OBSERVED_EXPOSURE');
+  assert.equal(receipt.reports_summary.items[1].status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+});
+
+test('T-REPAIR-05 (R1-02): Hostile accessor on array index 0 fails closed without evaluating getter', () => {
+  const { doc, root } = setupDom();
+  let getterEvaluated = false;
+
+  const hostileArray = [];
+  Object.defineProperty(hostileArray, '0', {
+    get() {
+      getterEvaluated = true;
+      throw new Error('INDEX_GETTER_FIRED');
+    },
+    enumerable: true,
+    configurable: true
+  });
+
+  // Direct disclosure update
+  const disclosure = createLoomGateDisclosure(doc);
+  assert.doesNotThrow(() => disclosure.update(hostileArray, 'ACTIVE'));
+  assert.equal(getterEvaluated, false, 'Getter on index 0 must NOT be evaluated in disclosure');
+  assert.equal(disclosure.getPublicReceipt().status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+
+  // Through Marrowline continuity
+  const packet = { loom_gate_reports: hostileArray };
+  assert.doesNotThrow(() => {
+    const continuity = installMarrowlineLoomGateContinuity({ doc, root, packet });
+    continuity.update({ phase: 'ARRIVED' });
+  });
+  assert.equal(getterEvaluated, false, 'Getter on index 0 must NOT be evaluated in continuity');
+});
+
+test('T-REPAIR-06 (R1-02): Hostile accessor on packet property loom_gate_reports fails closed without evaluating getter', () => {
+  const { doc, root } = setupDom();
+  let packetGetterEvaluated = false;
+
+  const packet = {};
+  Object.defineProperty(packet, 'loom_gate_reports', {
+    get() {
+      packetGetterEvaluated = true;
+      throw new Error('PACKET_GETTER_FIRED');
+    },
+    enumerable: true,
+    configurable: true
+  });
+
+  assert.doesNotThrow(() => {
+    const continuity = installMarrowlineLoomGateContinuity({ doc, root, packet });
+    continuity.update({ phase: 'ARRIVED' });
+  });
+  assert.equal(packetGetterEvaluated, false, 'Getter on packet.loom_gate_reports must NOT be evaluated');
+  assert.equal(root.__TD613_MARROWLINE_LOOM_GATE_CONTINUITY__.gate_disclosure.status, 'HELD_STRUCTURAL_CONTRACT_VIOLATION');
+});
+
+test('T-REPAIR-07 (R1-03): Private marker in governance.withheld_document_count never reflects into public events or DOM', () => {
+  const { doc, root } = setupDom();
+  let dispatchedDetail = null;
+  root.addEventListener('td613:marrowline:loom-gate-continuity', ev => {
+    dispatchedDetail = ev.detail;
+  });
+
+  const packet = {
+    governance: {
+      withheld_document_count: 'SECRET_CANARY_WITHHELD_MARKER_99'
+    },
+    documents: [{ id: 'doc1', name: 'confidential_payroll_records.pdf' }]
+  };
+
+  const continuity = installMarrowlineLoomGateContinuity({ doc, root, packet });
+  continuity.update({ phase: 'ARRIVED' });
+
+  const globalObj = root.__TD613_MARROWLINE_LOOM_GATE_CONTINUITY__;
+  const serializedGlobal = JSON.stringify(globalObj);
+  const serializedEvent = JSON.stringify(dispatchedDetail);
+  const domHtml = doc.getElementById('loomGateContinuity').innerHTML;
+
+  for (const target of [serializedGlobal, serializedEvent, domHtml]) {
+    assert.equal(target.includes('SECRET_CANARY_WITHHELD_MARKER_99'), false, 'Nonnumeric withheld marker must NEVER leak into public projections or DOM');
+    assert.equal(target.includes('confidential_payroll_records.pdf'), false, 'File name must NEVER leak into public projections or DOM');
+  }
+});
+
+test('T-REPAIR-08 (R1-04): Mixed-report with two distinct native references cannot falsely attribute exposure to first report', () => {
+  const { doc } = setupDom();
+  const disclosure = createLoomGateDisclosure(doc);
+  const hexA = '1'.repeat(64);
+  const hexB = '2'.repeat(64);
+
+  const reportA = createMockReport({ ref: hexA });
+  const reportB = createExposureReport({ ref: hexB });
+
+  disclosure.update([reportA, reportB], 'ACTIVE');
+  const receipt = disclosure.getPublicReceipt();
+
+  assert.equal(receipt.status, 'OBSERVED_EXPOSURE');
+  assert.equal(receipt.drawer.native_report_ref, null, 'Multi-report aggregate must NOT attribute exposure to first report ref');
+  assert.equal(receipt.reports_summary.items[0].ref, hexA);
+  assert.equal(receipt.reports_summary.items[1].ref, hexB);
+  assert.equal(receipt.drawer.coverage.declared_report_totals, true);
+  assert.match(receipt.customer_presentation.what_happened, /Alert · exposure detected in carried report summary/);
 });

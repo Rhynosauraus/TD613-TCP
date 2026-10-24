@@ -25,6 +25,52 @@ const button = (doc, label, action, className = '') => {
 const digestShort = value =>
   typeof value === 'string' && value.length > 18 ? `${value.slice(0, 10)}…${value.slice(-6)}` : value || '—';
 
+function parseNonNegativeInt(val) {
+  if (typeof val === 'number' && Number.isInteger(val) && val >= 0) return val;
+  return null;
+}
+
+/**
+ * Extracts carried gate reports safely by inspecting packet and array descriptors
+ * before iteration or property access (R1-01, R1-02).
+ * Fails closed without evaluating hostile getters on packet properties or array indices.
+ */
+function extractSafeGateReports(packet) {
+  if (!packet || typeof packet !== 'object') return [];
+  const packetDesc = Object.getOwnPropertyDescriptor(packet, 'loom_gate_reports');
+  if (packetDesc && (packetDesc.get || packetDesc.set)) {
+    return [{ schema: 'td613.loom.malformed-gate-report/v0.1', malformed: true }];
+  }
+  const rawReports = packet.loom_gate_reports;
+  if (!rawReports) return [];
+  if (!Array.isArray(rawReports)) {
+    return [{ schema: 'td613.loom.malformed-gate-report/v0.1', malformed: true }];
+  }
+  if (rawReports.length > 100) {
+    return [{ schema: 'td613.loom.malformed-gate-report/v0.1', malformed: true, error: 'OVERSIZED_REPORT_LIST' }];
+  }
+  const safeReports = [];
+  for (let i = 0; i < rawReports.length; i++) {
+    const indexDesc = Object.getOwnPropertyDescriptor(rawReports, String(i));
+    if (indexDesc && (indexDesc.get || indexDesc.set)) {
+      safeReports.push({ schema: 'td613.loom.malformed-gate-report/v0.1', malformed: true, index: i });
+      continue;
+    }
+    const r = rawReports[i];
+    if (!r || typeof r !== 'object') {
+      safeReports.push({ schema: 'td613.loom.malformed-gate-report/v0.1', malformed: true, index: i });
+      continue;
+    }
+    try {
+      validateStructureDeep(r);
+      safeReports.push(copy(r));
+    } catch (_err) {
+      safeReports.push({ schema: 'td613.loom.malformed-gate-report/v0.1', malformed: true, index: i });
+    }
+  }
+  return safeReports;
+}
+
 function ensureStylesheet(doc = document) {
   const href = new URL('./marrowline-loom-gate-continuity.css', import.meta.url).href;
   let link = doc.querySelector('link[data-marrowline-loom-gate-continuity]');
@@ -220,7 +266,8 @@ export function deriveMarrowlineLoomGateContinuity({
   const selected = Array.isArray(packet.documents) ? packet.documents : [];
   const selectedNames = selected.map(item => item?.name || item?.id).filter(Boolean);
   const selectedIds = selected.map(item => item?.id).filter(Boolean);
-  const withheld = activation?.governance?.withheld_document_count ?? packet?.governance?.withheld_document_count ?? null;
+  const rawWithheld = activation?.governance?.withheld_document_count ?? packet?.governance?.withheld_document_count ?? null;
+  const withheld = parseNonNegativeInt(rawWithheld);
   const p = phaseCopy(phase, lastAttempt, busy, substantiveContinuationCount, failure);
   const evidenceHold = loomEvidenceHoldSummary(failure);
   const usage = marrowlineProviderUsage(failure?.native_reply || { receipt: failure?.receipt });
@@ -283,20 +330,8 @@ export function deriveMarrowlineLoomGateContinuity({
     contentPredecessorLabel
   ];
 
-  // Deep structural validation on carried gate reports before copying (Guard C)
-  let safeReports = [];
-  if (Array.isArray(packet.loom_gate_reports)) {
-    for (const r of packet.loom_gate_reports) {
-      if (r && typeof r === 'object') {
-        try {
-          validateStructureDeep(r);
-          safeReports.push(copy(r));
-        } catch (_err) {
-          // Reject hostile getter payloads fail-closed
-        }
-      }
-    }
-  }
+  // Extract and deep-validate carried gate reports safely (R1-01, R1-02, Guard C)
+  const safeReports = extractSafeGateReports(packet);
 
   return Object.freeze({
     schema: MARROWLINE_LOOM_GATE_CONTINUITY_SCHEMA,
@@ -511,7 +546,11 @@ export function installMarrowlineLoomGateContinuity({
     );
     if (current.portableGateReports.length) {
       for (const report of current.portableGateReports) {
-        portableAlerts.append(el(doc, 'p', describePortableLoomGateReport(report)));
+        if (report && !report.malformed && report.coverage && typeof report.coverage === 'object' && typeof report.coverage.disclosed_targets === 'number') {
+          portableAlerts.append(el(doc, 'p', describePortableLoomGateReport(report)));
+        } else {
+          portableAlerts.append(el(doc, 'p', 'HOLD · carried gate report failed structural or semantic validation; contents untrusted.'));
+        }
       }
     } else {
       portableAlerts.append(el(doc, 'p', 'No captured disclosure or reconstruction result traveled with this handoff. Check Loom Gate to inspect captured evidence; this stage does not measure leakage from the whole conversation.'));
@@ -547,7 +586,21 @@ export function installMarrowlineLoomGateContinuity({
     roleNodes.temporal.question.textContent = current.temporal.question;
     roleNodes.temporal.body.textContent = `${current.temporal.state} · ${current.temporal.finding}`;
     technical.querySelector('pre').textContent = JSON.stringify(
-      { schema: current.schema, phase: current.phase, technical: current.technical, claim_ceiling: current.claimCeiling },
+      {
+        schema: current.schema,
+        phase: current.phase,
+        technical: {
+          activation_digest: current.technical?.activation_digest ?? null,
+          origin_input_digest: current.technical?.origin_input_digest ?? null,
+          current_input_digest: current.technical?.current_input_digest ?? null,
+          predecessor_request_id: current.technical?.predecessor_request_id ?? null,
+          current_result_request_id: current.technical?.current_result_request_id ?? null,
+          substantive_continuation_count: current.technical?.substantive_continuation_count ?? 0,
+          selected_document_count: current.technical?.selected_ids?.length ?? 0,
+          withheld_document_count: current.technical?.withheld_document_count ?? 0
+        },
+        claim_ceiling: current.claimCeiling
+      },
       null,
       2
     );

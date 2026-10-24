@@ -34,9 +34,34 @@ function normalizePhaseForSnapshot(phase) {
 }
 
 /**
+ * Validates report container and its property descriptors before iteration or spreading (R1-02).
+ * Fails closed without evaluating hostile getters on array indices.
+ */
+function validateReportsContainer(reports) {
+  if (reports == null) return [];
+  if (!Array.isArray(reports)) {
+    return [reports];
+  }
+  if (reports.length > 100) {
+    throw new TypeError('Carried reports array exceeds maximum limit of 100 items');
+  }
+  for (let i = 0; i < reports.length; i++) {
+    const desc = Object.getOwnPropertyDescriptor(reports, String(i));
+    if (desc && (desc.get || desc.set)) {
+      throw new TypeError(`Hostile accessor detected on reports array index ${i}`);
+    }
+  }
+  const safeList = [];
+  for (let i = 0; i < reports.length; i++) {
+    safeList.push(reports[i]);
+  }
+  return safeList;
+}
+
+/**
  * Safely derives a Slice 1 view-model from an individual carried report or returns a schema-valid NOT_RUN
  * view-model when no report is present. If the report fails structural validation, emits an explicit
- * HELD_STRUCTURAL_CONTRACT_VIOLATION without fabricating fake channels or attempts (Redline 48-01).
+ * HELD_STRUCTURAL_CONTRACT_VIOLATION with null coverage rather than fake zeros (R1-01, R1-04).
  */
 function deriveIndividualReportViewModel(report, phase) {
   const normalizedPhase = normalizePhaseForSnapshot(phase);
@@ -46,6 +71,49 @@ function deriveIndividualReportViewModel(report, phase) {
       session: { phase: normalizedPhase }
     };
     return deriveLoomGateViewModel(snapshot);
+  }
+  if (report.malformed) {
+    return Object.freeze({
+      schema: LOOM_GATE_VIEW_MODEL_SCHEMA,
+      action: 'CHECK_LOOM_GATE',
+      label: LOOM_GATE_LABEL,
+      href: LOOM_GATE_HREF,
+      declared_source_status: 'MALFORMED_DECLARATION',
+      status: 'HELD_STRUCTURAL_CONTRACT_VIOLATION',
+      gate_verification_status: 'UNVERIFIED_DECLARATION',
+      customer_presentation: Object.freeze({
+        what_happened: 'HOLD · carried gate report failed structural validation.',
+        what_was_checked: 'Carried summary violated structural contract rules; contents untrusted.',
+        what_remains_unknown: 'The model provider’s internal reasoning and hidden activations remain unobserved. Downstream retention, fine-tuning use, or training storage is not measured. Conversation leakage fraction is unmeasured (null).',
+        what_happens_next: 'HOLD · repair or regenerate valid challenge report before relying on gate status.'
+      }),
+      six_field_contract: Object.freeze({
+        source: 'UNTRUSTED_CARRIED_PAYLOAD',
+        scope: 'STRUCTURAL_CONTRACT_VIOLATION',
+        evidence_class: 'DECLARATION',
+        measurement_status: 'REJECTED_MALFORMED_DECLARATION',
+        limitation: 'STRUCTURAL_VALIDATION_FAILED',
+        next_action: 'HOLD_REPAIR_BINDING_OR_MISSING_CAPTURE'
+      }),
+      authority: Object.freeze({
+        head_advanced: false,
+        foreign_enforcement_proved: false,
+        empirical_credit: 0
+      }),
+      drawer: Object.freeze({
+        id: 'loomGateHow',
+        label: 'How do I know? 下',
+        native_report_ref: null,
+        verification_status: 'UNVERIFIED_DECLARATION',
+        local_private_recomputation_required: true,
+        coverage: null,
+        joining: null,
+        specialist_jurisdictions: Object.freeze([]),
+        mechanisms_reference: 'PORTABLE_LOOM_MECHANISMS_v0.1',
+        public_continuation: null
+      }),
+      claim_ceiling: 'fail-closed-structural-hold'
+    });
   }
   try {
     validateStructureDeep(report);
@@ -89,17 +157,8 @@ function deriveIndividualReportViewModel(report, phase) {
         native_report_ref: null,
         verification_status: 'UNVERIFIED_DECLARATION',
         local_private_recomputation_required: true,
-        coverage: Object.freeze({
-          captured_channels: 0,
-          missing_required_channels: 0,
-          checked_targets: 0,
-          disclosed_targets: 0,
-          declared_reconstruction_attempts: 0,
-          measured_reconstruction_attempts: 0,
-          successful_reconstruction_attempts: 0,
-          missing_attempts: 0
-        }),
-        joining: Object.freeze({ observed: 0, incomplete: 0 }),
+        coverage: null,
+        joining: null,
         specialist_jurisdictions: Object.freeze([]),
         mechanisms_reference: 'PORTABLE_LOOM_MECHANISMS_v0.1',
         public_continuation: null
@@ -185,10 +244,9 @@ function buildPublicAggregateReceipt(itemViewModels, reportsLength, phase) {
     );
     aggregateStatus = 'OBSERVED_EXPOSURE';
     aggregateDeclaredStatus = 'OBSERVED_EXPOSURE';
-    aggregateWhatHappened = exposureVm?.customer_presentation?.what_happened ||
-      'Alert · exposure detected. Declared protected targets appeared on captured surfaces.';
+    aggregateWhatHappened = 'Alert · exposure detected in carried report summary. Declared protected targets appeared on captured surfaces; local recomputation required before reliance.';
     aggregateWhatWasChecked = exposureVm?.customer_presentation?.what_was_checked ||
-      'Declared canary targets appeared in captured output.';
+      'Carried report declared that canary targets or reconstruction probes appeared in captured output. This carried summary has not been independently verified locally.';
     aggregateWhatHappensNext = 'HOLD · Review exposure and registered scope before taking any further action.';
     aggregateNextAction = 'HOLD_REVIEW_EXPOSURE_AND_REGISTERED_SCOPE';
   } else if (hasStructuralViolation) {
@@ -224,22 +282,30 @@ function buildPublicAggregateReceipt(itemViewModels, reportsLength, phase) {
     }
   }
 
-  // Aggregate coverage counts
-  const aggregatedCoverage = {
-    captured_channels: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.coverage?.captured_channels ?? 0), 0),
-    missing_required_channels: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.coverage?.missing_required_channels ?? 0), 0),
-    checked_targets: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.coverage?.checked_targets ?? 0), 0),
-    disclosed_targets: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.coverage?.disclosed_targets ?? 0), 0),
-    declared_reconstruction_attempts: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.coverage?.declared_reconstruction_attempts ?? 0), 0),
-    measured_reconstruction_attempts: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.coverage?.measured_reconstruction_attempts ?? 0), 0),
-    successful_reconstruction_attempts: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.coverage?.successful_reconstruction_attempts ?? 0), 0),
-    missing_attempts: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.coverage?.missing_attempts ?? 0), 0)
-  };
+  // Aggregate coverage counts only from reports with valid declared coverage (R1-04)
+  const validCoverageVms = itemViewModels.filter(vm => vm.drawer?.coverage != null);
+  const aggregatedCoverage = validCoverageVms.length > 0 ? {
+    captured_channels: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.coverage.captured_channels ?? 0), 0),
+    missing_required_channels: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.coverage.missing_required_channels ?? 0), 0),
+    checked_targets: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.coverage.checked_targets ?? 0), 0),
+    disclosed_targets: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.coverage.disclosed_targets ?? 0), 0),
+    declared_reconstruction_attempts: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.coverage.declared_reconstruction_attempts ?? 0), 0),
+    measured_reconstruction_attempts: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.coverage.measured_reconstruction_attempts ?? 0), 0),
+    successful_reconstruction_attempts: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.coverage.successful_reconstruction_attempts ?? 0), 0),
+    missing_attempts: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.coverage.missing_attempts ?? 0), 0),
+    declared_report_totals: true,
+    unmeasured_reports_omitted: itemViewModels.length - validCoverageVms.length
+  } : null;
 
-  const aggregatedJoining = {
-    observed: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.joining?.observed ?? 0), 0),
-    incomplete: itemViewModels.reduce((acc, vm) => acc + (vm.drawer?.joining?.incomplete ?? 0), 0)
-  };
+  const aggregatedJoining = validCoverageVms.length > 0 ? {
+    observed: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.joining?.observed ?? 0), 0),
+    incomplete: validCoverageVms.reduce((acc, vm) => acc + (vm.drawer.joining?.incomplete ?? 0), 0)
+  } : null;
+
+  // Single report preserves native ref; multiple reports set null to prevent misattribution (R1-04)
+  const aggregateNativeRef = itemViewModels.length === 1
+    ? (itemViewModels[0]?.drawer?.native_report_ref ?? null)
+    : null;
 
   return Object.freeze({
     schema: LOOM_GATE_DISCLOSURE_PUBLIC_RECEIPT_SCHEMA,
@@ -267,11 +333,11 @@ function buildPublicAggregateReceipt(itemViewModels, reportsLength, phase) {
       empirical_credit: 0
     }),
     drawer: Object.freeze({
-      native_report_ref: itemViewModels[0]?.drawer?.native_report_ref ?? null,
+      native_report_ref: aggregateNativeRef,
       verification_status: 'UNVERIFIED_DECLARATION',
       local_private_recomputation_required: true,
-      coverage: Object.freeze(aggregatedCoverage),
-      joining: Object.freeze(aggregatedJoining),
+      coverage: aggregatedCoverage ? Object.freeze(aggregatedCoverage) : null,
+      joining: aggregatedJoining ? Object.freeze(aggregatedJoining) : null,
       specialist_jurisdictions: itemViewModels[0]?.drawer?.specialist_jurisdictions ?? Object.freeze([])
     }),
     reports_summary: Object.freeze({
@@ -375,7 +441,13 @@ export function createLoomGateDisclosure(doc, { id = 'loomGateHow', onGate = () 
   }
 
   const update = (nextReports = [], nextPhase = 'ACTIVE') => {
-    rawReports = Array.isArray(nextReports) ? [...nextReports] : [];
+    let safeReports = [];
+    try {
+      safeReports = validateReportsContainer(nextReports);
+    } catch (_err) {
+      safeReports = [{ schema: 'td613.loom.malformed-gate-report/v0.1', malformed: true }];
+    }
+    rawReports = safeReports;
     currentPhase = nextPhase;
 
     // Bounded individual processing for all carried reports (Guard B, Redline 48-02)
@@ -401,8 +473,15 @@ export function createLoomGateDisclosure(doc, { id = 'loomGateHow', onGate = () 
 
   const open = report => {
     if (report) {
+      let safeItem = report;
+      try {
+        const container = validateReportsContainer([report]);
+        safeItem = container[0];
+      } catch (_err) {
+        safeItem = { schema: 'td613.loom.malformed-gate-report/v0.1', malformed: true };
+      }
       // Derive item-specific view-model projection without evaluating arbitrary getters
-      const itemVm = deriveIndividualReportViewModel(report, currentPhase);
+      const itemVm = deriveIndividualReportViewModel(safeItem, currentPhase);
       const singleReceipt = Object.freeze({
         schema: LOOM_GATE_DISCLOSURE_PUBLIC_RECEIPT_SCHEMA,
         basis: 'CARRIED_SCOPED_SUMMARY_REQUIRES_LOCAL_PRIVATE_RECOMPUTATION',
