@@ -1,0 +1,49 @@
+{
+  "task_scope": "MILESTONE_2_LOOM_GATE_READINESS",
+  "evidence_class": "SYNTHETIC_TEST_FIXTURE",
+  "defect_mode": "SYNTHETIC_FAULT_INJECTION",
+  "evidence_references": [
+    "app/engine/portable-loom-challenge.js",
+    "docs/reentry/RELATION_MAP.md",
+    "docs/reentry/EVIDENCE_AND_HOLDS.md",
+    "docs/PORTABLE_LOOM_REENTRY_HANDOFF.md"
+  ],
+  "roles": [
+    "PEDAGOGUE",
+    "APERTURE",
+    "ATLAS",
+    "FADT",
+    "TEMPORAL_CUSTODIAN"
+  ],
+  "include_orchestrator": true,
+  "domain_inputs": {
+    "PEDAGOGUE": {
+      "coordinate": "return_state_divergence_and_held_c2",
+      "fixture_class": "SYNTHETIC_FAULT_INJECTION",
+      "concern": "Broken return promise: interface navigates to #return-review while Marrowline continuation is incomplete."
+    },
+    "APERTURE": {
+      "coordinate": "url_hash_unadmitted_dom",
+      "fixture_class": "SYNTHETIC_FAULT_INJECTION",
+      "concern": "URL hash does not equal workspace admitted: #return-review URL present while DOM workspace is unadmitted."
+    },
+    "ATLAS": {
+      "coordinate": "predecessor_chain_unverified",
+      "fixture_class": "SYNTHETIC_FAULT_INJECTION",
+      "concern": "Unverified predecessor chain: returned work candidate missing cryptographic predecessor digest link."
+    },
+    "FADT": {
+      "coordinate": "unconditioned_action_escalation",
+      "fixture_class": "SYNTHETIC_FAULT_INJECTION",
+      "concern": "Illegal action grant: Export action requested under erased conditioning state without exact quotient support."
+    },
+    "TEMPORAL_CUSTODIAN": {
+      "coordinate": "unreferenced_retry_oblivion",
+      "fixture_class": "SYNTHETIC_FAULT_INJECTION",
+      "concern": "Chronological oblivion: unreferenced retry attempt lacks predecessor citation or phase monotonic order."
+    }
+  },
+  "options": {
+    "allow_synthetic_fault_injection": true
+  }
+}

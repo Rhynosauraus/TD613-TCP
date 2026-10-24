@@ -1,0 +1,34 @@
+{
+  "task_scope": "CUSTODY_RELATION_DESCENT_AUDIT",
+  "evidence_class": "SOURCE_CODE_AUDIT",
+  "evidence_references": [
+    "app/engine/dollhouse-atlas-relational-custody.js",
+    "app/engine/dollhouse-fadt-reparative-assistance.js"
+  ],
+  "roles": ["ATLAS", "FADT"],
+  "include_orchestrator": true,
+  "domain_inputs": {
+    "ATLAS": {
+      "trajectoryA": {
+        "endpoint": "REST_CUSTODY_ORIGIN",
+        "winding": 0
+      },
+      "trajectoryB": {
+        "endpoint": "REST_CUSTODY_ORIGIN",
+        "winding": 0
+      },
+      "relation_entry": {
+        "relation_class": "RECEIVER_INVARIANT",
+        "members": ["A", "B"],
+        "source_receiver": "R_ALPHA"
+      }
+    },
+    "FADT": {
+      "fiberRows": [
+        { "support": ["READ", "VERIFY"], "condition": "A" },
+        { "support": ["READ", "VERIFY"], "condition": "B" }
+      ],
+      "attempts_unconditioned_action": false
+    }
+  }
+}

@@ -197,7 +197,7 @@ jobs:
         run: npm run test:loom:instrument
       - name: Validate Dome-World runtime weather and hash regression
         run: node --test tests/dome-world-runtime-weather-hash-regression.test.mjs
-      - name: Validate restored 5-role Dollhouse specialist suites
+      - name: Validate restored 5-role Dollhouse specialist suites and native skill
         run: |
           node --test \
             tests/dollhouse-atlas-relational-custody.test.mjs \
@@ -207,7 +207,8 @@ jobs:
             tests/dollhouse-pedagogue-dromological.test.mjs \
             tests/dollhouse-temporal-custodian.test.mjs \
             tests/dollhouse-multi-role-ablation.test.mjs \
-            tests/dollhouse-synthetic-operator-workflow.test.mjs
+            tests/dollhouse-synthetic-operator-workflow.test.mjs \
+            tests/dollhouse-native-skill.test.mjs
       - name: Verify native-prosody permission, focused relay API and editorial contracts, and offline atlas
         run: |
           node --check server/khonapolit-quality.js
