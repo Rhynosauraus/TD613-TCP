@@ -172,7 +172,8 @@ node scripts/run-dollhouse-skill-audit.mjs \
 ```json
 {
   "task_scope": "MILESTONE_2_LOOM_GATE_READINESS",
-  "evidence_class": "SOURCE_CODE_AUDIT",
+  "evidence_class": "SYNTHETIC_TEST_FIXTURE",
+  "defect_mode": "SYNTHETIC_FAULT_INJECTION",
   "evidence_references": [
     "app/engine/portable-loom-challenge.js",
     "docs/reentry/RELATION_MAP.md",

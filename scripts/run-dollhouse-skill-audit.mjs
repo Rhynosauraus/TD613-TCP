@@ -7,7 +7,7 @@
  *   node scripts/run-dollhouse-skill-audit.mjs [options]
  *
  * Options:
- *   --input, -i <path>        Path to input JSON audit specification
+ *   --input, -i <path>        Path to input JSON audit specification (or read from stdin if piped)
  *   --role, -r <role>         Specialist role to execute (repeatable or comma-separated)
  *   --no-orchestrator         Skip Orchestrator adjudication
  *   --source, -s <rev>        Explicit target source revision
@@ -15,6 +15,8 @@
  *   --class <class>           Evidence class (e.g. SYNTHETIC_TEST_FIXTURE)
  *   --evidence, -e <ref>      Evidence reference (repeatable)
  *   --output, -o <path>       Output path for receipt artifact (.md or .json)
+ *   --allow-overwrite, -w     Allow overwriting existing artifact file
+ *   --strict-provenance       Enforce strict local git history check on source revision
  *   --format <mode>           Console output format: human (default), json, or both
  *   --help, -h                Show this help message
  */
@@ -29,7 +31,7 @@ TD613 Dollhouse Native Skill Audit Runner
 Usage: node scripts/run-dollhouse-skill-audit.mjs [options]
 
 Options:
-  --input, -i <path>        Path to input JSON audit specification
+  --input, -i <path>        Path to input JSON audit specification (or stream via stdin)
   --role, -r <role>         Specialist role to execute (repeatable or comma-separated: PEDAGOGUE, APERTURE, ATLAS, FADT, TEMPORAL_CUSTODIAN)
   --no-orchestrator         Skip Orchestrator adjudication (execute specialists standalone)
   --source, -s <rev>        Target source revision / commit SHA
@@ -37,6 +39,8 @@ Options:
   --class <class>           Evidence class (SYNTHETIC_TEST_FIXTURE, SOURCE_CODE_AUDIT, etc.)
   --evidence, -e <ref>      Evidence reference (repeatable)
   --output, -o <path>       Output path to save receipt artifact (.md, .json, or base path)
+  --allow-overwrite, -w     Authorize overwriting existing artifact file
+  --strict-provenance       Enforce strict local git history check on source revision
   --format <mode>           Console output format: 'human' (default), 'json', or 'both'
   --help, -h                Show this help message
 
@@ -44,12 +48,25 @@ Examples:
   # Run complete five-specialist audit with Orchestrator from JSON specification
   node scripts/run-dollhouse-skill-audit.mjs --input audit-spec.json
 
+  # Stream specification via stdin for host-independent ChatGPT / API interoperability
+  cat audit-spec.json | node scripts/run-dollhouse-skill-audit.mjs --format json
+
   # Run focused Atlas and FADT custody audit
   node scripts/run-dollhouse-skill-audit.mjs -r ATLAS -r FADT --scope "CUSTODY_RELATION_AUDIT"
 
   # Run standalone Pedagogue check with JSON console output
   node scripts/run-dollhouse-skill-audit.mjs -r PEDAGOGUE --no-orchestrator --format json
 `);
+}
+
+function readStdin() {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', chunk => { data += chunk; });
+    process.stdin.on('end', () => resolve(data));
+    process.stdin.on('error', err => reject(err));
+  });
 }
 
 async function parseArgs(args) {
@@ -60,6 +77,8 @@ async function parseArgs(args) {
     format: 'human',
     input_file: null,
     output_file: null,
+    allow_overwrite: false,
+    strict_provenance: false,
     source_revision: null,
     task_scope: null,
     evidence_class: null
@@ -92,6 +111,10 @@ async function parseArgs(args) {
       options.evidence_references.push(args[++i]);
     } else if (arg === '--output' || arg === '-o') {
       options.output_file = args[++i];
+    } else if (arg === '--allow-overwrite' || arg === '-w') {
+      options.allow_overwrite = true;
+    } else if (arg === '--strict-provenance') {
+      options.strict_provenance = true;
     } else if (arg === '--format') {
       options.format = String(args[++i] || 'human').toLowerCase();
     }
@@ -116,7 +139,32 @@ async function main() {
       const content = await readFile(resolve(cliOpts.input_file), 'utf8');
       auditPayload = JSON.parse(content);
     } catch (err) {
-      console.error(`Error reading input file (${cliOpts.input_file}): ${err.message}`);
+      if (cliOpts.format === 'json') {
+        console.log(JSON.stringify({
+          error: `Error reading input file (${cliOpts.input_file}): ${err.message}`,
+          code: 'INPUT_FILE_READ_ERROR'
+        }, null, 2));
+      } else {
+        console.error(`Error reading input file (${cliOpts.input_file}): ${err.message}`);
+      }
+      process.exit(2);
+    }
+  } else if (!process.stdin.isTTY) {
+    // Read from piped stdin if available
+    try {
+      const stdinContent = await readStdin();
+      if (stdinContent && stdinContent.trim()) {
+        auditPayload = JSON.parse(stdinContent);
+      }
+    } catch (err) {
+      if (cliOpts.format === 'json') {
+        console.log(JSON.stringify({
+          error: `Error parsing stdin JSON: ${err.message}`,
+          code: 'STDIN_JSON_PARSE_ERROR'
+        }, null, 2));
+      } else {
+        console.error(`Error parsing stdin JSON: ${err.message}`);
+      }
       process.exit(2);
     }
   }
@@ -145,6 +193,13 @@ async function main() {
   }
   if (cliOpts.output_file) {
     auditPayload.artifact_path = cliOpts.output_file;
+  }
+  if (cliOpts.allow_overwrite) {
+    auditPayload.allow_overwrite = true;
+    auditPayload.options = { ...(auditPayload.options || {}), allow_overwrite: true };
+  }
+  if (cliOpts.strict_provenance) {
+    auditPayload.options = { ...(auditPayload.options || {}), strict_provenance: true };
   }
 
   const result = await runDollhouseSkillAudit(auditPayload);

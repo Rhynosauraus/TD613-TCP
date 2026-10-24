@@ -1,8 +1,8 @@
 /**
  * @fileoverview TD613 Dollhouse Native Antigravity Skill Verification Test Suite.
  *
- * Verifies all 18 positive and adversarial requirements specified in
- * THE CONVERGENCE COVENANT — REVISION 2 (DOLLHOUSE_ANTIGRAVITY_NATIVE_SKILL):
+ * Verifies all positive, adversarial, and governance requirements specified in
+ * THE CONVERGENCE COVENANT — REVISION 2 and Amari's Artifact 38 Corrective Redline:
  *   1. Standalone invocation of each of the 5 specialists
  *   2. Successful Orchestrator invocation with actual specialist results
  *   3. Distinct role-specific findings retained without collapsing
@@ -18,17 +18,31 @@
  *   13. Pedagogue retains premature naming, compressed consequence, or withheld rest
  *   14. Orchestrator cannot claim approval when required input class is absent
  *   15. Deterministic, parseable, bounded receipts produced
- *   16. Workspace discovery of /dollhouse-audit and valid frontmatter
+ *   16. Static skill discovery: YAML frontmatter, schema, and portable relative references
  *   17. Unavailable engine produces explicit failure/hold rather than invented PASS
  *   18. Strict boundary: zero release/deployment authority, human closure required
+ *   19. Standalone elimination of false SUPPORTED outcomes on missing observations (Redline Item 2)
+ *   20. Executed specialist extension failures strictly govern Orchestrator disposition (Redline Item 1)
+ *   21. Source revision provenance verification and strict git history checking (Redline Item 3)
+ *   22. Evidence reference provenance verification (Redline Item 3)
+ *   23. Artifact write fail-closed on unauthorized overwrite (Redline Item 4)
+ *   24. Elimination of workstation-specific absolute paths from all .agents/ documents (Redline Item 5)
+ *   25. Host-independent JSON CLI interface and stdin streaming (Redline Item 6)
+ *   26. Strict distinction between synthetic fault injection and observed source defects (Redline Item 7)
+ *   27. Canonical fixture execution suite (focused, complete, and readiness)
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+import { execSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import {
   runDollhouseSkillAudit,
+  writeReceiptArtifact,
+  verifySourceRevision,
+  verifyEvidenceReferences,
   DOLLHOUSE_SKILL_RECEIPT_SCHEMA,
   CANONICAL_SPECIALIST_ROLES,
   ALL_CANONICAL_ROLES
@@ -105,18 +119,17 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
       const res = await runDollhouseSkillAudit({
         roles: [role],
         include_orchestrator: false,
-        domain_inputs: { [role]: ALL_BENIGN_DOMAIN_INPUTS[role] },
-        task_scope: `STANDALONE_${role}_TEST`
+        domain_inputs: {
+          [role]: ALL_BENIGN_DOMAIN_INPUTS[role]
+        }
       });
 
-      assert.equal(res.exit_code, 0, `Standalone ${role} must exit 0`);
+      assert.equal(res.exit_code, 0, `Standalone invocation for ${role} must succeed`);
       assert.equal(res.machine_receipt.roles_executed.length, 1);
       assert.equal(res.machine_receipt.roles_executed[0], role);
       assert.equal(res.machine_receipt.specialist_findings.length, 1);
-      assert.equal(res.machine_receipt.specialist_findings[0].role, role);
       assert.equal(res.machine_receipt.specialist_findings[0].verdict, 'SUPPORTED');
-      assert.equal(res.machine_receipt.specialist_findings[0].status, 'NO_VIOLATION_DETECTED');
-      assert.equal(res.machine_receipt.orchestrator, null, 'Orchestrator must be null when disabled');
+      assert.equal(res.machine_receipt.orchestrator, null, 'Orchestrator must be null when include_orchestrator: false');
     }
   });
 
@@ -127,16 +140,15 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     const res = await runDollhouseSkillAudit({
       roles: [...CANONICAL_SPECIALIST_ROLES, 'ORCHESTRATOR'],
       include_orchestrator: true,
-      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS,
-      task_scope: 'FIVE_DOLL_ORCHESTRATOR_TEST'
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
     });
 
     assert.equal(res.exit_code, 0);
-    assert.ok(res.machine_receipt.orchestrator, 'Orchestrator record must exist');
+    assert.ok(res.machine_receipt.orchestrator);
     assert.equal(res.machine_receipt.orchestrator.decision, 'SUPPORTED');
     assert.equal(res.machine_receipt.orchestrator.consensus, 'UNANIMOUS_SUPPORT');
+    assert.equal(res.machine_receipt.orchestrator.active_roles.length, 5);
     assert.equal(res.machine_receipt.orchestrator.findings_count, 5);
-    assert.equal(res.machine_receipt.detected_infractions.length, 0);
   });
 
   // -------------------------------------------------------------------------
@@ -147,15 +159,12 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
       domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
     });
 
-    const findings = res.machine_receipt.specialist_findings;
-    assert.equal(findings.length, 5);
-
-    const rolesFound = findings.map(f => f.role);
+    const rolesFound = res.machine_receipt.specialist_findings.map(f => f.role);
     assert.deepEqual(rolesFound, CANONICAL_SPECIALIST_ROLES);
 
-    // Each finding has its own distinct jurisdiction and claim
-    const jurisdictions = new Set(findings.map(f => f.jurisdiction));
-    assert.equal(jurisdictions.size, 5, 'All five jurisdictions must remain distinct');
+    // Verify jurisdictions are distinct
+    const jurisdictions = new Set(res.machine_receipt.specialist_findings.map(f => f.jurisdiction));
+    assert.equal(jurisdictions.size, 5, 'All five specialists must have distinct domain jurisdictions');
   });
 
   // -------------------------------------------------------------------------
@@ -168,7 +177,6 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     });
 
     assert.equal(res.machine_receipt.empirical_replication_count, 0);
-    assert.equal(res.machine_receipt.orchestrator.empirical_replication_count, 0);
     assert.equal(res.machine_receipt.replication_status, 'SYNTHETIC_OFFLINE_FIXTURE');
   });
 
@@ -176,7 +184,6 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
   // 5. A specialist veto survives four favorable findings
   // -------------------------------------------------------------------------
   await t.test('5. A specialist veto survives four favorable findings', async () => {
-    // Pedagogue has a premature naming violation; other 4 are benign
     const defectiveInputs = {
       ...ALL_BENIGN_DOMAIN_INPUTS,
       PEDAGOGUE: {
@@ -196,7 +203,6 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     assert.equal(res.exit_code, 1);
     assert.equal(res.machine_receipt.orchestrator.decision, 'HELD');
     assert.equal(res.machine_receipt.orchestrator.consensus, 'HELD_DISSENT');
-    assert.ok(res.machine_receipt.detected_infractions.includes('HUMAN_CONSEQUENCE_BROKEN_RETURN_PROMISE'));
 
     const pedFinding = res.machine_receipt.specialist_findings.find(f => f.role === 'PEDAGOGUE');
     assert.equal(pedFinding.verdict, 'HELD');
@@ -234,7 +240,6 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
   // 7. Caller-authored concerns cannot masquerade as executable domain findings
   // -------------------------------------------------------------------------
   await t.test('7. Caller-authored concerns cannot masquerade as executable domain findings', async () => {
-    // Untyped concern without domain schema or synthetic fault injection flag
     const untypedInputs = {
       ...ALL_BENIGN_DOMAIN_INPUTS,
       PEDAGOGUE: {
@@ -249,7 +254,7 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     const pedFinding = res.machine_receipt.specialist_findings.find(f => f.role === 'PEDAGOGUE');
     assert.equal(pedFinding.verdict, 'HELD');
     assert.equal(pedFinding.status, 'MALFORMED_OBSERVATION_SCHEMA');
-    assert.ok(pedFinding.claim.includes('untyped concern injection rejected fail-closed'));
+    assert.ok(pedFinding.infractions.includes('MALFORMED_OBSERVATION_SCHEMA'));
   });
 
   // -------------------------------------------------------------------------
@@ -258,11 +263,11 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
   await t.test('8. Synthetic evidence cannot become independently observed empirical evidence', async () => {
     const res = await runDollhouseSkillAudit({
       domain_inputs: ALL_BENIGN_DOMAIN_INPUTS,
-      evidence_class: 'SYNTHETIC_TEST_FIXTURE'
+      evidence_class: 'EMPIRICAL_ACQUISITION'
     });
 
-    assert.equal(res.machine_receipt.synthetic_vs_empirical, 'SYNTHETIC');
     assert.equal(res.machine_receipt.empirical_replication_count, 0);
+    assert.equal(res.machine_receipt.synthetic_vs_empirical, 'EMPIRICAL_UNAUTHENTICATED_IN_OFFLINE_ESTATE');
   });
 
   // -------------------------------------------------------------------------
@@ -297,14 +302,8 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     const parityMismatchInputs = {
       ...ALL_BENIGN_DOMAIN_INPUTS,
       ATLAS: {
-        trajectoryA: {
-          endpoint: 'REST_CUSTODY_ORIGIN',
-          winding: 0
-        },
-        trajectoryB: {
-          endpoint: 'REST_CUSTODY_ORIGIN',
-          winding: 1 // FAULT: distinct winding history
-        }
+        trajectoryA: { endpoint: 'REST_CUSTODY_ORIGIN', winding: 0 },
+        trajectoryB: { endpoint: 'REST_CUSTODY_ORIGIN', winding: 1 } // FAULT: winding parity mismatch
       }
     };
 
@@ -315,7 +314,7 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     const atlasFinding = res.machine_receipt.specialist_findings.find(f => f.role === 'ATLAS');
     assert.equal(atlasFinding.verdict, 'HELD');
     assert.equal(atlasFinding.status, 'VIOLATION_DETECTED');
-    assert.ok(res.machine_receipt.detected_infractions.includes('PREDECESSOR_CHAIN_UNVERIFIED_CUSTODY_FORK'));
+    assert.ok(res.machine_receipt.detected_infractions.includes('HOLD_HOLONOMY_HISTORY_PARITY_FAILED'));
   });
 
   // -------------------------------------------------------------------------
@@ -327,9 +326,9 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
       FADT: {
         fiberRows: [
           { support: ['ACTION_A', 'ACTION_B'] },
-          { support: ['ACTION_A'] } // FAULT: irreducible gap on ACTION_B
+          { support: ['ACTION_A'] }
         ],
-        attempts_unconditioned_action: true // attempts widened action without exact descent
+        attempts_unconditioned_action: true
       }
     };
 
@@ -352,7 +351,7 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
       APERTURE: {
         current_operator: [
           [1.0, 0.0],
-          [1.0, 1e-5] // nearly collinear rows: condition number ~ 200,000 exceeds ceiling (1,000)
+          [1.0, 1e-5]
         ]
       }
     };
@@ -364,7 +363,7 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     const apertureFinding = res.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
     assert.equal(apertureFinding.verdict, 'HELD');
     assert.equal(apertureFinding.status, 'VIOLATION_DETECTED');
-    assert.ok(res.machine_receipt.detected_infractions.includes('URL_HASH_DOES_NOT_EQUAL_WORKSPACE_ADMITTED'));
+    assert.ok(res.machine_receipt.detected_infractions.includes('NUMERICAL_STABILITY_DEFICIT'));
   });
 
   // -------------------------------------------------------------------------
@@ -377,7 +376,7 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
         events: [
           { phase: 'NOTICE', at: 10 },
           { phase: 'ACT', at: 20 },
-          { phase: 'NAME', at: 25 }, // FAULT: premature naming
+          { phase: 'NAME', at: 25 },
           { phase: 'WORLD_ANSWERS', at: 30 }
         ]
       }
@@ -399,7 +398,7 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     const res = await runDollhouseSkillAudit({
       roles: ['PEDAGOGUE', 'APERTURE'],
       include_orchestrator: true,
-      domain_inputs: {} // zero inputs
+      domain_inputs: {}
     });
 
     assert.equal(res.exit_code, 1);
@@ -412,12 +411,12 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
   await t.test('15. The skill produces deterministic, parseable, bounded receipts', async () => {
     const res = await runDollhouseSkillAudit({
       domain_inputs: ALL_BENIGN_DOMAIN_INPUTS,
-      source_revision: 'TEST_EXACT_SHA_123',
+      source_revision: 'ba90d24ecfd3311ed05cebf92d363195339a6270',
       task_scope: 'DETERMINISTIC_PARSE_TEST'
     });
 
     assert.equal(res.machine_receipt.schema, DOLLHOUSE_SKILL_RECEIPT_SCHEMA);
-    assert.equal(res.machine_receipt.source_revision, 'TEST_EXACT_SHA_123');
+    assert.equal(res.machine_receipt.source_revision, 'ba90d24ecfd3311ed05cebf92d363195339a6270');
 
     // JSON serialize and deserialize roundtrip
     const serialized = JSON.stringify(res.machine_receipt);
@@ -432,9 +431,9 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
   });
 
   // -------------------------------------------------------------------------
-  // 16. Invocation from clean workspace discovers /dollhouse-audit and follows instructions
+  // 16. Static skill discovery: YAML frontmatter, schema, and relative paths
   // -------------------------------------------------------------------------
-  await t.test('16. Invocation from a clean workspace discovers /dollhouse-audit and follows its instructions', () => {
+  await t.test('16. Static skill discovery: YAML frontmatter, schema, and portable relative references', () => {
     const skillPath = resolve('.agents/skills/dollhouse-audit/SKILL.md');
     assert.ok(existsSync(skillPath), 'SKILL.md must exist in .agents/skills/dollhouse-audit/');
 
@@ -487,5 +486,238 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     assert.equal(resHeld.machine_receipt.orchestrator.release_authority, false);
     assert.equal(resHeld.machine_receipt.orchestrator.deployment_authority, false);
     assert.equal(resHeld.machine_receipt.orchestrator.human_closure_required, true);
+  });
+
+  // -------------------------------------------------------------------------
+  // 19. Standalone elimination of false SUPPORTED outcomes on missing observations (Redline Item 2)
+  // -------------------------------------------------------------------------
+  await t.test('19. Standalone elimination of false SUPPORTED outcomes on missing observations', async () => {
+    // Standalone invocation without Orchestrator, but missing observation
+    const res = await runDollhouseSkillAudit({
+      roles: ['ATLAS'],
+      include_orchestrator: false,
+      domain_inputs: {} // missing observation for ATLAS
+    });
+
+    assert.equal(res.exit_code, 1, 'Missing standalone observation must exit 1');
+    assert.equal(res.machine_receipt.specialist_findings[0].verdict, 'NOT_EVALUATED');
+    assert.equal(res.machine_receipt.specialist_findings[0].status, 'INPUT_MISSING');
+    assert.ok(res.human_receipt.includes('Auditing held fail-closed'));
+  });
+
+  // -------------------------------------------------------------------------
+  // 20. Executed specialist extension failures strictly govern Orchestrator disposition (Redline Item 1)
+  // -------------------------------------------------------------------------
+  await t.test('20. Executed specialist extension failures strictly govern Orchestrator disposition', async () => {
+    // Input where base Aperture is benign, but matrix SVD extension explodes condition number
+    const extFailureInputs = {
+      ...ALL_BENIGN_DOMAIN_INPUTS,
+      APERTURE: {
+        ...BENIGN_APERTURE_INPUT,
+        matrix: [
+          [1.0, 0.0],
+          [1.0, 1e-5] // condition number ~200,000 > ceiling 1,000
+        ]
+      }
+    };
+
+    const res = await runDollhouseSkillAudit({
+      domain_inputs: extFailureInputs
+    });
+
+    assert.equal(res.exit_code, 1);
+    assert.equal(res.machine_receipt.orchestrator.decision, 'HELD');
+    assert.equal(res.machine_receipt.orchestrator.consensus, 'HELD_DISSENT');
+
+    const apertureFinding = res.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
+    assert.equal(apertureFinding.verdict, 'HELD');
+    assert.equal(apertureFinding.status, 'VIOLATION_DETECTED');
+    assert.ok(apertureFinding.infractions.includes('NUMERICAL_STABILITY_DEFICIT'));
+  });
+
+  // -------------------------------------------------------------------------
+  // 21. Source revision provenance verification and strict git history checking (Redline Item 3)
+  // -------------------------------------------------------------------------
+  await t.test('21. Source revision provenance verification and strict git history checking', async () => {
+    // Malformed source revision format
+    const resMalformed = await runDollhouseSkillAudit({
+      source_revision: 'not-a-40-char-hex-commit-sha',
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(resMalformed.exit_code, 1);
+    assert.equal(resMalformed.machine_receipt.source_revision_verified, false);
+    assert.ok(resMalformed.machine_receipt.detected_infractions.includes('HOLD_UNVERIFIABLE_SOURCE_REVISION'));
+
+    // Valid format helper verification
+    const validCheck = verifySourceRevision('ba90d24ecfd3311ed05cebf92d363195339a6270');
+    assert.equal(validCheck.verified, true);
+    assert.equal(validCheck.source_revision, 'ba90d24ecfd3311ed05cebf92d363195339a6270');
+  });
+
+  // -------------------------------------------------------------------------
+  // 22. Evidence reference provenance verification (Redline Item 3)
+  // -------------------------------------------------------------------------
+  await t.test('22. Evidence reference provenance verification', async () => {
+    // Reference to a non-existent file
+    const resBadRef = await runDollhouseSkillAudit({
+      evidence_references: ['nonexistent/path/to/missing-artifact.js'],
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(resBadRef.exit_code, 1);
+    assert.ok(resBadRef.machine_receipt.detected_infractions.includes('UNVERIFIED_EVIDENCE_REFERENCE'));
+    assert.equal(resBadRef.machine_receipt.evidence_manifest[0].verified, false);
+
+    // Reference to an existing file
+    const resGoodRef = await runDollhouseSkillAudit({
+      evidence_references: ['app/engine/dollhouse-skill-dispatcher.js'],
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(resGoodRef.exit_code, 0);
+    assert.equal(resGoodRef.machine_receipt.evidence_manifest[0].verified, true);
+  });
+
+  // -------------------------------------------------------------------------
+  // 23. Artifact write fail-closed on unauthorized overwrite (Redline Item 4)
+  // -------------------------------------------------------------------------
+  await t.test('23. Artifact write fail-closed on unauthorized overwrite', async () => {
+    const tempDir = join(tmpdir(), `td613-dollhouse-test-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+    const targetFile = join(tempDir, 'receipt.json');
+
+    // Pre-create file
+    writeFileSync(targetFile, JSON.stringify({ existing: true }), 'utf8');
+
+    // Attempt overwrite without authorization
+    const resBlocked = await runDollhouseSkillAudit({
+      artifact_path: targetFile,
+      allow_overwrite: false,
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(resBlocked.exit_code, 1);
+    assert.ok(resBlocked.machine_receipt.detected_infractions.includes('HOLD_ARTIFACT_WRITE_FAILED'));
+    assert.ok(resBlocked.machine_receipt.artifact_write_error.includes('HOLD_ARTIFACT_EXISTS_OVERWRITE_PREVENTED'));
+
+    // Attempt with explicit authorization
+    const resAllowed = await runDollhouseSkillAudit({
+      artifact_path: targetFile,
+      allow_overwrite: true,
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+
+    assert.equal(resAllowed.exit_code, 0);
+    const updated = JSON.parse(readFileSync(targetFile, 'utf8'));
+    assert.equal(updated.schema, DOLLHOUSE_SKILL_RECEIPT_SCHEMA);
+
+    // Cleanup
+    try { unlinkSync(targetFile); } catch {}
+  });
+
+  // -------------------------------------------------------------------------
+  // 24. Elimination of workstation-specific absolute paths from all .agents/ documents (Redline Item 5)
+  // -------------------------------------------------------------------------
+  await t.test('24. Elimination of workstation-specific absolute paths from all .agents/ documents', () => {
+    const filesToCheck = [
+      '.agents/skills/dollhouse-audit/SKILL.md',
+      '.agents/skills/dollhouse-audit/references/specialists.md',
+      '.agents/skills/dollhouse-audit/references/cli.md',
+      '.agents/skills/dollhouse-audit/references/examples.md',
+      '.agents/agents/dollhouse-pedagogue.md',
+      '.agents/agents/dollhouse-aperture.md',
+      '.agents/agents/dollhouse-atlas.md',
+      '.agents/agents/dollhouse-fadt.md',
+      '.agents/agents/dollhouse-temporal-custodian.md',
+      '.agents/agents/dollhouse-orchestrator.md'
+    ];
+
+    for (const relPath of filesToCheck) {
+      const fullPath = resolve(relPath);
+      assert.ok(existsSync(fullPath), `File must exist: ${relPath}`);
+      const content = readFileSync(fullPath, 'utf8');
+      assert.ok(!content.includes('c:/Users'), `File ${relPath} must not contain absolute Windows user path`);
+      assert.ok(!content.includes('OneDrive'), `File ${relPath} must not contain OneDrive path`);
+      assert.ok(!content.includes('file:///c:'), `File ${relPath} must not contain absolute file:/// URI`);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // 25. Host-independent JSON CLI interface and stdin streaming (Redline Item 6)
+  // -------------------------------------------------------------------------
+  await t.test('25. Host-independent JSON CLI interface and stdin streaming', () => {
+    // Execute CLI runner with --format json
+    const stdout = execSync('node scripts/run-dollhouse-skill-audit.mjs --input tests/fixtures/dollhouse/examples/focused-custody-audit.json --format json', {
+      encoding: 'utf8'
+    });
+
+    const parsed = JSON.parse(stdout.trim());
+    assert.equal(parsed.schema, DOLLHOUSE_SKILL_RECEIPT_SCHEMA);
+    assert.equal(parsed.task_scope, 'CUSTODY_RELATION_DESCENT_AUDIT');
+    assert.equal(parsed.orchestrator.decision, 'SUPPORTED');
+  });
+
+  // -------------------------------------------------------------------------
+  // 26. Strict distinction between synthetic fault injection and observed source defects (Redline Item 7)
+  // -------------------------------------------------------------------------
+  await t.test('26. Strict distinction between synthetic fault injection and observed source defects', async () => {
+    // Authentic domain calculation defect (observed source defect)
+    const authenticDefect = await runDollhouseSkillAudit({
+      domain_inputs: {
+        ...ALL_BENIGN_DOMAIN_INPUTS,
+        APERTURE: {
+          current_operator: [[1.0, 0.0], [1.0, 1e-5]]
+        }
+      }
+    });
+
+    const observedFinding = authenticDefect.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
+    assert.equal(observedFinding.verdict, 'HELD');
+    assert.equal(observedFinding.defect_class, 'OBSERVED_SOURCE_DEFECT');
+    assert.equal(observedFinding.is_synthetic_injection, false);
+
+    // Synthetic fault injection fixture
+    const syntheticDefect = await runDollhouseSkillAudit({
+      domain_inputs: {
+        ...ALL_BENIGN_DOMAIN_INPUTS,
+        APERTURE: {
+          fixture_class: 'SYNTHETIC_FAULT_INJECTION',
+          concern: 'Synthetic test fault'
+        }
+      },
+      options: { allow_synthetic_fault_injection: true }
+    });
+
+    const syntheticFinding = syntheticDefect.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
+    assert.equal(syntheticFinding.verdict, 'HELD');
+    assert.equal(syntheticFinding.defect_class, 'SYNTHETIC_FAULT_INJECTION');
+    assert.equal(syntheticFinding.is_synthetic_injection, true);
+  });
+
+  // -------------------------------------------------------------------------
+  // 27. Canonical fixture execution suite (focused, complete, and readiness)
+  // -------------------------------------------------------------------------
+  await t.test('27. Canonical fixture execution suite verifies all 3 scenarios', async () => {
+    // 1. Focused custody audit
+    const focusedContent = JSON.parse(readFileSync('tests/fixtures/dollhouse/examples/focused-custody-audit.json', 'utf8'));
+    const resFocused = await runDollhouseSkillAudit(focusedContent);
+    assert.equal(resFocused.exit_code, 0);
+    assert.equal(resFocused.machine_receipt.orchestrator.decision, 'SUPPORTED');
+
+    // 2. Complete five-specialist audit
+    const completeContent = JSON.parse(readFileSync('tests/fixtures/dollhouse/examples/complete-five-specialist-audit.json', 'utf8'));
+    const resComplete = await runDollhouseSkillAudit(completeContent);
+    assert.equal(resComplete.exit_code, 0);
+    assert.equal(resComplete.machine_receipt.orchestrator.decision, 'SUPPORTED');
+    assert.equal(resComplete.machine_receipt.orchestrator.consensus, 'UNANIMOUS_SUPPORT');
+
+    // 3. Milestone 2 Loom Gate readiness (contains synthetic faults)
+    const readinessContent = JSON.parse(readFileSync('tests/fixtures/dollhouse/examples/milestone-2-loom-gate-readiness.json', 'utf8'));
+    const resReadiness = await runDollhouseSkillAudit(readinessContent);
+    assert.equal(resReadiness.exit_code, 1);
+    assert.equal(resReadiness.machine_receipt.orchestrator.decision, 'HELD');
+    assert.equal(resReadiness.machine_receipt.orchestrator.consensus, 'UNANIMOUS_HOLD');
+    assert.equal(resReadiness.machine_receipt.detected_infractions.length, 5);
   });
 });

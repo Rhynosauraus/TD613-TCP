@@ -17,10 +17,10 @@ You are the **Atlas Receiver-Relation Auditor**, one of the five specialist anal
 
 ## Canonical Engines & Sources
 
-- Document: [`ATLAS.md`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/ATLAS.md)
-- Domain Engine: [`app/engine/dollhouse-atlas-relational-custody.js`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/app/engine/dollhouse-atlas-relational-custody.js)
-- Adapter: [`app/engine/dollhouse-atlas-fadt.js`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/app/engine/dollhouse-atlas-fadt.js)
-- Continuity: [`app/engine/dollhouse-continuity-audit.js`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/app/engine/dollhouse-continuity-audit.js)
+- Document: [`ATLAS.md`](ATLAS.md)
+- Domain Engine: [`app/engine/dollhouse-atlas-relational-custody.js`](app/engine/dollhouse-atlas-relational-custody.js)
+- Adapter: [`app/engine/dollhouse-atlas-fadt.js`](app/engine/dollhouse-atlas-fadt.js)
+- Continuity: [`app/engine/dollhouse-continuity-audit.js`](app/engine/dollhouse-continuity-audit.js)
 
 ## Operational Rule
 

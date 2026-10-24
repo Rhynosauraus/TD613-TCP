@@ -12,11 +12,17 @@
  *     SHARED_ACQUISITION != INDEPENDENT_REPLICATION;
  *   - Missing observations are never filled by inference; they remain NOT_EVALUATED/HELD;
  *   - Orchestrator preserves dissent and holds fail-closed;
+ *   - Executed specialist findings and extension failures strictly govern the final Orchestrator disposition;
+ *   - Standalone missing observations eliminate false SUPPORTED outcomes;
+ *   - Source revision and evidence references bind to verifiable provenance;
+ *   - Artifact writes fail closed and prevent unauthorized file overwrites;
  *   - Release and deployment authority remain strictly false; human closure is always required.
  */
 
 import { createHash } from 'node:crypto';
+import { existsSync, statSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
+import { resolve, isAbsolute, relative } from 'node:path';
 import {
   FIVE_ROLES,
   ROLE_INFRACTIONS,
@@ -67,16 +73,157 @@ export const ALL_CANONICAL_ROLES = Object.freeze([...FIVE_ROLES, ORCHESTRATOR_RO
 /**
  * Resolves current git head SHA if available, otherwise returns fallback.
  */
-function resolveCurrentSourceRevision() {
+export function resolveCurrentSourceRevision() {
   const child_process = globalThis.process?.getBuiltinModule?.('node:child_process');
   if (child_process?.execSync) {
     try {
-      return child_process.execSync('git rev-parse HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+      const sha = child_process.execSync('git rev-parse HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+      if (/^[a-f0-9]{40}$/.test(sha)) {
+        return sha;
+      }
     } catch {
       return 'WORKING_TREE_UNCOMMITTED';
     }
   }
   return 'WORKING_TREE_UNCOMMITTED';
+}
+
+/**
+ * Binds and validates source revision against verifiable git provenance.
+ */
+export function verifySourceRevision(sourceRev, options = {}) {
+  if (typeof sourceRev !== 'string' || !sourceRev.trim()) {
+    return {
+      verified: false,
+      reason: 'MISSING_SOURCE_REVISION',
+      infraction: 'HOLD_UNVERIFIABLE_SOURCE_REVISION',
+      source_revision: null
+    };
+  }
+
+  const trimmed = sourceRev.trim();
+
+  // Allow working tree fallback when explicitly running in uncommitted local state
+  if (trimmed === 'WORKING_TREE_UNCOMMITTED') {
+    return {
+      verified: true,
+      in_local_git_history: false,
+      is_working_tree: true,
+      source_revision: trimmed
+    };
+  }
+
+  // Must match 40-character hex commit SHA
+  if (!/^[a-f0-9]{40}$/.test(trimmed)) {
+    return {
+      verified: false,
+      reason: 'INVALID_SOURCE_REVISION_FORMAT',
+      infraction: 'HOLD_UNVERIFIABLE_SOURCE_REVISION',
+      source_revision: trimmed
+    };
+  }
+
+  // Check against local git history if child_process is available
+  const child_process = globalThis.process?.getBuiltinModule?.('node:child_process');
+  if (child_process?.execSync) {
+    try {
+      child_process.execSync(`git cat-file -e ${trimmed}^{commit}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      return {
+        verified: true,
+        in_local_git_history: true,
+        is_working_tree: false,
+        source_revision: trimmed
+      };
+    } catch {
+      if (options.strict_provenance === true) {
+        return {
+          verified: false,
+          in_local_git_history: false,
+          reason: 'COMMIT_NOT_IN_LOCAL_HISTORY',
+          infraction: 'HOLD_SOURCE_REVISION_NOT_IN_LOCAL_HISTORY',
+          source_revision: trimmed
+        };
+      }
+      return {
+        verified: true,
+        in_local_git_history: false,
+        notice: 'COMMIT_NOT_VERIFIED_IN_LOCAL_GIT_OBJECT_DATABASE',
+        source_revision: trimmed
+      };
+    }
+  }
+
+  return {
+    verified: true,
+    in_local_git_history: false,
+    source_revision: trimmed
+  };
+}
+
+/**
+ * Validates declared evidence references against workspace existence or digest provenance.
+ */
+export function verifyEvidenceReferences(references = [], options = {}) {
+  if (!Array.isArray(references)) {
+    return {
+      all_verified: false,
+      manifest: [],
+      infractions: ['INVALID_EVIDENCE_REFERENCES_FORMAT']
+    };
+  }
+
+  const manifest = [];
+  const infractions = [];
+
+  for (const ref of references) {
+    const strRef = String(ref).trim();
+    if (!strRef) continue;
+
+    // Check if digest SHA-256
+    if (/^[a-f0-9]{64}$/.test(strRef)) {
+      manifest.push({
+        reference: strRef,
+        type: 'CONTENT_DIGEST',
+        verified: true
+      });
+      continue;
+    }
+
+    // Check if git commit SHA
+    if (/^[a-f0-9]{40}$/.test(strRef)) {
+      manifest.push({
+        reference: strRef,
+        type: 'COMMIT_SHA',
+        verified: true
+      });
+      continue;
+    }
+
+    // Treat as relative file path
+    const fullPath = resolve(strRef);
+    if (existsSync(fullPath)) {
+      manifest.push({
+        reference: strRef,
+        type: 'WORKSPACE_FILE',
+        verified: true
+      });
+    } else {
+      manifest.push({
+        reference: strRef,
+        type: 'WORKSPACE_FILE',
+        verified: false,
+        reason: 'FILE_NOT_FOUND'
+      });
+      infractions.push('UNVERIFIED_EVIDENCE_REFERENCE');
+    }
+  }
+
+  const all_verified = manifest.every(m => m.verified);
+  return {
+    all_verified,
+    manifest,
+    infractions
+  };
 }
 
 /**
@@ -210,7 +357,8 @@ function compileHumanReceipt(machineReceipt) {
 
   const rows = specialist_findings.map(f => {
     const verdictBadge = f.verdict === 'SUPPORTED' ? '✓ SUPPORTED' : (f.verdict === 'HELD' ? '✖ HELD' : '○ NOT_EVALUATED');
-    return `| \`${f.role}\` | ${f.jurisdiction} | **${verdictBadge}** | \`${f.status}\` | ${f.claim} |`;
+    const defectBadge = f.defect_class ? `\`${f.defect_class}\`` : '`-`';
+    return `| \`${f.role}\` | ${f.jurisdiction} | **${verdictBadge}** | \`${f.status}\` | ${defectBadge} | ${f.claim} |`;
   }).join('\n');
 
   const infractionsList = detected_infractions.length > 0
@@ -262,8 +410,8 @@ ${missingList}
 
 ## 3. Specialist Findings
 
-| Specialist Role | Jurisdiction | Verdict | Status | Finding / Claim |
-|---|---|---|---|---|
+| Specialist Role | Jurisdiction | Verdict | Status | Defect Class | Finding / Claim |
+|---|---|---|---|---|---|
 ${rows}
 
 ---
@@ -292,13 +440,16 @@ ${questionsList}
 ${orchestrator?.decision === 'SUPPORTED'
   ? '_All active specialist invariants verified. No open holds._'
   : (detected_infractions.map(i => {
-      if (i.includes('PEDAGOGUE')) return '- **Pedagogue Hold:** Restore canonical order NOTICE < ACT < WORLD_ANSWERS < NAME and ensure returned-work navigation routes do not trap the operator.';
-      if (i.includes('APERTURE')) return '- **Aperture Hold:** Ensure operator matrix is numerically well-conditioned and noise covariance is symmetric positive-definite. Do not treat URL hash as DOM admission.';
-      if (i.includes('ATLAS')) return '- **Atlas Hold:** Verify predecessor receipt continuity across window boundaries and ensure serialization profiles (dome-v0 vs atlas-v1) match.';
-      if (i.includes('FADT')) return '- **FADT Hold:** Bound coordinate recovery search under 10,000 budget and reject action widening when conditioning state is erased.';
-      if (i.includes('TEMPORAL')) return '- **Temporal Custodian Hold:** Provide monotonic chronological sequence with predecessor citations and complete planned phases.';
+      if (i.includes('PEDAGOGUE') || i.includes('CADENCE')) return '- **Pedagogue Hold:** Restore canonical order NOTICE < ACT < WORLD_ANSWERS < NAME and ensure returned-work navigation routes do not trap the operator.';
+      if (i.includes('APERTURE') || i.includes('NUMERICAL') || i.includes('NOISE')) return '- **Aperture Hold:** Ensure operator matrix is numerically well-conditioned and noise covariance is symmetric positive-definite. Do not treat URL hash as DOM admission.';
+      if (i.includes('ATLAS') || i.includes('HOLONOMY') || i.includes('BRIDGE')) return '- **Atlas Hold:** Verify predecessor receipt continuity across window boundaries and ensure serialization profiles (dome-v0 vs atlas-v1) match.';
+      if (i.includes('FADT') || i.includes('FIBER') || i.includes('GAP')) return '- **FADT Hold:** Bound coordinate recovery search under 10,000 budget and reject action widening when conditioning state is erased.';
+      if (i.includes('TEMPORAL') || i.includes('CHRONOLOGY')) return '- **Temporal Custodian Hold:** Provide monotonic chronological sequence with predecessor citations and complete planned phases.';
       if (i.includes('MALFORMED')) return '- **Schema Hold:** Supply schema-valid domain observations; untyped caller concern strings reject fail-closed.';
       if (i.includes('MISSING')) return '- **Missingness Hold:** Supply valid domain observations for all active specialist roles.';
+      if (i.includes('OVERWRITE')) return '- **Artifact Hold:** Authorize overwrite explicitly via allow_overwrite or specify a distinct artifact path.';
+      if (i.includes('WRITE')) return '- **Write Hold:** Correct file permissions or disk target before re-running.';
+      if (i.includes('PROVENANCE') || i.includes('EVIDENCE')) return '- **Provenance Hold:** Supply valid, verifiable source revision and existing evidence file references.';
       return `- **General Hold (${i}):** Address domain-specific defect before re-running audit.`;
     }).join('\n') || '- Address missing observations or specialist infractions before re-running audit.')}
 
@@ -316,14 +467,36 @@ Sealed ⟐
  * Main programmatic dispatcher for the TD613 Dollhouse Native Antigravity Skill.
  *
  * @param {Object} input - Invocation contract payload
- * @returns {Promise<{ machine_receipt: Object, human_receipt: string, exit_code: number }>}
+ * @returns {Promise<{ machine_receipt: Object, human_receipt: string, exit_code: number, write_error?: Error }>}
  */
 export async function runDollhouseSkillAudit(input = {}) {
   const startTime = Date.now();
+  const detected_infractions_set = new Set();
+  const unresolved_questions = [];
 
-  const source_revision = typeof input.source_revision === 'string' && input.source_revision.trim()
+  const rawSourceRevision = typeof input.source_revision === 'string' && input.source_revision.trim()
     ? input.source_revision.trim()
     : resolveCurrentSourceRevision();
+
+  const options = (input.options && typeof input.options === 'object')
+    ? { ...input.options }
+    : {};
+
+  if (input.allow_synthetic_fault_injection !== undefined) {
+    options.allow_synthetic_fault_injection = Boolean(input.allow_synthetic_fault_injection);
+  }
+  if (input.allow_overwrite !== undefined) {
+    options.allow_overwrite = Boolean(input.allow_overwrite);
+  }
+
+  // 1. Provenance Verification: Bind source revision
+  const sourceValidation = verifySourceRevision(rawSourceRevision, options);
+  const source_revision = sourceValidation.source_revision || rawSourceRevision;
+  if (!sourceValidation.verified) {
+    detected_infractions_set.add(sourceValidation.infraction || 'HOLD_UNVERIFIABLE_SOURCE_REVISION');
+    unresolved_questions.push(`Source revision provenance error: ${sourceValidation.reason || 'unverifiable'}.`);
+  }
+  options.expected_source_revision = source_revision;
 
   const task_scope = typeof input.task_scope === 'string' && input.task_scope.trim()
     ? input.task_scope.trim()
@@ -333,9 +506,23 @@ export async function runDollhouseSkillAudit(input = {}) {
     ? input.evidence_class.trim()
     : 'SYNTHETIC_TEST_FIXTURE';
 
-  const evidence_references = Array.isArray(input.evidence_references)
+  const rawEvidenceReferences = Array.isArray(input.evidence_references)
     ? input.evidence_references.map(String)
     : [];
+
+  // 2. Provenance Verification: Bind evidence references
+  const evidenceValidation = verifyEvidenceReferences(rawEvidenceReferences, options);
+  const evidence_references = rawEvidenceReferences;
+  if (!evidenceValidation.all_verified) {
+    evidenceValidation.infractions.forEach(i => detected_infractions_set.add(i));
+    unresolved_questions.push('One or more declared evidence references could not be verified in repository.');
+  }
+
+  // Consistency check: SOURCE_CODE_AUDIT should declare evidence references
+  if (evidence_class === 'SOURCE_CODE_AUDIT' && evidence_references.length === 0 && options.strict_provenance === true) {
+    detected_infractions_set.add('SOURCE_CODE_AUDIT_MISSING_EVIDENCE_REFERENCES');
+    unresolved_questions.push('Declared SOURCE_CODE_AUDIT without providing verifiable evidence_references.');
+  }
 
   const rawRoles = input.roles !== undefined
     ? input.roles
@@ -355,16 +542,7 @@ export async function runDollhouseSkillAudit(input = {}) {
     ? input.domain_inputs
     : {};
 
-  const options = (input.options && typeof input.options === 'object')
-    ? { ...input.options }
-    : {};
-
-  if (input.allow_synthetic_fault_injection !== undefined) {
-    options.allow_synthetic_fault_injection = Boolean(input.allow_synthetic_fault_injection);
-  }
-  options.expected_source_revision = source_revision;
-
-  // 1. Fail-closed check for unknown / uninstalled roles
+  // 3. Fail-closed check for unknown / uninstalled roles
   if (unknown_roles.length > 0) {
     const duration = Date.now() - startTime;
     const invocation_id = `dollhouse-audit-${Date.now()}-${createHash('sha256').update(source_revision + task_scope).digest('hex').slice(0, 8)}`;
@@ -373,9 +551,11 @@ export async function runDollhouseSkillAudit(input = {}) {
       invocation_id,
       timestamp: new Date().toISOString(),
       source_revision,
+      source_revision_verified: sourceValidation.verified,
       task_scope,
       evidence_class,
       evidence_references,
+      evidence_manifest: evidenceValidation.manifest,
       roles_requested: rawRoles,
       roles_executed: [],
       missing_inputs: [],
@@ -384,7 +564,8 @@ export async function runDollhouseSkillAudit(input = {}) {
         jurisdiction: 'unknown',
         claim: `Unrecognized specialist role rejected fail-closed: ${r}`,
         verdict: 'HELD',
-        status: 'UNKNOWN_ROLE_REJECTED'
+        status: 'UNKNOWN_ROLE_REJECTED',
+        defect_class: 'UNRECOGNIZED_ROLE'
       })),
       detected_infractions: ['UNKNOWN_ROLE_REJECTED'],
       orchestrator: {
@@ -410,15 +591,20 @@ export async function runDollhouseSkillAudit(input = {}) {
     const human_receipt = compileHumanReceipt(machine_receipt);
 
     if (input.artifact_path && typeof input.artifact_path === 'string') {
-      await writeReceiptArtifact(input.artifact_path, machine_receipt, human_receipt);
+      try {
+        await writeReceiptArtifact(input.artifact_path, machine_receipt, human_receipt, options);
+      } catch (err) {
+        machine_receipt.detected_infractions.push('HOLD_ARTIFACT_WRITE_FAILED');
+        machine_receipt.artifact_write_error = err.message;
+        return { machine_receipt, human_receipt: compileHumanReceipt(machine_receipt), exit_code: 1, write_error: err };
+      }
     }
 
     return { machine_receipt, human_receipt, exit_code: 1 };
   }
 
-  // 2. Execute each requested specialist role
+  // 4. Execute each requested specialist role and evaluate extensions
   const specialist_findings = [];
-  const detected_infractions_set = new Set();
   const missing_inputs = [];
   const roles_executed = [];
 
@@ -433,8 +619,10 @@ export async function runDollhouseSkillAudit(input = {}) {
         jurisdiction: DOLLHOUSE_AGENT_REGISTRY.agents[role]?.role || 'unspecified',
         verdict: 'NOT_EVALUATED',
         status: 'INPUT_MISSING',
+        defect_class: 'NONE',
         claim: `No observation input supplied for ${role}`,
         infractions: [],
+        is_synthetic_injection: false,
         extensions: null
       });
       continue;
@@ -444,51 +632,217 @@ export async function runDollhouseSkillAudit(input = {}) {
     const evalResult = executeSpecialistRole(role, roleInput, options);
     const extensions = executeSpecialistExtensions(role, roleInput, options);
 
+    let activeVerdict = evalResult.verdict;
+    let activeStatus = evalResult.status;
+    let activeClaim = evalResult.concern || `Invariants verified by ${role}`;
+    const activeInfractions = Array.isArray(evalResult.infractions) ? [...evalResult.infractions] : [];
+
+    // Evaluate Extension Failures (Redline Item 1)
+    if (extensions) {
+      if (extensions.extension_error) {
+        activeVerdict = 'HELD';
+        activeStatus = 'EXTENSION_ERROR';
+        activeClaim = `Extension execution failed: ${extensions.extension_error}`;
+        activeInfractions.push('EXTENSION_EXECUTION_FAILURE');
+      }
+
+      // Pedagogue extensions
+      if (extensions.cadence_audit) {
+        if (extensions.cadence_audit.verdict === 'HELD' || extensions.cadence_audit.canonical_order_satisfied === false) {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = 'Dromological sequence violation detected in cadence audit';
+          (extensions.cadence_audit.violations || []).forEach(v => {
+            activeInfractions.push(v.type || v.code || 'CADENCE_VIOLATION');
+          });
+        }
+      }
+      if (extensions.institutional_time_audit) {
+        if (extensions.institutional_time_audit.acts_before_counts || extensions.institutional_time_audit.verdict === 'HELD') {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = 'Institutional time violation: acts precede counts';
+          activeInfractions.push('ACTS_BEFORE_COUNTS');
+        }
+      }
+
+      // Aperture extensions
+      if (extensions.epistemic_deficit) {
+        const disp = extensions.epistemic_deficit.disposition;
+        const deficit = extensions.epistemic_deficit.deficit_class;
+        if (disp === 'REJECT' || disp === 'ABSTAIN' || deficit === 'NUMERICAL_STABILITY_DEFICIT') {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = `Aperture deficit detected: ${deficit}`;
+          activeInfractions.push(deficit);
+        }
+      }
+      if (extensions.matrix_svd) {
+        if (extensions.matrix_svd.condition_number > 1e3) {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = `Matrix condition number ${extensions.matrix_svd.condition_number} exceeds stability ceiling 1,000`;
+          activeInfractions.push('NUMERICAL_STABILITY_DEFICIT');
+        }
+      }
+
+      // Atlas extensions
+      if (extensions.holonomy_parity) {
+        if (extensions.holonomy_parity.disposition !== 'PASS') {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = extensions.holonomy_parity.reason || 'Atlas holonomy history parity failed';
+          activeInfractions.push(extensions.holonomy_parity.hold_reason || 'HOLD_HOLONOMY_HISTORY_PARITY_FAILED');
+        }
+      }
+      if (extensions.phason_custody_diff) {
+        if (extensions.phason_custody_diff.verified !== true) {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = extensions.phason_custody_diff.hold_reason || 'Atlas Phason custody diff failed';
+          activeInfractions.push(extensions.phason_custody_diff.hold_reason || 'HOLD_CROSS_INSTRUMENT_BRIDGE_FAILED');
+        }
+      }
+
+      // FADT extensions
+      if (extensions.fiber_bounds) {
+        if (extensions.fiber_bounds.irreducible_gap_cardinality > 0 && roleInput.attempts_unconditioned_action) {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = 'FADT irreducible gap: action grant exposed under erased conditioning';
+          activeInfractions.push('ILLEGAL_ACTION_GRANT_UNDER_ERASED_CONDITIONING');
+        }
+      }
+      if (extensions.coordinate_recovery) {
+        if (extensions.coordinate_recovery.recovered === false) {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = 'FADT coordinate recovery failed or budget exceeded';
+          activeInfractions.push(extensions.coordinate_recovery.status || 'UNSUPPORTED_SEARCH_SIZE');
+        }
+      }
+
+      // Temporal Custodian extensions
+      if (extensions.journey_chronology) {
+        if (extensions.journey_chronology.verdict !== 'PASS') {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = 'Temporal chronology sequence violation';
+          (extensions.journey_chronology.violations || []).forEach(v => {
+            activeInfractions.push(v.code || v.type || 'HOLD_CHRONOLOGY_BACKWARD');
+          });
+        }
+      }
+      if (extensions.temporal_audit) {
+        if (extensions.temporal_audit.valid === false) {
+          activeVerdict = 'HELD';
+          activeStatus = 'VIOLATION_DETECTED';
+          activeClaim = 'Temporal audit failed';
+          (extensions.temporal_audit.infractions || []).forEach(i => activeInfractions.push(i));
+        }
+      }
+    }
+
+    // Determine synthetic vs observed defect classification (Redline Item 7)
+    const isSynthetic = Boolean(
+      evalResult.is_synthetic_injection ||
+      roleInput.fixture_class === 'SYNTHETIC_FAULT_INJECTION' ||
+      (options.allow_synthetic_fault_injection === true && (evalResult.is_synthetic_injection || roleInput.fixture_class === 'SYNTHETIC_FAULT_INJECTION'))
+    );
+
+    const defectClass = activeVerdict === 'HELD'
+      ? (isSynthetic ? 'SYNTHETIC_FAULT_INJECTION' : 'OBSERVED_SOURCE_DEFECT')
+      : 'NONE';
+
     specialist_findings.push({
       role,
       jurisdiction: evalResult.jurisdiction || DOLLHOUSE_AGENT_REGISTRY.agents[role]?.role || 'unspecified',
-      verdict: evalResult.verdict,
-      status: evalResult.status,
-      claim: evalResult.concern || `Invariants verified by ${role}`,
-      infractions: evalResult.infractions || [],
-      is_synthetic_injection: evalResult.is_synthetic_injection || false,
+      verdict: activeVerdict,
+      status: activeStatus,
+      defect_class: defectClass,
+      claim: activeClaim,
+      infractions: activeInfractions,
+      is_synthetic_injection: isSynthetic,
       extensions
     });
 
-    if (Array.isArray(evalResult.infractions)) {
-      evalResult.infractions.forEach(i => detected_infractions_set.add(i));
-    }
+    activeInfractions.forEach(i => detected_infractions_set.add(i));
   }
 
-  // 3. Orchestrator Governance & Adjudication
+  // 5. Orchestrator Governance & Adjudication (Redline Item 1)
+  // Executed specialist findings and extension failures strictly govern the Orchestrator disposition
   let orchestrator = null;
   if (shouldOrchestrate) {
-    // Pass active specialist roles and domain_inputs to canonical Orchestrator
+    const hasSpecialistHeld = specialist_findings.some(f => f.verdict === 'HELD');
+    const hasSpecialistMissing = specialist_findings.some(f => f.verdict === 'NOT_EVALUATED');
+
+    // Run baseline harness decision for replication and consensus accounting
     const orchResult = runOrchestrationDecision(specialist_roles, domain_inputs, {
       ...options,
       orchestrator_governance: true,
       condition_name: specialist_roles.length === 0 ? 'ORCHESTRATOR_ALONE' : 'SKILL_INVOCATION'
     });
 
+    let adjudicatedDecision;
+    let adjudicatedConsensus;
+
+    if (specialist_roles.length === 0) {
+      adjudicatedDecision = 'HELD_NO_ACTIVE_SPECIALISTS';
+      adjudicatedConsensus = 'ABSTAIN_NO_SPECIALIST_SENSES';
+    } else if (hasSpecialistHeld) {
+      adjudicatedDecision = 'HELD';
+      adjudicatedConsensus = specialist_findings.every(f => f.verdict === 'HELD')
+        ? 'UNANIMOUS_HOLD'
+        : 'HELD_DISSENT';
+    } else if (hasSpecialistMissing || missing_inputs.length > 0) {
+      adjudicatedDecision = 'HELD_MISSING_OBSERVATION';
+      adjudicatedConsensus = 'INCOMPLETE_OBSERVATION';
+    } else {
+      adjudicatedDecision = 'SUPPORTED';
+      adjudicatedConsensus = specialist_roles.length === FIVE_ROLES.length
+        ? 'UNANIMOUS_SUPPORT'
+        : 'PARTIAL_ROLE_SUPPORT';
+    }
+
     orchestrator = {
-      decision: orchResult.decision,
-      consensus: orchResult.consensus,
+      decision: adjudicatedDecision,
+      consensus: adjudicatedConsensus,
       replication_status: orchResult.replication_status,
       empirical_replication_count: orchResult.empirical_replication_count,
-      active_roles: orchResult.active_roles,
-      findings_count: orchResult.findings_count,
-      detected_infractions: orchResult.detected_infractions,
+      active_roles: specialist_roles,
+      findings_count: specialist_findings.length,
+      detected_infractions: [...detected_infractions_set],
       release_authority: false,
       deployment_authority: false,
       human_closure_required: true
     };
+  }
 
-    if (Array.isArray(orchResult.detected_infractions)) {
-      orchResult.detected_infractions.forEach(i => detected_infractions_set.add(i));
+  // 6. Standalone Elimination of False SUPPORTED (Redline Item 2)
+  let overallDecision;
+  if (orchestrator) {
+    overallDecision = orchestrator.decision;
+  } else {
+    // Standalone mode: must fail-closed if empty, held, or missing
+    if (specialist_roles.length === 0) {
+      overallDecision = 'HELD_NO_ACTIVE_SPECIALISTS';
+    } else if (specialist_findings.some(f => f.verdict === 'HELD')) {
+      overallDecision = 'HELD';
+    } else if (specialist_findings.some(f => f.verdict === 'NOT_EVALUATED') || missing_inputs.length > 0) {
+      overallDecision = 'HELD_MISSING_OBSERVATION';
+    } else if (detected_infractions_set.size > 0) {
+      overallDecision = 'HELD';
+    } else {
+      overallDecision = 'SUPPORTED';
     }
   }
 
-  // 4. Dossier Creation (Optional, if case metadata is supplied)
+  // If source revision or evidence was unverified, overall audit must hold
+  if (!sourceValidation.verified || !evidenceValidation.all_verified) {
+    overallDecision = 'HELD';
+  }
+
+  // 7. Dossier Creation (Optional)
   let case_dossier = null;
   if (input.create_case_dossier === true && input.dossier_spec) {
     try {
@@ -500,13 +854,10 @@ export async function runDollhouseSkillAudit(input = {}) {
     }
   }
 
-  // 5. Determine Overall Disposition & Permitted Next Actions
   const detected_infractions = [...detected_infractions_set];
-  const overallDecision = orchestrator ? orchestrator.decision : (specialist_findings.some(f => f.verdict === 'HELD') ? 'HELD' : 'SUPPORTED');
   const duration = Date.now() - startTime;
   const invocation_id = `dollhouse-audit-${Date.now()}-${createHash('sha256').update(source_revision + task_scope).digest('hex').slice(0, 8)}`;
 
-  const unresolved_questions = [];
   if (missing_inputs.length > 0) {
     unresolved_questions.push(`Missing domain observation inputs for: ${missing_inputs.join(', ')}.`);
   }
@@ -526,9 +877,11 @@ export async function runDollhouseSkillAudit(input = {}) {
     invocation_id,
     timestamp: new Date().toISOString(),
     source_revision,
+    source_revision_verified: sourceValidation.verified,
     task_scope,
     evidence_class,
     evidence_references,
+    evidence_manifest: evidenceValidation.manifest,
     roles_requested: rawRoles,
     roles_executed,
     missing_inputs,
@@ -546,8 +899,25 @@ export async function runDollhouseSkillAudit(input = {}) {
 
   const human_receipt = compileHumanReceipt(machine_receipt);
 
+  // 8. Fail-closed artifact writing and overwrite prevention (Redline Item 4)
   if (input.artifact_path && typeof input.artifact_path === 'string') {
-    await writeReceiptArtifact(input.artifact_path, machine_receipt, human_receipt);
+    try {
+      await writeReceiptArtifact(input.artifact_path, machine_receipt, human_receipt, options);
+    } catch (err) {
+      detected_infractions_set.add('HOLD_ARTIFACT_WRITE_FAILED');
+      machine_receipt.detected_infractions = [...detected_infractions_set];
+      machine_receipt.artifact_write_error = err.message;
+      unresolved_questions.push(`Artifact write failed fail-closed: ${err.message}`);
+      if (orchestrator) {
+        orchestrator.decision = 'HELD';
+      }
+      return {
+        machine_receipt,
+        human_receipt: compileHumanReceipt(machine_receipt),
+        exit_code: 1,
+        write_error: err
+      };
+    }
   }
 
   const exit_code = overallDecision === 'SUPPORTED' ? 0 : 1;
@@ -555,19 +925,41 @@ export async function runDollhouseSkillAudit(input = {}) {
 }
 
 /**
- * Writes receipt to disk at the specified path.
+ * Writes receipt to disk at the specified path with overwrite prevention and directory safety.
+ *
+ * @param {string} targetPath - File path to write to
+ * @param {Object} machineReceipt - Machine-readable JSON object
+ * @param {string} humanReceipt - Human-readable Markdown string
+ * @param {Object} [options={}] - Options, e.g. allow_overwrite: boolean
  */
-async function writeReceiptArtifact(targetPath, machineReceipt, humanReceipt) {
-  try {
-    if (targetPath.endsWith('.json')) {
-      await writeFile(targetPath, JSON.stringify(machineReceipt, null, 2), 'utf8');
-    } else if (targetPath.endsWith('.md')) {
-      await writeFile(targetPath, humanReceipt, 'utf8');
-    } else {
-      await writeFile(`${targetPath}.json`, JSON.stringify(machineReceipt, null, 2), 'utf8');
-      await writeFile(`${targetPath}.md`, humanReceipt, 'utf8');
+export async function writeReceiptArtifact(targetPath, machineReceipt, humanReceipt, options = {}) {
+  if (!targetPath || typeof targetPath !== 'string' || !targetPath.trim()) {
+    throw new Error('HOLD_ARTIFACT_INVALID_PATH: Non-empty targetPath required');
+  }
+
+  const resolved = resolve(targetPath);
+
+  // Check overwrite authorization
+  const checkOverwrite = (p) => {
+    if (existsSync(p)) {
+      if (options.allow_overwrite !== true) {
+        throw new Error(`HOLD_ARTIFACT_EXISTS_OVERWRITE_PREVENTED: Cannot overwrite existing file (${p}) without explicit allow_overwrite authorization`);
+      }
     }
-  } catch (err) {
-    console.error(`Failed to write artifact at ${targetPath}:`, err);
+  };
+
+  if (targetPath.endsWith('.json')) {
+    checkOverwrite(resolved);
+    await writeFile(resolved, JSON.stringify(machineReceipt, null, 2), 'utf8');
+  } else if (targetPath.endsWith('.md')) {
+    checkOverwrite(resolved);
+    await writeFile(resolved, humanReceipt, 'utf8');
+  } else {
+    const jsonPath = `${resolved}.json`;
+    const mdPath = `${resolved}.md`;
+    checkOverwrite(jsonPath);
+    checkOverwrite(mdPath);
+    await writeFile(jsonPath, JSON.stringify(machineReceipt, null, 2), 'utf8');
+    await writeFile(mdPath, humanReceipt, 'utf8');
   }
 }

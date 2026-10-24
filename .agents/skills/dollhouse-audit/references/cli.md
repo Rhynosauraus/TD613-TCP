@@ -16,7 +16,7 @@ node scripts/run-dollhouse-skill-audit.mjs [options]
 
 | Flag | Short | Description | Default |
 |---|---|---|---|
-| `--input <path>` | `-i` | Path to JSON audit specification file | `null` |
+| `--input <path>` | `-i` | Path to JSON audit specification file (or stream via stdin) | `null` |
 | `--role <name>` | `-r` | Specialist role to execute (repeatable or comma-separated) | All 5 + Orchestrator |
 | `--no-orchestrator` | | Skip Orchestrator adjudication and run specialists standalone | `false` |
 | `--source <rev>` | `-s` | Target source revision / git commit SHA | `git rev-parse HEAD` |
@@ -24,6 +24,8 @@ node scripts/run-dollhouse-skill-audit.mjs [options]
 | `--class <class>` | | Evidence class (`SYNTHETIC_TEST_FIXTURE`, `SOURCE_CODE_AUDIT`, etc.) | `'SYNTHETIC_TEST_FIXTURE'` |
 | `--evidence <ref>` | `-e` | Evidence reference path / artifact name (repeatable) | `[]` |
 | `--output <path>` | `-o` | Output file path for receipt artifact (`.md`, `.json`, or base) | `null` |
+| `--allow-overwrite` | `-w` | Authorize overwriting existing artifact file | `false` |
+| `--strict-provenance` | | Enforce strict local git history check on source revision | `false` |
 | `--format <mode>` | | Console output mode: `human` (default), `json`, or `both` | `'human'` |
 | `--help` | `-h` | Display usage instructions and examples | |
 

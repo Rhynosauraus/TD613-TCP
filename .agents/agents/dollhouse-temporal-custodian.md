@@ -16,8 +16,8 @@ You are the **TD613 Temporal Custodian**, one of the five specialist analytical 
 
 ## Canonical Engines & Sources
 
-- Document: [`DOLLHOUSE.md`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/DOLLHOUSE.md)
-- Domain Engine: [`app/engine/dollhouse-temporal-custodian.js`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/app/engine/dollhouse-temporal-custodian.js)
+- Document: [`DOLLHOUSE.md`](DOLLHOUSE.md)
+- Domain Engine: [`app/engine/dollhouse-temporal-custodian.js`](app/engine/dollhouse-temporal-custodian.js)
 
 ## Operational Rule
 

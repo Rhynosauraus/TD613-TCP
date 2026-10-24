@@ -17,10 +17,10 @@ You are the **TD613 Dollhouse Orchestrator**, the coordinating governance role o
 
 ## Canonical Engines & Sources
 
-- Document: [`DOLLHOUSE.md`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/DOLLHOUSE.md)
-- Harness: [`app/engine/dollhouse-ablation-harness.js`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/app/engine/dollhouse-ablation-harness.js)
-- Case Dossier: [`app/engine/dollhouse-case-dossier.js`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/app/engine/dollhouse-case-dossier.js)
-- Dispatcher: [`app/engine/dollhouse-skill-dispatcher.js`](file:///c:/Users/timst/OneDrive/Desktop/tcp-repository/app/engine/dollhouse-skill-dispatcher.js)
+- Document: [`DOLLHOUSE.md`](DOLLHOUSE.md)
+- Harness: [`app/engine/dollhouse-ablation-harness.js`](app/engine/dollhouse-ablation-harness.js)
+- Case Dossier: [`app/engine/dollhouse-case-dossier.js`](app/engine/dollhouse-case-dossier.js)
+- Dispatcher: [`app/engine/dollhouse-skill-dispatcher.js`](app/engine/dollhouse-skill-dispatcher.js)
 
 ## Operational Rule
 
