@@ -338,6 +338,37 @@ export function verifyEvidenceReferences(references = [], options = {}) {
       }
     } catch {}
 
+    // Reject symlinked ancestors as well as symlinked leaf references.
+    // Resolving a relative path within the repository must not follow a
+    // junction out of the approved evidence subtree.
+    let evidenceParent = resolve(fullPath, '..');
+    let symlinkedAncestor = false;
+    while (true) {
+      try {
+        if (lstatSync(evidenceParent).isSymbolicLink()) {
+          symlinkedAncestor = true;
+          break;
+        }
+      } catch {
+        symlinkedAncestor = true;
+        break;
+      }
+      const parent = resolve(evidenceParent, '..');
+      if (parent === evidenceParent) break;
+      evidenceParent = parent;
+    }
+    if (symlinkedAncestor) {
+      manifest.push({
+        reference: filePath,
+        type: 'SYMBOLIC_LINK_ANCESTOR',
+        verified: false,
+        byte_digest_verified: false,
+        reason: 'SYMLINK_EVIDENCE_REFERENCE_REJECTED'
+      });
+      infractions.push('HOLD_EVIDENCE_SYMLINK_REJECTED');
+      continue;
+    }
+
     // Regular file check (directories or non-regular files cannot establish byte evidence)
     let st;
     try {
@@ -663,33 +694,12 @@ Sealed ⟐
  * Determines whether an observation is an authentic source-bound defect supported by code inspection.
  */
 function isSourceBoundWitness(roleInput, evidence_class) {
-  if (evidence_class !== 'SOURCE_CODE_AUDIT') return false;
-  if (!roleInput || typeof roleInput !== 'object') return false;
-
-  // Must have explicit source binding or inspected code witness
-  if (
-    roleInput.source_bound === true ||
-    roleInput.inspected_code_witness === true ||
-    roleInput.witness_type === 'SOURCE_CODE_WITNESS' ||
-    roleInput.witness_class === 'SOURCE_CODE_WITNESS'
-  ) {
-    return true;
-  }
-
-  const hasSourceFileRef = Boolean(
-    typeof roleInput.source_file === 'string' ||
-    typeof roleInput.target_file === 'string' ||
-    typeof roleInput.inspected_file === 'string'
-  );
-
-  const hasCodeContent = Boolean(
-    typeof roleInput.source_code === 'string' ||
-    typeof roleInput.code_witness === 'string' ||
-    typeof roleInput.source_snippet === 'string' ||
-    typeof roleInput.ast_finding === 'object'
-  );
-
-  return hasSourceFileRef && hasCodeContent;
+  // This offline dispatcher executes mathematical checks on caller-provided data.
+  // Caller-authored flags, snippets, AST-shaped objects and reference paths do
+  // not establish that the tested data was extracted from inspected source bytes.
+  // Reserve OBSERVED_SOURCE_DEFECT for a future trusted source-inspection adapter
+  // that independently verifies the witness-to-engine-input binding.
+  return false;
 }
 
 /**
@@ -765,20 +775,22 @@ export async function runDollhouseSkillAudit(input = {}) {
     ? input.evidence_class.trim()
     : 'SYNTHETIC_TEST_FIXTURE';
 
-  const rawEvidenceReferences = Array.isArray(input.evidence_references)
-    ? input.evidence_references.map(String)
-    : [];
+  // Preserve typed { path, sha256 } references for actual byte verification.
+  // Never coerce structured references to "[object Object]" before validation.
+  const rawEvidenceReferences = input.evidence_references === undefined
+    ? []
+    : input.evidence_references;
 
   // 2. Provenance Verification: Bind evidence references
   const evidenceValidation = verifyEvidenceReferences(rawEvidenceReferences, options);
-  const evidence_references = rawEvidenceReferences;
+  const evidence_references = Array.isArray(rawEvidenceReferences) ? rawEvidenceReferences : [];
   if (!evidenceValidation.all_verified) {
     evidenceValidation.infractions.forEach(i => detected_infractions_set.add(i));
     unresolved_questions.push('One or more declared evidence references could not be verified in repository.');
   }
 
   // Consistency check: SOURCE_CODE_AUDIT should declare evidence references
-  if (evidence_class === 'SOURCE_CODE_AUDIT' && evidence_references.length === 0 && options.strict_provenance === true) {
+  if (evidence_class === 'SOURCE_CODE_AUDIT' && evidence_references.length === 0) {
     detected_infractions_set.add('SOURCE_CODE_AUDIT_MISSING_EVIDENCE_REFERENCES');
     unresolved_questions.push('Declared SOURCE_CODE_AUDIT without providing verifiable evidence_references.');
   }
@@ -1331,20 +1343,15 @@ export async function writeReceiptArtifact(targetPath, machineReceipt, humanRece
     throw new Error(`HOLD_ARTIFACT_DESTINATION_NOT_AUTHORIZED: Destination path (${resolved}) is outside approved repository or temporary subtrees`);
   }
 
-  // Constrain receipt writing to explicit audit-output destinations in repository:
-  // Reject attempts to write into executable code directories (app/, scripts/, src/) or repo root configuration (package.json)
+  // A caller-controlled "authorized_output_destination" boolean is never
+  // sufficient to widen filesystem write authority.
   if (isInsideRepo) {
     const normalizedRel = relRepo.replace(/\\/g, '/');
-    const isProtectedSourceCode =
-      normalizedRel === 'package.json' ||
-      normalizedRel === 'package-lock.json' ||
-      normalizedRel.startsWith('app/') ||
-      normalizedRel.startsWith('scripts/') ||
-      normalizedRel.startsWith('.git/') ||
-      normalizedRel.startsWith('.github/');
-
-    if (isProtectedSourceCode && options.authorized_output_destination !== true) {
-      throw new Error(`HOLD_ARTIFACT_DESTINATION_NOT_AUTHORIZED: Cannot write receipt artifact into protected source directory or file (${normalizedRel})`);
+    const allowedOutputRoot = ['artifacts/', 'audit-artifacts/', 'receipts/', 'reports/']
+      .some(prefix => normalizedRel.startsWith(prefix));
+    const documentedRootReceipt = /^receipt(?:[-_.][a-zA-Z0-9_-]+)?\.(?:json|md)$/.test(normalizedRel);
+    if (!allowedOutputRoot && !documentedRootReceipt) {
+      throw new Error(`HOLD_ARTIFACT_DESTINATION_NOT_AUTHORIZED: Receipt path (${normalizedRel}) is outside approved audit-output destinations`);
     }
   }
 
