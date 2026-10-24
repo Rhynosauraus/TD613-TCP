@@ -1,6 +1,7 @@
 /**
  * @file tests/loom-gate-view-model-readonly.test.mjs
  * @description Negative probe suite and boundary verification for the Loom Gate View-Model adapter (Issue #1592).
+ * Includes R1-01, R1-02, R1-03, and R1-04 reparative counterexamples (Artifact 46-R1).
  */
 
 import test from 'node:test';
@@ -83,6 +84,10 @@ function createBaseSnapshot(status = 'BOUNDED_CHALLENGE_PASSED', overrides = {})
   };
 }
 
+// ============================================================================
+// BASELINE TESTS PRESERVED
+// ============================================================================
+
 test('T-AUTH-01: View-model contains no mutate/send/sign methods', () => {
   const snapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
   const vm = deriveLoomGateViewModel(snapshot);
@@ -152,14 +157,16 @@ test('T-EXPORT-01: sanitizePublicContinuation strips canaries, prompts, solution
   }, TypeError);
 });
 
-test('F-CLEAN-PASS-01: Clean bounded challenge pass view-model', () => {
+test('F-CLEAN-PASS-01: Clean bounded challenge pass view-model (R1-01 Qualified)', () => {
   const snapshot = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
   const vm = deriveLoomGateViewModel(snapshot);
 
   assert.equal(vm.status, 'BOUNDED_CHALLENGE_PASSED');
-  assert.equal(vm.customer_presentation.what_happened, 'All declared checks passed on captured surfaces. Selected file commitments remain local.');
+  // R1-01: An unverified report cannot produce an unqualified customer-facing PASS
+  assert.ok(vm.customer_presentation.what_happened.includes('Unverified declaration · declared checks passed'));
+  assert.ok(vm.customer_presentation.what_happened.includes('local recomputation required'));
   assert.ok(vm.customer_presentation.what_remains_unknown.includes('hidden activations remain unobserved'));
-  assert.equal(vm.six_field_contract.next_action, 'REVIEW_CAPTURE_COVERAGE_BEFORE_CONTINUING');
+  assert.equal(vm.six_field_contract.next_action, 'HOLD_RECOMPUTE_LOCAL_GATE_INTEGRITY');
   assert.equal(vm.authority.empirical_credit, 0);
   assert.equal(vm.authority.foreign_enforcement_proved, false);
   assert.equal(vm.gate_verification_status, 'UNVERIFIED_DECLARATION');
@@ -212,7 +219,6 @@ test('F-TAMPERED-SUMMARY-04: Structural authority contract violation throws cont
 });
 
 test('Native digest tampering is caught by inspectPortableLoomGateReport with native error', async () => {
-  // Construct a structurally valid report with genuine digest
   const validReportBody = {
     schema: PORTABLE_LOOM_GATE_SCHEMA,
     action: 'CHECK_LOOM_GATE',
@@ -248,11 +254,9 @@ test('Native digest tampering is caught by inspectPortableLoomGateReport with na
   const genuineRef = await portableLoomCoreDigest(validReportBody);
   const genuineReport = { ...validReportBody, ref: genuineRef };
 
-  // Native inspection passes for untampered report
   const inspected = await inspectPortableLoomGateReport(genuineReport);
   assert.equal(inspected.status, 'CARRIED_SUMMARY_INTEGRITY');
 
-  // Tamper a field without updating ref -> throws native integrity error
   const tamperedReport = { ...genuineReport, status: 'OBSERVED_EXPOSURE', next_action: 'HOLD_REVIEW_EXPOSURE_AND_REGISTERED_SCOPE' };
   await assert.rejects(async () => {
     await inspectPortableLoomGateReport(tamperedReport);
@@ -270,7 +274,6 @@ test('Caller-supplied serialized verification witness is untrusted and never pro
 
   const vm = deriveLoomGateViewModel(snapshot);
 
-  // Even with injected witness claiming CARRIED_SUMMARY_INTEGRITY, adapter defaults strictly to UNVERIFIED_DECLARATION
   assert.equal(vm.gate_verification_status, 'UNVERIFIED_DECLARATION');
   assert.equal(vm.drawer.verification_status, 'UNVERIFIED_DECLARATION');
   assert.equal(vm.drawer.local_private_recomputation_required, true);
@@ -282,7 +285,7 @@ test('validateLoomGateSnapshot rejects prototype pollution', () => {
 
   assert.throws(() => {
     validateLoomGateSnapshot(maliciousProto);
-  }, /Loom Gate snapshot prototype must be plain Object or null\./);
+  }, /non-plain object or custom prototype/);
 });
 
 test('validateLoomGateSnapshot rejects cyclic references', () => {
@@ -291,7 +294,7 @@ test('validateLoomGateSnapshot rejects cyclic references', () => {
 
   assert.throws(() => {
     validateLoomGateSnapshot(cyclicSnapshot);
-  }, /Loom Gate snapshot contains cyclic references\./);
+  }, /Loom Gate snapshot contains cyclic reference/);
 });
 
 test('validateLoomGateSnapshot rejects executable functions in snapshot', () => {
@@ -306,14 +309,14 @@ test('validateLoomGateSnapshot rejects executable functions in snapshot', () => 
 test('validateLoomGateSnapshot rejects impossible or negative counts', () => {
   const invalidSnapshot1 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
   invalidSnapshot1.native_gate_report.coverage.disclosed_targets = 10;
-  invalidSnapshot1.native_gate_report.coverage.checked_targets = 5; // disclosed > checked
+  invalidSnapshot1.native_gate_report.coverage.checked_targets = 5;
 
   assert.throws(() => {
     validateLoomGateSnapshot(invalidSnapshot1);
   }, /disclosed_targets cannot exceed checked_targets/);
 
   const invalidSnapshot2 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
-  invalidSnapshot2.native_gate_report.coverage.captured_channels = -1; // negative count
+  invalidSnapshot2.native_gate_report.coverage.captured_channels = -1;
 
   assert.throws(() => {
     validateLoomGateSnapshot(invalidSnapshot2);
@@ -335,11 +338,257 @@ test('Customer UI presentation strictly omits internal research cast names (Issu
     );
   }
 
-  // Allowed customer-facing terms must be present
   assert.equal(vm.label, '米 Check Loom Gate');
   assert.ok(typeof vm.customer_presentation.what_happened === 'string');
   assert.ok(typeof vm.customer_presentation.what_was_checked === 'string');
   assert.ok(typeof vm.customer_presentation.what_remains_unknown === 'string');
   assert.ok(typeof vm.customer_presentation.what_happens_next === 'string');
   assert.equal(vm.drawer.label, 'How do I know? 下');
+});
+
+// ============================================================================
+// REPAIR R1-01: CONTRADICTORY REPORT COMBINATION TESTS
+// ============================================================================
+
+test('R1-01: Contradictory report: BOUNDED_CHALLENGE_PASSED with nonzero disclosed_targets is rejected', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.native_gate_report.coverage.disclosed_targets = 1;
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /Contradictory report: status is BOUNDED_CHALLENGE_PASSED but disclosed_targets is nonzero/);
+});
+
+test('R1-01: Contradictory report: BOUNDED_CHALLENGE_PASSED with nonzero successful_reconstructions is rejected', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.native_gate_report.coverage.successful_reconstruction_attempts = 1;
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /Contradictory report: status is BOUNDED_CHALLENGE_PASSED but successful_reconstruction_attempts is nonzero/);
+});
+
+test('R1-01: Contradictory report: BOUNDED_CHALLENGE_PASSED with missing channels is rejected', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.native_gate_report.coverage.missing_required_channels = 1;
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /Contradictory report: status is BOUNDED_CHALLENGE_PASSED but missing_required_channels is nonzero/);
+});
+
+test('R1-01: Contradictory report: OBSERVED_EXPOSURE with zero disclosed targets or recoveries is rejected', () => {
+  const s = createBaseSnapshot('OBSERVED_EXPOSURE');
+  s.native_gate_report.coverage.disclosed_targets = 0;
+  s.native_gate_report.coverage.successful_reconstruction_attempts = 0;
+  s.native_gate_report.joining = { observed: 0, incomplete: 0 };
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /Contradictory report: status is OBSERVED_EXPOSURE but zero disclosed targets or reconstructions observed/);
+});
+
+test('R1-01: Contradictory report: HELD_INCOMPLETE_OBSERVATION with zero missing items is rejected', () => {
+  const s = createBaseSnapshot('HELD_INCOMPLETE_OBSERVATION');
+  s.native_gate_report.coverage.missing_required_channels = 0;
+  s.native_gate_report.coverage.missing_attempts = 0;
+  s.native_gate_report.coverage.measured_reconstruction_attempts = 10; // 10 measured + 0 missing = 10 declared
+  s.native_gate_report.joining = { observed: 0, incomplete: 0 };
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /Contradictory report: status is HELD_INCOMPLETE_OBSERVATION but zero missing channels or attempts recorded/);
+});
+
+// ============================================================================
+// REPAIR R1-02: VALUE-LEVEL PUBLIC EXPORT SAFETY & SENSITIVE MARKER TESTS
+// ============================================================================
+
+test('R1-02: Sensitive marker in request_id is sanitized to null', () => {
+  const cont = {
+    schema: 'td613.loom.continuation/v0.1',
+    request_id: 'SECRET_CANARY_X99_DO_NOT_LEAK with spaces and illegal punctuation!!!',
+    session_root_ref: VALID_HEX_64,
+    anchor_work_unit_ref: VALID_HEX_REF_1,
+    phase: 'DONE',
+    status: 'ADMITTED'
+  };
+
+  const sanitized = sanitizePublicContinuation(cont);
+  assert.equal(sanitized.request_id, null);
+  assert.equal(JSON.stringify(sanitized).includes('SECRET_CANARY'), false);
+});
+
+test('R1-02: Sensitive marker in receipt_scope is rejected in validation', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.native_gate_report.receipt_scope = 'SECRET_CANARY_X99_DO_NOT_LEAK';
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /receipt_scope contains unrecognized value/);
+});
+
+test('R1-02: Sensitive marker in evidence_class is rejected in validation', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.native_gate_report.evidence_class = 'SECRET_CANARY_X99_DO_NOT_LEAK';
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /evidence_class contains unrecognized value/);
+});
+
+test('R1-02: Sensitive marker in phase is sanitized to UNKNOWN', () => {
+  const cont = {
+    schema: 'td613.loom.continuation/v0.1',
+    request_id: 'req-clean',
+    phase: 'SECRET_CANARY_X99_DO_NOT_LEAK',
+    status: 'ADMITTED'
+  };
+
+  const sanitized = sanitizePublicContinuation(cont);
+  assert.equal(sanitized.phase, 'UNKNOWN');
+  assert.equal(JSON.stringify(sanitized).includes('SECRET_CANARY'), false);
+});
+
+test('R1-02: Sensitive marker in status is sanitized to HELD', () => {
+  const cont = {
+    schema: 'td613.loom.continuation/v0.1',
+    request_id: 'req-clean',
+    phase: 'DONE',
+    status: 'SECRET_CANARY_X99_DO_NOT_LEAK'
+  };
+
+  const sanitized = sanitizePublicContinuation(cont);
+  assert.equal(sanitized.status, 'HELD');
+  assert.equal(JSON.stringify(sanitized).includes('SECRET_CANARY'), false);
+});
+
+test('R1-02: Sensitive marker in specialist status is rejected in validation', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.specialist_summaries.PEDAGOGUE = { status: 'SECRET_CANARY_X99_DO_NOT_LEAK' };
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /contains unrecognized status/);
+});
+
+test('R1-02: Unrecognized specialist key is rejected in validation', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.specialist_summaries.LEAKED_CAST_MEMBER = { status: 'NOT_RUN' };
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /Unrecognized specialist key in specialist_summaries/);
+});
+
+// ============================================================================
+// REPAIR R1-03: DEEP STRUCTURAL DOMAIN VALIDATION TESTS
+// ============================================================================
+
+test('R1-03: Nested non-plain objects are rejected fail-closed', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.session.injected_date = new Date();
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /non-plain object or custom prototype/);
+});
+
+test('R1-03: Nested accessor properties with side effects are rejected WITHOUT evaluation', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  let sideEffectTriggered = false;
+
+  const maliciousObj = {};
+  Object.defineProperty(maliciousObj, 'exploit', {
+    get() {
+      sideEffectTriggered = true;
+      return 'pwned';
+    },
+    enumerable: true
+  });
+
+  s.session.malicious = maliciousObj;
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /accessor property \(getter\/setter\)/);
+
+  assert.equal(sideEffectTriggered, false, 'Accessor getter must not be evaluated during rejection');
+});
+
+test('R1-03: Excessive nesting depth (> 10) is rejected fail-closed', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  let current = s.session;
+  for (let i = 0; i < 15; i++) {
+    current.nested = {};
+    current = current.nested;
+  }
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /exceeds maximum nesting depth of 10/);
+});
+
+test('R1-03: Oversized string (> 2048 chars) is rejected fail-closed', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.session.oversized = 'X'.repeat(3000);
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /string exceeds maximum length of 2048/);
+});
+
+test('R1-03: Oversized array (> 1000 items) is rejected fail-closed', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.session.oversized_array = new Array(1500).fill(1);
+
+  assert.throws(() => {
+    validateLoomGateSnapshot(s);
+  }, /array exceeds maximum length of 1000/);
+});
+
+test('R1-03: Ordinary valid JSON input passes deep structural validation', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED', {
+    session: {
+      session_root_ref: VALID_HEX_64,
+      anchor_work_unit_ref: VALID_HEX_REF_1,
+      phase: 'ARRIVED',
+      substantive_continuation_count: 0,
+      declared_withheld_documents: 2,
+      declared_selected_documents: 1,
+      extra_safe_metadata: {
+        labels: ['clean', 'ordinary'],
+        count: 42,
+        active: true,
+        notes: null
+      }
+    }
+  });
+
+  assert.equal(validateLoomGateSnapshot(s), true);
+  const vm = deriveLoomGateViewModel(s);
+  assert.equal(vm.status, 'BOUNDED_CHALLENGE_PASSED');
+});
+
+// ============================================================================
+// REPAIR R1-04: DETERMINISTIC PURITY TEST
+// ============================================================================
+
+test('R1-04: sanitizePublicContinuation is strictly deterministic across replays', () => {
+  const input = {
+    request_id: 'req-abc-123',
+    session_root_ref: VALID_HEX_64,
+    anchor_work_unit_ref: VALID_HEX_REF_1,
+    phase: 'DONE',
+    status: 'ADMITTED',
+    secret_canaries: ['SECRET_A', 'SECRET_B'],
+    private_key: 'ED25519_SECRET'
+  };
+
+  const run1 = sanitizePublicContinuation(input);
+  const run2 = sanitizePublicContinuation(input);
+
+  assert.deepEqual(run1, run2);
+  assert.equal(JSON.stringify(run1), JSON.stringify(run2));
+  assert.equal(typeof run1.sanitized_at, 'undefined', 'sanitized_at should not exist or use non-deterministic Date');
 });
