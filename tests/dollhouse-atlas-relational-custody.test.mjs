@@ -121,7 +121,7 @@ test('Atlas Holonomy History Parity enforces: same endpoint does not erase route
   assert.equal(passAudit.history_parity_equal, true);
   assert.equal(passAudit.disposition, 'PASS');
 
-  // Identical endpoints, distinct loop powers / winding numbers (e.g. 0 loops vs 2 loops)
+  // T-HISTORY-02: Identical endpoints, distinct loop powers / winding numbers (e.g. 0 loops vs 2 loops)
   // Under an order-2 holonomy, endpoint state is identical, but winding history differs!
   const heldAudit = auditAtlasHolonomyHistoryParity(
     { endpoint, winding_number: 0 },

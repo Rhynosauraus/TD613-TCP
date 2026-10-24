@@ -209,6 +209,19 @@ jobs:
             tests/dollhouse-multi-role-ablation.test.mjs \
             tests/dollhouse-synthetic-operator-workflow.test.mjs \
             tests/dollhouse-native-skill.test.mjs
+      - name: Validate COV-M3 25-probe negative validation matrix and synthetic scenarios
+        run: |
+          node --test \
+            tests/dollhouse-scenarios.test.mjs \
+            tests/loom-four-route-presentation.test.mjs \
+            tests/loom-public-private-export.test.mjs \
+            tests/loom-reentry-invariants.test.mjs \
+            tests/dollhouse-pedagogue-dromological.test.mjs \
+            tests/dollhouse-aperture-numerical-deficit.test.mjs \
+            tests/dollhouse-atlas-relational-custody.test.mjs \
+            tests/dollhouse-fadt-reparative-assistance.test.mjs \
+            tests/dollhouse-temporal-custodian.test.mjs \
+            tests/dollhouse-case-dossier.test.mjs
       - name: Verify native-prosody permission, focused relay API and editorial contracts, and offline atlas
         run: |
           node --check server/khonapolit-quality.js
