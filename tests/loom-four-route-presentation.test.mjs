@@ -192,7 +192,12 @@ test('T-ROUTE-01: Flow-Core Four AIA Routes preserve identical lawful action set
     }
   }
 
-  // Negative Counterexample: a uniformly widened action set cannot pass admission merely because all 4 routes agree
+  // Legitimate act views pass native invariant verification
+  const actReport = verifyAIAInvariants(scene, actViews);
+  assert.equal(actReport.all_invariants_preserved, true);
+  assert.equal(actReport.authority_transferred, false);
+
+  // Negative Counterexample 1: uniformly widened action set fails native verification even under unanimous 4-route agreement
   const uniformlyWidenedViews = actViews.map(v => {
     const cloned = JSON.parse(JSON.stringify(v));
     cloned.authorized_actions.push('Dome-World:unauthorized_mutation');
@@ -204,15 +209,29 @@ test('T-ROUTE-01: Flow-Core Four AIA Routes preserve identical lawful action set
   const widenedPair = compareAIAViews(uniformlyWidenedViews[0], uniformlyWidenedViews[1]);
   assert.equal(widenedPair.invariants_preserved, true, 'Widened views agree with each other on the widened invariant');
 
-  // But admission fails closed: independent station-authority check rejects unauthorized actions
-  const passesStationAdmission = uniformlyWidenedViews.every(v =>
-    v.authorized_actions.every(action => stationAuthorizedActions.has(action))
-  );
-  assert.equal(
-    passesStationAdmission,
-    false,
-    'Uniformly widened views must fail station-authority admission despite four-route mutual agreement'
-  );
+  // But native verification fails closed: rejects unauthorized action despite unanimous agreement
+  assert.throws(() => {
+    verifyAIAInvariants(scene, uniformlyWidenedViews);
+  }, /AIA view contains unauthorized action: Dome-World:unauthorized_mutation/);
+
+  // Negative Counterexample 2: split-representation bundle fails native verification (top-level vs invariant mismatch)
+  const splitTopViews = actViews.map(v => {
+    const cloned = JSON.parse(JSON.stringify(v));
+    cloned.authorized_actions.push('Dome-World:split_action');
+    return cloned;
+  });
+  assert.throws(() => {
+    verifyAIAInvariants(scene, splitTopViews);
+  }, /action representation split between top-level and invariants/);
+
+  const splitInvViews = actViews.map(v => {
+    const cloned = JSON.parse(JSON.stringify(v));
+    cloned.invariants.authorized_actions.push('Dome-World:split_action');
+    return cloned;
+  });
+  assert.throws(() => {
+    verifyAIAInvariants(scene, splitInvViews);
+  }, /action representation split between top-level and invariants/);
 
   // Widened station authority flags fail validation closed even under unanimous view agreement
   const authorityWidenedViews = uniformlyWidenedViews.map(v => {

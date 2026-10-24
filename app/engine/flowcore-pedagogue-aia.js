@@ -250,6 +250,21 @@ export function verifyAIAInvariants(scene, views) {
   const routeSet = [...new Set(views.map(view => view.route))].sort();
   if (canonicalJson(routeSet) !== canonicalJson([...FLOWCORE_AIA_ROUTE_IDS].sort())) throw new Error('Canonical AIA routes are incomplete or duplicated.');
   if (views.some(view => view.scene_reference !== scene.scene_id)) throw new Error('AIA view references another scene.');
+  const stationAllowed = new Set(
+    (scene.available_affordances || []).map(a => `${a.authorized_by_station}:${a.action_id}`)
+  );
+  for (const view of views) {
+    const topActions = view.authorized_actions || [];
+    const invActions = view.invariants?.authorized_actions || [];
+    if (canonicalJson(sortedUnique(topActions)) !== canonicalJson(sortedUnique(invActions))) {
+      throw new Error(`AIA view ${view.route} action representation split between top-level and invariants.`);
+    }
+    for (const action of topActions) {
+      if (!stationAllowed.has(action)) {
+        throw new Error(`AIA view contains unauthorized action: ${action}`);
+      }
+    }
+  }
   const comparisons = [];
   for (let i = 0; i < views.length; i += 1) {
     for (let j = i + 1; j < views.length; j += 1) comparisons.push(compareAIAViews(views[i], views[j]));
