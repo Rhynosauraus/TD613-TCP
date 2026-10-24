@@ -91,6 +91,61 @@ function sha256(data) {
   return createHash('sha256').update(typeof data === 'string' ? data : JSON.stringify(data)).digest('hex');
 }
 
+export const THEMATIC_CLUSTERS = Object.freeze({
+  // Five selectable tradition clusters for deterministic instrument scoring
+  institutional: Object.freeze([
+    'king', 'court', 'power', 'authority', 'sovereign', 'censor', 'bureaucracy',
+    'statute', 'archive', 'allegiance', 'title', 'law', 'corridor', 'gatekeeper',
+    'administrative', 'official', 'procedural', 'redact', 'redaction', 'petition',
+    'waiting', 'waiting-room', 'hearing', 'permit', 'clerk', 'sanction', 'stamp'
+  ]),
+  performative: Object.freeze([
+    'performativity', 'performative', 'ritual', 'reiteration', 'reiterate', 'norm',
+    'normative', 'subversion', 'subversive', 'slippage', 'mimicry', 'convention',
+    'citation', 'citational', 'legibility', 'syntax', 'grammar', 'marks', 'repetition',
+    'parody', 'conformity', 'compulsory', 'script', 'iteration'
+  ]),
+  reparative: Object.freeze([
+    'reparative', 'texture', 'textural', 'beside', 'besideness', 'affective', 'care',
+    'survival', 'fragment', 'shelter', 'parataxis', 'paratactic', 'communal',
+    'vulnerability', 'dissolve', 'dissolution', 'reparation', 'touch', 'tactile',
+    'loss', 'wound', 'remedy', 'gathering', 'discarded', 'patch', 'textile'
+  ]),
+  dialectical: Object.freeze([
+    'dialectical', 'dialectic', 'tension', 'antithesis', 'polyphonic', 'polyphony',
+    'dissonance', 'contradiction', 'dispute', 'rival', 'oppose', 'opposition',
+    'irreducible', 'counterpoint', 'interval', 'unison', 'synthesis', 'antagonism',
+    'contrapuntal', 'thesis', 'incommensurable', 'conflict', 'voice'
+  ]),
+  phasonic: Object.freeze([
+    'phason', 'phasonic', 'quasiperiodic', 'lattice', 'periodic', 'moiré', 'trajectory',
+    'geometry', 'wave', 'interference', 'recurrence', 'detour', 'transmedia', 'cadence',
+    'temporal', 'spatial', 'endpoint', 'door', 'arrival', 'passage', 'stage', 'machinery',
+    'proscenium', 'scaffold', 'projection', 'strain', 'd3', 'phi', 'scene', 'time'
+  ]),
+  // Semantic descriptive clusters for candidate generation
+  temporal: Object.freeze([
+    'time', 'scene', 'history', 'before', 'after', 'dawn', 'future', 'past',
+    'passage', 'cadence', 'quietly', 'temporal', 'moment'
+  ]),
+  machinery: Object.freeze([
+    'machinery', 'machine', 'stage', 'pulley', 'crane', 'gear', 'lever',
+    'rigging', 'console', 'engine', 'instrument', 'mechanism', 'anvil'
+  ]),
+  textual: Object.freeze([
+    'punctuation', 'grammar', 'marks', 'sentence', 'clause', 'word', 'syntax',
+    'letters', 'language', 'title', 'ledger', 'record', 'stop', 'colon', 'dash'
+  ]),
+  spatial: Object.freeze([
+    'theater', 'corridor', 'door', 'endpoint', 'boundary', 'threshold',
+    'estuary', 'proscenium', 'hall', 'room', 'vault', 'site', 'ground'
+  ]),
+  relational: Object.freeze([
+    'arrive', 'differ', 'separate', 'change', 'converge', 'refract', 'invert',
+    'slip', 'reiterate', 'dissolve', 'suspend', 'hold'
+  ])
+});
+
 /**
  * Analyzes seed semantics to derive operative keywords and thematic tensions.
  * @param {string} seed
@@ -100,23 +155,15 @@ export function analyzeSeedSemantics(seed = '') {
   const clean = String(seed).toLowerCase();
   const words = clean.match(/[a-z0-9'-]+/g) || [];
 
-  const clusters = {
-    temporal: ['time', 'scene', 'history', 'before', 'after', 'dawn', 'future', 'past', 'passage', 'cadence', 'quietly', 'temporal', 'moment'],
-    machinery: ['machinery', 'machine', 'stage', 'pulley', 'crane', 'gear', 'lever', 'rigging', 'console', 'engine', 'instrument', 'mechanism', 'anvil'],
-    textual: ['punctuation', 'grammar', 'marks', 'sentence', 'clause', 'word', 'syntax', 'letters', 'language', 'title', 'ledger', 'record', 'stop', 'colon', 'dash'],
-    spatial: ['theater', 'corridor', 'door', 'endpoint', 'boundary', 'threshold', 'estuary', 'proscenium', 'hall', 'room', 'vault', 'site', 'ground'],
-    institutional: ['king', 'court', 'power', 'authority', 'sovereign', 'censor', 'bureaucracy', 'statute', 'archive', 'allegiance', 'title', 'law'],
-    relational: ['arrive', 'differ', 'separate', 'change', 'converge', 'refract', 'invert', 'slip', 'reiterate', 'dissolve', 'suspend', 'hold']
-  };
-
   const detected = {};
-  for (const [cluster, terms] of Object.entries(clusters)) {
-    detected[cluster] = words.filter(w => terms.includes(w));
+  for (const [clusterName, termList] of Object.entries(THEMATIC_CLUSTERS)) {
+    detected[clusterName] = words.filter(w => termList.includes(w));
   }
 
   const stopWords = new Set([
     'a', 'an', 'the', 'in', 'which', 'are', 'and', 'each', 'of', 'it', 'to',
-    'for', 'with', 'on', 'at', 'by', 'from', 'but', 'is', 'as', 'that', 'this'
+    'for', 'with', 'on', 'at', 'by', 'from', 'but', 'is', 'as', 'that', 'this',
+    'when', 'where', 'only', 'all', 'any', 'into', 'over'
   ]);
   const salientKeywords = words.filter(w => !stopWords.has(w) && w.length > 2);
 
@@ -270,12 +317,21 @@ export function deriveCommissionCandidates(commission) {
   if (analysis.detected_clusters.machinery.length > 0 && analysis.detected_clusters.textual.length > 0) {
     candATitle = `The ${cap(analysis.detected_clusters.textual[0])} Machinery`;
     candAProp = `Couples textual syntax with mechanical rigging, turning grammatical marks into operative stage levers that deform antecedent history.`;
-  } else if (analysis.detected_clusters.spatial.length > 0 && analysis.detected_clusters.relational.length > 0) {
-    candATitle = `The ${cap(analysis.detected_clusters.spatial[0])} ${cap(analysis.detected_clusters.relational[0])}`;
-    candAProp = `Spatially manifests the divergence of passage across distinct routes despite apparent endpoint convergence.`;
-  } else if (analysis.detected_clusters.institutional.length > 0) {
-    candATitle = `The ${cap(analysis.detected_clusters.institutional[0])} Apparatus`;
+  } else if (primaryInst === 'CARO_INSTITUTIONAL_RECONSTRUCTION' || analysis.detected_clusters.institutional.length > 0) {
+    candATitle = `The ${cap(analysis.detected_clusters.institutional[0] || 'Corridor')} Apparatus`;
     candAProp = `Materializes administrative resistance and institutional friction through procedural delay and archival omission.`;
+  } else if (primaryInst === 'BUTLER_PERFORMATIVE_ITERATION' || analysis.detected_clusters.performative.length > 0) {
+    candATitle = `The ${cap(analysis.detected_clusters.performative[0] || 'Ritual')} Iteration`;
+    candAProp = `Stages citational repetition where small performative slippages subvert the normative decree.`;
+  } else if (primaryInst === 'SEDGWICK_REPARATIVE_TEXTURE' || analysis.detected_clusters.reparative.length > 0) {
+    candATitle = `The ${cap(analysis.detected_clusters.reparative[0] || 'Textile')} Shelter`;
+    candAProp = `Assembles paratactic fragments beside the sovereign baseline, prioritizing affective survival and tactile care.`;
+  } else if (primaryInst === 'DIALECTICAL_TENSION' || analysis.detected_clusters.dialectical.length > 0) {
+    candATitle = `The ${cap(analysis.detected_clusters.dialectical[0] || 'Dissonant')} Counterpoint`;
+    candAProp = `Maintains irreconcilable polyphonic voices in sustained tension without forced synthesis or harmonic erasure.`;
+  } else if (primaryInst === 'PHASONIC_COUNTERPOINT' || analysis.detected_clusters.phasonic.length > 0) {
+    candATitle = `The ${cap(analysis.detected_clusters.phasonic[0] || 'Phasonic')} Escapement`;
+    candAProp = `Couples quasiperiodic wave modulation with physical lattice strain, transforming recurrence into material displacement.`;
   }
 
   const candidateA = {
@@ -298,15 +354,18 @@ export function deriveCommissionCandidates(commission) {
   let candBTitle = `The Inverted ${cap(noun2)}`;
   let candBProp = `Inverts the temporal sequence: displays the terminal consequence at ingress, requiring the observer to unravel accumulated expenditure.`;
 
-  if (analysis.detected_clusters.temporal.length > 0) {
-    candBTitle = `The Retroactive ${cap(analysis.detected_clusters.temporal[0])} Inversion`;
-    candBProp = `Reverses the chronological encounter: exposes the final altered state first, disclosing the machinery of change only upon retrospective traversal.`;
-  } else if (secondaryInst === 'SEDGWICK_REPARATIVE_TEXTURE') {
+  if (secondaryInst === 'SEDGWICK_REPARATIVE_TEXTURE' || analysis.detected_clusters.reparative.length > 0) {
     candBTitle = `The Paratactic Shelter`;
     candBProp = `Assembles discarded textures beside the sovereign baseline, prioritizing affective survival over procedural prosecution.`;
-  } else if (secondaryInst === 'CARO_INSTITUTIONAL_RECONSTRUCTION') {
+  } else if (secondaryInst === 'CARO_INSTITUTIONAL_RECONSTRUCTION' || analysis.detected_clusters.institutional.length > 0) {
     candBTitle = `The Applicant's Corridor`;
     candBProp = `Reframes the work through the sensory exhaustion of the delayed subject rather than the sovereign designer's blueprint.`;
+  } else if (secondaryInst === 'BUTLER_PERFORMATIVE_ITERATION' || analysis.detected_clusters.performative.length > 0) {
+    candBTitle = `The Citational Slippage`;
+    candBProp = `Discloses how successive repetitions introduce subversive drift into the authoritative script.`;
+  } else if (secondaryInst === 'DIALECTICAL_TENSION' || analysis.detected_clusters.dialectical.length > 0) {
+    candBTitle = `The Antithetical Voice`;
+    candBProp = `Elevates the opposing choral counter-voice, refusing premature unison and exposing structural contradiction.`;
   }
 
   const candidateB = {
@@ -330,25 +389,33 @@ export function deriveCommissionCandidates(commission) {
 
 /**
  * Infers a context-sensitive default instrument from the semantic seed when omitted.
+ * Uses deterministic token scoring across THEMATIC_CLUSTERS.
  * @param {string} seed
  * @returns {Array<string>}
  */
 export function inferContextualInstruments(seed = '') {
   const analysis = analyzeSeedSemantics(seed);
-  if (analysis.detected_clusters.institutional.length > 0) {
-    return ['CARO_INSTITUTIONAL_RECONSTRUCTION'];
+
+  const scores = {
+    CARO_INSTITUTIONAL_RECONSTRUCTION: analysis.detected_clusters.institutional.length,
+    BUTLER_PERFORMATIVE_ITERATION: analysis.detected_clusters.performative.length,
+    SEDGWICK_REPARATIVE_TEXTURE: analysis.detected_clusters.reparative.length,
+    DIALECTICAL_TENSION: analysis.detected_clusters.dialectical.length,
+    PHASONIC_COUNTERPOINT: analysis.detected_clusters.phasonic.length
+  };
+
+  // Find candidate with highest score (deterministic tie-break follows order above)
+  let bestInstrument = null;
+  let maxScore = 0;
+  for (const [inst, score] of Object.entries(scores)) {
+    if (score > maxScore) {
+      maxScore = score;
+      bestInstrument = inst;
+    }
   }
-  if (analysis.detected_clusters.textual.some(w => ['syntax', 'grammar', 'letters', 'words', 'marks'].includes(w)) &&
-      analysis.detected_clusters.relational.some(w => ['slip', 'reiterate', 'change', 'subvert'].includes(w))) {
-    return ['BUTLER_PERFORMATIVE_ITERATION'];
-  }
-  if (analysis.detected_clusters.relational.some(w => ['dissolve', 'beside', 'affective', 'care', 'texture'].includes(w))) {
-    return ['SEDGWICK_REPARATIVE_TEXTURE'];
-  }
-  if (analysis.detected_clusters.relational.some(w => ['differ', 'separate', 'tension', 'dispute', 'antithesis', 'oppose'].includes(w))) {
-    return ['DIALECTICAL_TENSION'];
-  }
-  return ['PHASONIC_COUNTERPOINT'];
+
+  // If at least one cluster matched with score > 0, return best; otherwise predictable fallback to PHASONIC
+  return [bestInstrument || 'PHASONIC_COUNTERPOINT'];
 }
 
 /**

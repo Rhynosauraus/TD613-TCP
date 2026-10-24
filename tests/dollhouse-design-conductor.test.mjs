@@ -185,3 +185,45 @@ test('TD613 Dollhouse Design Conductor v0.2 - Full Cycle with v0.2 Governance & 
   assert.equal(receipt.governance.discourse_mode, 'OPEN_FIELD_CREATIVE_SYNTHESIS');
   assert.equal(receipt.governance.release_authority, false);
 });
+
+test('TD613 Dollhouse Design Conductor v0.2 - Contextual Instrument Inference Across All Five Traditions', () => {
+  // 1. Caro: Institutional / Bureaucracy / Redaction
+  const caroSeed = "A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.";
+  const caroComm = normalizeCommission({ seed: caroSeed, medium: 'VISUAL' });
+  assert.deepEqual(caroComm.instruments, ['CARO_INSTITUTIONAL_RECONSTRUCTION'], 'Bureaucracy/petition seed must infer Caro');
+
+  // 2. Butler: Performative / Iteration / Citational Subversion
+  const butlerSeed = "A ritualized legal ceremony where iterative citations introduce subversive slippage into the normative decree.";
+  const butlerComm = normalizeCommission({ seed: butlerSeed, medium: 'MOTION' });
+  assert.deepEqual(butlerComm.instruments, ['BUTLER_PERFORMATIVE_ITERATION'], 'Citational/normative seed must infer Butler');
+
+  // 3. Sedgwick: Reparative / Affective / Paratactic Texture
+  const sedgwickSeed = "A textile archive of discarded communal patches offering affective shelter and textural survival beside the ruined monument.";
+  const sedgwickComm = normalizeCommission({ seed: sedgwickSeed, medium: 'SCHOLARLY' });
+  assert.deepEqual(sedgwickComm.instruments, ['SEDGWICK_REPARATIVE_TEXTURE'], 'Affective/textural patch seed must infer Sedgwick');
+
+  // 4. Dialectical: Polyphonic Tension / Dissonance / Contradiction
+  const dialecticalSeed = "Two irreconcilable choral voices sustaining polyphonic dissonance and structural contradiction without resolving into unison.";
+  const dialecticalComm = normalizeCommission({ seed: dialecticalSeed, medium: 'THEORETICAL' });
+  assert.deepEqual(dialecticalComm.instruments, ['DIALECTICAL_TENSION'], 'Polyphonic dissonance seed must infer Dialectical Tension');
+
+  // 5. Phasonic: Quasiperiodic / Lattice / Detour
+  const phasonicSeed = "A quasiperiodic wave lattice projecting moiré interference fringes across an equilateral triangular grid.";
+  const phasonicComm = normalizeCommission({ seed: phasonicSeed, medium: 'VISUAL' });
+  assert.deepEqual(phasonicComm.instruments, ['PHASONIC_COUNTERPOINT'], 'Quasiperiodic lattice seed must infer Phasonic Counterpoint');
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - Explicit Instrument Override & Ambiguous Fallback', () => {
+  // Explicit author override must supersede heuristic inference
+  const overriddenComm = normalizeCommission({
+    seed: "A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition.",
+    medium: 'VISUAL',
+    instruments: ['SEDGWICK_REPARATIVE_TEXTURE'] // Author explicitly chooses Sedgwick despite institutional words
+  });
+  assert.deepEqual(overriddenComm.instruments, ['SEDGWICK_REPARATIVE_TEXTURE'], 'Explicit author choice must override heuristic inference');
+
+  // Ambiguous seed with zero cluster tokens must predictably fall back to PHASONIC_COUNTERPOINT
+  const ambiguousSeed = "Blue pebbles falling through clear glass.";
+  const ambiguousComm = normalizeCommission({ seed: ambiguousSeed, medium: 'VISUAL' });
+  assert.deepEqual(ambiguousComm.instruments, ['PHASONIC_COUNTERPOINT'], 'Genuinely ambiguous seed must fall back predictably to Phasonic');
+});

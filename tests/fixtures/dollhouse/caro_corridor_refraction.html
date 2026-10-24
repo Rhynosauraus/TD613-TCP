@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Applicant's Margins · Caro Refractive Counterfactual</title>
+  <style>
+    :root {
+      --parchment-bg: #f5f0e8;
+      --paper-card: #fefdfa;
+      --ink-primary: #211e1b;
+      --ink-secondary: #655d54;
+      --border-parchment: #d5caa3;
+      --marginal-pencil: #2c3e50;
+      --marginal-highlight: #e65100;
+      --marginal-bg: rgba(230, 81, 0, 0.05);
+      --redaction-bar: #211e1b;
+      --focus-ring: #0277bd;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--parchment-bg);
+      color: var(--ink-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Georgia", "Times New Roman", serif;
+      line-height: 1.5;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 920px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      background: var(--paper-card);
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .header-eyebrow {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--marginal-highlight);
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--ink-secondary);
+      font-style: italic;
+    }
+
+    /* Telemetry HUD Strip */
+    .hud-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .hud-card {
+      background: var(--paper-card);
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      padding: 10px 12px;
+    }
+
+    .hud-label {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-secondary);
+      margin-bottom: 4px;
+    }
+
+    .hud-value {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink-primary);
+    }
+
+    /* Traversal Stage */
+    .refraction-stage {
+      background: var(--paper-card);
+      border: 2px solid var(--border-parchment);
+      border-radius: 6px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    .waiting-rooms-track {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .waiting-node {
+      border: 1px dashed var(--border-parchment);
+      border-radius: 4px;
+      padding: 12px;
+      background: rgba(255,255,255,0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .waiting-node:hover {
+      border-color: var(--ink-secondary);
+    }
+
+    .waiting-node.active-room {
+      border: 2px solid var(--marginal-highlight);
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .room-time {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 10px;
+      color: var(--marginal-highlight);
+    }
+
+    .room-name {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Document With Wide Marginal Inscriptions */
+    .palimpsest-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 20px;
+      border: 1px solid var(--border-parchment);
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 24px;
+    }
+
+    .margin-column {
+      border-right: 1px dashed var(--border-parchment);
+      padding-right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .margin-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--marginal-highlight);
+      border-bottom: 1px solid var(--border-parchment);
+      padding-bottom: 4px;
+    }
+
+    .marginal-note {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--border-parchment);
+      background: transparent;
+      padding: 8px 10px;
+      border-left: 2px solid transparent;
+      border-radius: 2px;
+      transition: all 0.2s ease;
+    }
+
+    .marginal-note.unlocked {
+      color: var(--marginal-pencil);
+      border-left-color: var(--marginal-highlight);
+      background: var(--marginal-bg);
+    }
+
+    .marginal-meta {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--marginal-highlight);
+      margin-bottom: 2px;
+    }
+
+    /* Official Core Document */
+    .official-core {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .core-header {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ink-secondary);
+      border-bottom: 1px solid var(--border-parchment);
+      padding-bottom: 4px;
+    }
+
+    .core-text {
+      font-size: 16px;
+      line-height: 1.8;
+      margin-top: 6px;
+    }
+
+    .word-cell {
+      display: inline-block;
+      padding: 0 2px;
+      background: var(--redaction-bar);
+      color: transparent;
+      user-select: none;
+      border-radius: 1px;
+      margin: 1px 0;
+    }
+
+    .word-cell.unredacted {
+      background: transparent;
+      color: var(--ink-primary);
+    }
+
+    /* Inverted Consequence Banner */
+    .inversion-banner {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-left: 4px solid var(--marginal-highlight);
+      border-radius: 4px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .inversion-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--marginal-highlight);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .inversion-desc {
+      font-size: 12px;
+      color: var(--ink-primary);
+    }
+
+    /* Controls */
+    .controls-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      background: var(--paper-card);
+      color: var(--ink-primary);
+      border: 1px solid var(--ink-secondary);
+      border-radius: 4px;
+      padding: 10px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      min-width: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      background: #ffffff;
+      border-color: var(--ink-primary);
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    button.btn-primary {
+      background: var(--marginal-pencil);
+      color: #ffffff;
+      border-color: var(--marginal-pencil);
+    }
+
+    button.btn-primary:hover {
+      background: #1a252f;
+    }
+
+    button.falsify-btn {
+      border: 1px dashed var(--marginal-highlight);
+      color: var(--marginal-highlight);
+    }
+
+    button.falsify-btn.falsify-active {
+      background: var(--marginal-highlight);
+      color: #ffffff;
+      border-style: solid;
+    }
+
+    /* Responsive Bounds */
+    @media (max-width: 720px) {
+      .hud-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .palimpsest-layout {
+        grid-template-columns: 1fr;
+      }
+      .margin-column {
+        border-right: none;
+        border-bottom: 1px dashed var(--border-parchment);
+        padding-right: 0;
+        padding-bottom: 16px;
+      }
+      .waiting-rooms-track {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-eyebrow">TD613 · Dollhouse Native Design Skill · Refractive Counterfactual</div>
+    <h1>The Applicant's Margins</h1>
+    <div class="subtitle">A counterfactual mutation of administrative friction: inverting the vantage point from sovereign redaction to clandestine communal survival in the margins.</div>
+  </header>
+
+  <!-- Telemetry HUD -->
+  <div class="hud-grid" role="region" aria-label="Refractive Parameters">
+    <div class="hud-card">
+      <div class="hud-label">Waiting Station</div>
+      <div class="hud-value" id="hudRoom">Outer Bench</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Accumulated Wait (τ)</div>
+      <div class="hud-value" id="hudWait">1.0 hrs</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Marginal Inscriptions</div>
+      <div class="hud-value" id="hudGlosses">1 of 4 Decoded</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Archival Counter-Memory</div>
+      <div class="hud-value" id="hudMemory">ACTIVE</div>
+    </div>
+  </div>
+
+  <!-- Traversal Stage -->
+  <main class="refraction-stage">
+    <div class="waiting-rooms-track" role="tablist" aria-label="Waiting Room Stations">
+      <div class="waiting-node active-room" id="room1" role="tab" tabindex="0" aria-selected="true" onclick="setRoom(1)">
+        <div class="room-header">
+          <span>STATION I</span>
+          <span class="room-time">τ = 1h</span>
+        </div>
+        <div class="room-name">The Outer Bench</div>
+      </div>
+
+      <div class="waiting-node" id="room2" role="tab" tabindex="0" aria-selected="false" onclick="setRoom(2)">
+        <div class="room-header">
+          <span>STATION II</span>
+          <span class="room-time">τ = 4h</span>
+        </div>
+        <div class="room-name">The Annex Alcove</div>
+      </div>
+
+      <div class="waiting-node" id="room3" role="tab" tabindex="0" aria-selected="false" onclick="setRoom(3)">
+        <div class="room-header">
+          <span>STATION III</span>
+          <span class="room-time">τ = 12h</span>
+        </div>
+        <div class="room-name">The Censure Antechamber</div>
+      </div>
+
+      <div class="waiting-node" id="room4" role="tab" tabindex="0" aria-selected="false" onclick="setRoom(4)">
+        <div class="room-header">
+          <span>STATION IV</span>
+          <span class="room-time">τ = 48h</span>
+        </div>
+        <div class="room-name">The Oblivion Threshold</div>
+      </div>
+    </div>
+
+    <!-- The Dual Palimpsest Document -->
+    <div class="palimpsest-layout">
+      <!-- Left Column: Clandestine Margins -->
+      <aside class="margin-column" aria-label="Decoded Marginal Inscriptions">
+        <div class="margin-title">Marginal Testimonies (Prior Applicants)</div>
+
+        <div class="marginal-note unlocked" id="note1">
+          <div class="marginal-meta">Applicant #412 · Graphite</div>
+          "Do not surrender the carbon copy; clerk in Room 2 destroys unverified annexes without logging them."
+        </div>
+
+        <div class="marginal-note" id="note2">
+          <div class="marginal-meta">Applicant #588 · Lemon Juice</div>
+          "Room 3 requires stamp 02 in purple ink; cite Section 14-B before they strike the petition heading."
+        </div>
+
+        <div class="marginal-note" id="note3">
+          <div class="marginal-meta">Applicant #703 · Steel Nib</div>
+          "They redact the word 'rights' first. Preserve the root noun in your verbal testimony."
+        </div>
+
+        <div class="marginal-note" id="note4">
+          <div class="marginal-meta">Applicant #920 · Charcoal</div>
+          "The door opens only when our words are erased, but our living memory remains inscribed here."
+        </div>
+      </aside>
+
+      <!-- Right Column: The Sovereign Official Redaction Surface -->
+      <section class="official-core" aria-label="Official Sovereign Redaction Core">
+        <div class="core-header">Sovereign Archival Form · Dossier TD613-EXPURGATED</div>
+        
+        <div class="core-text" id="coreRedactionText">
+          <!-- Official text showing sovereign erasure -->
+          <span class="word-cell" id="w1">We</span>
+          <span class="word-cell" id="w2">the</span>
+          <span class="word-cell" id="w3">undersigned</span>
+          <span class="word-cell" id="w4">citizens</span>
+          <span class="word-cell unredacted" id="w5">humbly</span>
+          <span class="word-cell unredacted" id="w6">request</span>
+          <span class="word-cell unredacted" id="w7">statutory</span>
+          <span class="word-cell unredacted" id="w8">redress</span>
+          <span class="word-cell unredacted" id="w9">of</span>
+          <span class="word-cell unredacted" id="w10">grievance</span>
+          <span class="word-cell unredacted" id="w11">and</span>
+          <span class="word-cell unredacted" id="w12">restoration</span>
+          <span class="word-cell unredacted" id="w13">of</span>
+          <span class="word-cell unredacted" id="w14">inalienable</span>
+          <span class="word-cell unredacted" id="w15">communal</span>
+          <span class="word-cell unredacted" id="w16">rights.</span>
+        </div>
+      </section>
+    </div>
+
+    <!-- Inverted Consequence Banner -->
+    <div class="inversion-banner" id="inversionBanner" role="status">
+      <div>
+        <div class="inversion-title" id="inversionTitle">COUNTERFACTUAL INVERSION ACTIVE</div>
+        <div class="inversion-desc" id="inversionDesc">Administrative delay is transformed into communal legibility: 1 of 4 clandestine survival notes decoded from historical margins.</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Controls Panel -->
+  <div class="controls-panel" role="toolbar" aria-label="Waiting Room Controls">
+    <button class="btn-primary" id="btnPrev" onclick="stepRoom(-1)">← Prior Station</button>
+    <button class="btn-primary" id="btnNext" onclick="stepRoom(1)">Next Station →</button>
+    <button class="falsify-btn" id="btnFalsify" onclick="toggleFalsification()">Suppress Margins (Impose Sovereign Silence)</button>
+    <button id="btnReset" onclick="resetRefraction()">Reset Vantage</button>
+  </div>
+</div>
+
+<script>
+  let currentStation = 1;
+  let forceSovereignSilence = false;
+
+  const STATIONS = [
+    { num: 1, name: 'Outer Bench', wait: 1.0, glosses: 1 },
+    { num: 2, name: 'Annex Alcove', wait: 4.0, glosses: 2 },
+    { num: 3, name: 'Censure Antechamber', wait: 12.0, glosses: 3 },
+    { num: 4, name: 'Oblivion Threshold', wait: 48.0, glosses: 4 }
+  ];
+
+  function renderState() {
+    const station = STATIONS[currentStation - 1];
+
+    // 1. Update HUD
+    document.getElementById('hudRoom').textContent = station.name;
+    document.getElementById('hudWait').textContent = `${station.wait.toFixed(1)} hrs`;
+    const decodedCount = forceSovereignSilence ? 0 : station.glosses;
+    document.getElementById('hudGlosses').textContent = `${decodedCount} of 4 Decoded`;
+    document.getElementById('hudMemory').textContent = forceSovereignSilence ? 'SILENCED' : 'ACTIVE';
+    document.getElementById('hudMemory').style.color = forceSovereignSilence ? '#b71c1c' : '#e65100';
+
+    // 2. Update Station Nodes
+    for (let i = 1; i <= 4; i++) {
+      const node = document.getElementById(`room${i}`);
+      const isCurrent = (i === currentStation);
+      node.classList.toggle('active-room', isCurrent);
+      node.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
+    }
+
+    // 3. Update Marginal Inscriptions
+    for (let i = 1; i <= 4; i++) {
+      const note = document.getElementById(`note${i}`);
+      const isVisible = (!forceSovereignSilence && i <= currentStation);
+      note.classList.toggle('unlocked', isVisible);
+    }
+
+    // 4. Update Sovereign Official Words (Simulate clerk's ongoing censorship)
+    // Chamber 1 redacts words 1-4, Chamber 2 redacts words 5-8, etc.
+    for (let i = 1; i <= 16; i++) {
+      const wordCell = document.getElementById(`w${i}`);
+      const requiredStation = Math.ceil(i / 4);
+      const isRedacted = (requiredStation <= currentStation);
+      wordCell.classList.toggle('unredacted', !isRedacted);
+    }
+
+    // 5. Update Banner
+    const bannerTitle = document.getElementById('inversionTitle');
+    const bannerDesc = document.getElementById('inversionDesc');
+
+    if (forceSovereignSilence) {
+      bannerTitle.textContent = 'SOVEREIGN SILENCE IMPOSED · MARGINS SUPPRESSED';
+      bannerDesc.textContent = 'All marginal testimonies are suppressed. Only the state-imposed black redaction bars remain visible.';
+    } else {
+      bannerTitle.textContent = 'COUNTERFACTUAL INVERSION ACTIVE';
+      bannerDesc.textContent = `Administrative delay is transformed into communal legibility: ${decodedCount} of 4 clandestine survival notes decoded from historical margins.`;
+    }
+
+    // 6. Navigation Buttons
+    document.getElementById('btnPrev').disabled = (currentStation <= 1);
+    document.getElementById('btnNext').disabled = (currentStation >= 4);
+  }
+
+  function setRoom(n) {
+    if (n >= 1 && n <= 4) {
+      currentStation = n;
+      renderState();
+    }
+  }
+
+  function stepRoom(delta) {
+    setRoom(currentStation + delta);
+  }
+
+  function toggleFalsification() {
+    forceSovereignSilence = !forceSovereignSilence;
+    const btn = document.getElementById('btnFalsify');
+    if (forceSovereignSilence) {
+      btn.classList.add('falsify-active');
+      btn.textContent = '✓ Margins Silenced (Restore Testimonies)';
+    } else {
+      btn.classList.remove('falsify-active');
+      btn.textContent = 'Suppress Margins (Impose Sovereign Silence)';
+    }
+    renderState();
+  }
+
+  function resetRefraction() {
+    forceSovereignSilence = false;
+    currentStation = 1;
+    const btn = document.getElementById('btnFalsify');
+    btn.classList.remove('falsify-active');
+    btn.textContent = 'Suppress Margins (Impose Sovereign Silence)';
+    renderState();
+  }
+
+  // Keyboard controls
+  window.addEventListener('keydown', (e) => {
+    if (e.target && e.target.tagName === 'BUTTON') {
+      if (e.key === ' ' || e.code === 'Space') return;
+    }
+    if (e.key === '1') setRoom(1);
+    else if (e.key === '2') setRoom(2);
+    else if (e.key === '3') setRoom(3);
+    else if (e.key === '4') setRoom(4);
+    else if (e.key === 'ArrowRight') stepRoom(1);
+    else if (e.key === 'ArrowLeft') stepRoom(-1);
+    else if (e.key === 'f' || e.key === 'F') toggleFalsification();
+    else if (e.key === 'r' || e.key === 'R') resetRefraction();
+  });
+
+  // Automated Test API
+  window.testAPI = {
+    setRoom,
+    toggleFalsification,
+    resetRefraction,
+    getState: () => ({
+      currentStation,
+      accumulatedWaitHrs: STATIONS[currentStation - 1].wait,
+      decodedGlossesCount: document.querySelectorAll('.marginal-note.unlocked').length,
+      forceSovereignSilence,
+      isMemoryActive: document.getElementById('hudMemory').textContent === 'ACTIVE',
+      bannerTitle: document.getElementById('inversionTitle').textContent.trim()
+    })
+  };
+
+  // Initial render
+  renderState();
+</script>
+</body>
+</html>

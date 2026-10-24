@@ -457,8 +457,10 @@
     const labelFontSize = Math.max(12, Math.round(12 * scaleRatio));
 
     // 1. True Triangular Lattice Mesh (D3 equilateral 6-fold coordination)
-    const cols = 16, rows = 9;
-    const cellW = W / cols, cellH = H / rows;
+    const cellW = 60.0;
+    const cellH = cellW * (Math.sqrt(3) / 2); // 51.96152422706631 - Exact equilateral altitude
+    const cols = Math.floor(W / cellW); // 16 columns for W = 960
+    const rows = Math.ceil(H / cellH);  // 10 rows for H = 480
 
     ctx.strokeStyle = `rgba(0, 229, 255, ${0.08 + H_val * 0.12})`;
     ctx.lineWidth = 1;
@@ -692,7 +694,68 @@
       activeActBtn: [1, 2, 3, 4].find(n => document.getElementById(`btnAct${n}`).classList.contains('active-btn'))
     }),
     toggleZeroInterferenceOverride,
-    setAct
+    setAct,
+    getLatticeGeometry: () => {
+      const cellW = 60.0;
+      const cellH = cellW * (Math.sqrt(3) / 2);
+      const cols = Math.floor(W / cellW);
+      const rows = Math.ceil(H / cellH);
+      const unperturbedGrid = [];
+      const perturbedGrid = [];
+      const disp = forceZeroInterference ? 0.0 : 24.0 * computeInterferenceField(currentU);
+
+      for (let r = 0; r <= rows; r++) {
+        unperturbedGrid[r] = [];
+        perturbedGrid[r] = [];
+        const rowOffset = (r % 2 === 1) ? cellW * 0.5 : 0;
+        for (let c = 0; c <= cols; c++) {
+          const x0 = c * cellW + rowOffset;
+          const y0 = r * cellH;
+          const phaseK = c + r * cols;
+          const dx = disp * Math.cos(2 * Math.PI * PHI * phaseK * 0.05);
+          const dy = disp * Math.sin(2 * Math.PI * PHI * phaseK * 0.05);
+          unperturbedGrid[r][c] = { x: x0, y: y0 };
+          perturbedGrid[r][c] = { x: x0 + dx, y: y0 + dy };
+        }
+      }
+
+      // Representative interior vertex at r=2, c=2 (even row, offset = 0)
+      const r = 2, c = 2;
+      const p = unperturbedGrid[r][c];
+
+      const pHorizRight = unperturbedGrid[r][c + 1];
+      const pHorizLeft = unperturbedGrid[r][c - 1];
+      const dHorizRight = Math.hypot(pHorizRight.x - p.x, pHorizRight.y - p.y);
+      const dHorizLeft = Math.hypot(pHorizLeft.x - p.x, pHorizLeft.y - p.y);
+
+      const pDownRight = unperturbedGrid[r + 1][c];
+      const pDownLeft = unperturbedGrid[r + 1][c - 1];
+      const dDownRight = Math.hypot(pDownRight.x - p.x, pDownRight.y - p.y);
+      const dDownLeft = Math.hypot(pDownLeft.x - p.x, pDownLeft.y - p.y);
+
+      const pUpRight = unperturbedGrid[r - 1][c];
+      const pUpLeft = unperturbedGrid[r - 1][c - 1];
+      const dUpRight = Math.hypot(pUpRight.x - p.x, pUpRight.y - p.y);
+      const dUpLeft = Math.hypot(pUpLeft.x - p.x, pUpLeft.y - p.y);
+
+      return {
+        cellW,
+        cellH,
+        cols,
+        rows,
+        unperturbedGrid,
+        perturbedGrid,
+        representativeEdges: {
+          dHorizRight,
+          dHorizLeft,
+          dDownRight,
+          dDownLeft,
+          dUpRight,
+          dUpLeft
+        },
+        interiorVertexCoordination: 6
+      };
+    }
   };
 
   // Initial render

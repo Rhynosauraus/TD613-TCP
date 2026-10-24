@@ -29,7 +29,7 @@ Usage: node scripts/run-dollhouse-design.mjs [options]
 Options:
   --seed, -s <seed>          Intellectual seed / core inquiry
   --medium, -m <medium>      Output medium: VISUAL, MOTION, SCHOLARLY, THEORETICAL, PRODUCT, HYBRID (default: SCHOLARLY)
-  --instrument, -i <inst>    Selectable instrument (repeatable, default: PHASONIC_COUNTERPOINT)
+  --instrument, -i <inst>    Selectable instrument (repeatable; if omitted, contextually inferred from seed; defaults to PHASONIC_COUNTERPOINT if ambiguous)
                              Available: ${Object.keys(AVAILABLE_INSTRUMENTS).join(', ')}
   --input <path>             Path to JSON commission file
   --output, -o <path>        Path to write return receipt (.json)

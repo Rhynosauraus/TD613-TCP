@@ -112,12 +112,59 @@ test('Causal Phasonic Demonstration - Causal Ablation & Falsification Probe (DD6
   assert.equal(act4Falsified.activeActBtn, 1, 'Falsified zero state must revert button highlight to Act 1');
 });
 
-test('Causal Phasonic Demonstration - True Triangular Mesh Structure (DD63-C3 Geometric Accuracy)', () => {
+test('Causal Phasonic Demonstration - True Equilateral Lattice Geometry & 6-Fold Coordination (DD-65 Correction A)', () => {
   const html = fs.readFileSync(fixturePath, 'utf8');
-  // Confirm presence of 2D grid allocation and diagonal mesh connections
-  assert.ok(html.includes('const grid = [];'), 'Grid must allocate 2D vertex array');
-  assert.ok(html.includes('grid[r + 1][c]'), 'Lattice must draw vertical/diagonal inter-row connections');
-  assert.ok(html.includes('grid[r + 1][c + 1]') || html.includes('grid[r + 1][c - 1]'), 'Lattice must draw alternating triangular diagonals');
+  const dom = new JSDOM(html, {
+    runScripts: 'dangerously',
+    pretendToBeVisual: true,
+    beforeParse(w) {
+      setupWindowMocks(w, { reducedMotion: false });
+    }
+  });
+
+  const testAPI = dom.window.testAPI;
+  assert.ok(testAPI && testAPI.getLatticeGeometry, 'testAPI.getLatticeGeometry must be exposed');
+
+  const geom = testAPI.getLatticeGeometry();
+
+  // 1. Altitude and Spacing Geometry
+  const expectedCellW = 60.0;
+  const expectedCellH = expectedCellW * (Math.sqrt(3) / 2); // 51.96152422706631
+  assert.equal(geom.cellW, expectedCellW, 'Horizontal cell width must be 60.0');
+  assert.ok(Math.abs(geom.cellH - expectedCellH) < 1e-12, `Vertical row altitude must equal 60 * sqrt(3)/2, got ${geom.cellH}`);
+
+  // 2. Numerical Edge Length Verification: All 6 Incident Edges Must Equal 60.0 (Equilateral, Not Isosceles)
+  const edges = geom.representativeEdges;
+  const tolerance = 1e-10;
+
+  assert.ok(Math.abs(edges.dHorizRight - 60.0) < tolerance, `Horizontal right edge must be 60.0, got ${edges.dHorizRight}`);
+  assert.ok(Math.abs(edges.dHorizLeft - 60.0) < tolerance, `Horizontal left edge must be 60.0, got ${edges.dHorizLeft}`);
+  assert.ok(Math.abs(edges.dDownRight - 60.0) < tolerance, `Diagonal down-right edge must be 60.0, got ${edges.dDownRight}`);
+  assert.ok(Math.abs(edges.dDownLeft - 60.0) < tolerance, `Diagonal down-left edge must be 60.0, got ${edges.dDownLeft}`);
+  assert.ok(Math.abs(edges.dUpRight - 60.0) < tolerance, `Diagonal up-right edge must be 60.0, got ${edges.dUpRight}`);
+  assert.ok(Math.abs(edges.dUpLeft - 60.0) < tolerance, `Diagonal up-left edge must be 60.0, got ${edges.dUpLeft}`);
+
+  // Disprove Isosceles Defect: verify |dHoriz - dDiag| < 1e-10 across all diagonals
+  assert.ok(Math.abs(edges.dHorizRight - edges.dDownRight) < tolerance, 'Horizontal and diagonal edge lengths must be equal');
+  assert.ok(Math.abs(edges.dHorizRight - edges.dDownLeft) < tolerance, 'Horizontal and diagonal edge lengths must be equal');
+  assert.ok(Math.abs(edges.dHorizRight - edges.dUpRight) < tolerance, 'Horizontal and diagonal edge lengths must be equal');
+  assert.ok(Math.abs(edges.dHorizRight - edges.dUpLeft) < tolerance, 'Horizontal and diagonal edge lengths must be equal');
+
+  // Verify that the ratio is 1.000000000000 (not 67.082 / 60 = 1.118)
+  const ratio = edges.dDownRight / edges.dHorizRight;
+  assert.ok(Math.abs(ratio - 1.0) < tolerance, `Ratio of diagonal to horizontal edge must be exactly 1.0, got ${ratio}`);
+
+  // 3. 6-Fold Coordination Verification
+  assert.equal(geom.interiorVertexCoordination, 6, 'Interior vertex must have exactly 6-fold coordination in D3 triangular lattice');
+
+  // 4. Zero Interference Causal State Restores Exact Unperturbed Coordinates
+  testAPI.setAct(4);
+  testAPI.toggleZeroInterferenceOverride(); // Force H = 0
+  const falsifiedGeom = testAPI.getLatticeGeometry();
+  const pUnperturbed = falsifiedGeom.unperturbedGrid[2][2];
+  const pPerturbed = falsifiedGeom.perturbedGrid[2][2];
+  assert.equal(pPerturbed.x, pUnperturbed.x, 'Zero interference must collapse vertex displacement in X');
+  assert.equal(pPerturbed.y, pUnperturbed.y, 'Zero interference must collapse vertex displacement in Y');
 });
 
 test('Causal Phasonic Demonstration - Mobile Legibility & Touch Target Bounds (DD63-C4)', () => {
