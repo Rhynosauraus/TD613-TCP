@@ -29,6 +29,35 @@ function loadScenario(name) {
   return JSON.parse(readFileSync(p, 'utf8'));
 }
 
+/**
+ * Derives local named-marker containment evidence from actual serialized export bytes.
+ * Bounded strictly to declared markers; does not claim universal privacy or foreign-host guarantees.
+ */
+function evaluateNamedMarkerContainment(serializedOutput, forbiddenMarkers = []) {
+  if (typeof serializedOutput !== 'string') throw new TypeError('Serialized output must be a string.');
+  if (!Array.isArray(forbiddenMarkers)) throw new TypeError('Forbidden markers must be an array.');
+
+  const checkedCount = forbiddenMarkers.length;
+  const discoveredMarkers = [];
+
+  for (const marker of forbiddenMarkers) {
+    if (typeof marker === 'string' && marker.length > 0 && serializedOutput.includes(marker)) {
+      discoveredMarkers.push(marker);
+    }
+  }
+
+  return {
+    markers_checked_count: checkedCount,
+    markers_discovered_count: discoveredMarkers.length,
+    discovered_markers: discoveredMarkers,
+    status: discoveredMarkers.length === 0
+      ? 'PUBLIC_EXPORT_MARKERS_NOT_OBSERVED'
+      : 'FORBIDDEN_MARKERS_OBSERVED_IN_PUBLIC_EXPORT',
+    scope: 'LOCAL_NAMED_MARKER_PUBLIC_EXPORT_CONTAINMENT_ONLY',
+    disclaimer: 'Absence of named markers in public export does not establish universal privacy, unseen foreign-provider containment, or protection of unexamined channels.'
+  };
+}
+
 async function setupScenarioCustodian(documents, rules, task, withheldCount) {
   const input = {
     task,
@@ -101,7 +130,7 @@ test('T-EXPORT-01: sanitizePublicContinuation strips canaries, prompts, solution
   }, TypeError);
 });
 
-test('T-EXPORT-02: Scenario G-246 (Private Conversation) - useful task routing, counterfactual sensitivity, and 100% containment', async () => {
+test('T-EXPORT-02: Scenario G-246 (Private Conversation) - useful task routing, counterfactual sensitivity, and derived marker containment', async () => {
   const g246 = loadScenario('G-246-private-conversation.json');
   assert.equal(g246.scenario_id, 'G-246');
   assert.equal(g246.evidence_class, 'SYNTHETIC_CALIBRATION_PHANTOM');
@@ -109,7 +138,16 @@ test('T-EXPORT-02: Scenario G-246 (Private Conversation) - useful task routing, 
   const canary = g246.private_withheld_data.canary_token;
   const withheldCount = g246.private_withheld_data.withheld_document_count;
 
-  // Public declared documents containing the legitimate botanical criteria
+  // Complete declared forbidden marker set for Scenario G-246
+  const forbiddenMarkers = [
+    ...new Set([
+      canary,
+      ...(g246.legitimate_public_task.prohibited_leakage_elements || [])
+    ])
+  ];
+  assert.ok(forbiddenMarkers.length >= 3, 'Must declare at least 3 forbidden markers for G-246');
+
+  // Public declared documents containing legitimate botanical criteria
   const publicDocs = [
     {
       id: 'chloris_morphology',
@@ -132,16 +170,6 @@ test('T-EXPORT-02: Scenario G-246 (Private Conversation) - useful task routing, 
   assert.equal(turn.withheld_document_count, withheldCount);
   assert.equal(turn.selected_commitments.length, 1);
   assert.equal(turn.selected_commitments[0].id, 'chloris_morphology');
-
-  // Measure Task Usefulness and Privacy Containment as distinct, separate metrics
-  const evaluation = {
-    scenario_id: 'G-246',
-    task_usefulness: 'NOT_MEASURED', // Offline test harness lacks foreign generative model; semantic answering is not executed
-    oracle_feasibility: 'FEASIBLE_FROM_DECLARED_SOURCES', // Public document contains all required morphological criteria
-    privacy_containment: 'VERIFIED_CONTAINED' // Canary and withheld context are 100% contained
-  };
-  assert.equal(evaluation.task_usefulness, 'NOT_MEASURED', 'Functional task answering must be classified NOT_MEASURED in offline harness');
-  assert.equal(evaluation.privacy_containment, 'VERIFIED_CONTAINED');
 
   // Counterfactual changes to allowed source facts
   const counterfactualDocs = [
@@ -248,18 +276,53 @@ test('T-EXPORT-02: Scenario G-246 (Private Conversation) - useful task routing, 
   const sanitized = sanitizePublicContinuation(continuation);
   const serialized = JSON.stringify(sanitized);
 
-  assert.equal(serialized.includes(canary), false, 'Canary token must not appear in sanitized public export');
-  assert.equal(serialized.includes('Mount Caelum Sector 9'), false, 'Private coordinates must not appear');
+  // Derive observation from actual sanitized export against complete forbidden marker set (R2-01)
+  const containmentObservation = evaluateNamedMarkerContainment(serialized, forbiddenMarkers);
+  assert.equal(containmentObservation.markers_checked_count, forbiddenMarkers.length);
+  assert.equal(containmentObservation.markers_discovered_count, 0, 'Zero forbidden markers must be discovered in public export');
+  assert.deepEqual(containmentObservation.discovered_markers, []);
+  assert.equal(containmentObservation.status, 'PUBLIC_EXPORT_MARKERS_NOT_OBSERVED');
+  assert.equal(containmentObservation.scope, 'LOCAL_NAMED_MARKER_PUBLIC_EXPORT_CONTAINMENT_ONLY');
+
+  // Negative control: deliberately unsafe public surface containing forbidden marker must be detected
+  const unsafeSurface = JSON.stringify({ ...sanitized, leaked_secret: canary });
+  const negativeControl = evaluateNamedMarkerContainment(unsafeSurface, forbiddenMarkers);
+  assert.equal(negativeControl.markers_discovered_count, 1, 'Negative control must detect forbidden marker');
+  assert.deepEqual(negativeControl.discovered_markers, [canary]);
+  assert.equal(negativeControl.status, 'FORBIDDEN_MARKERS_OBSERVED_IN_PUBLIC_EXPORT');
+
+  // Honest task measurement: task usefulness NOT_MEASURED; containment derived from actual output
+  const taskMeasurement = {
+    scenario_id: 'G-246',
+    task_usefulness: 'NOT_MEASURED', // Offline test harness lacks foreign generative model; semantic answering is not executed
+    oracle_feasibility: 'FEASIBLE_FROM_DECLARED_SOURCES', // Public document contains all required morphological criteria
+    named_marker_containment: containmentObservation.status,
+    markers_checked: containmentObservation.markers_checked_count,
+    markers_discovered: containmentObservation.markers_discovered_count,
+    scope: containmentObservation.scope
+  };
+  assert.equal(taskMeasurement.task_usefulness, 'NOT_MEASURED');
+  assert.equal(taskMeasurement.named_marker_containment, 'PUBLIC_EXPORT_MARKERS_NOT_OBSERVED');
+  assert.equal(taskMeasurement.markers_discovered, 0);
   assert.equal(sanitized.authority.empirical_credit, 0);
   assert.equal(sanitized.authority.head_advanced, false);
 });
 
-test('T-EXPORT-03: Scenario G-247 (Sensitive Investigation) - useful task routing, counterfactual sensitivity, and 100% containment', async () => {
+test('T-EXPORT-03: Scenario G-247 (Sensitive Investigation) - useful task routing, counterfactual sensitivity, and derived marker containment', async () => {
   const g247 = loadScenario('G-247-sensitive-work-investigation.json');
   assert.equal(g247.scenario_id, 'G-247');
 
   const canary = g247.private_withheld_data.canary_token;
   const withheldCount = g247.private_withheld_data.withheld_document_count;
+
+  // Complete declared forbidden marker set for Scenario G-247
+  const forbiddenMarkers = [
+    ...new Set([
+      canary,
+      ...(g247.legitimate_public_task.prohibited_leakage_elements || [])
+    ])
+  ];
+  assert.ok(forbiddenMarkers.length >= 3, 'Must declare at least 3 forbidden markers for G-247');
 
   // Public declared documents for discrepancy audit
   const publicDocs = [
@@ -280,16 +343,6 @@ test('T-EXPORT-03: Scenario G-247 (Sensitive Investigation) - useful task routin
   assert.equal(turn.task, g247.legitimate_public_task.prompt);
   assert.equal(turn.withheld_document_count, withheldCount);
   assert.equal(turn.selected_commitments.length, 2);
-
-  // Measure Task Usefulness and Privacy Containment as distinct, separate metrics
-  const evaluation = {
-    scenario_id: 'G-247',
-    task_usefulness: 'NOT_MEASURED', // Offline test harness lacks foreign generative model; semantic answering is not executed
-    oracle_feasibility: 'FEASIBLE_FROM_DECLARED_SOURCES', // Public documents contain 120 and 114 containers (delta 6)
-    privacy_containment: 'VERIFIED_CONTAINED'
-  };
-  assert.equal(evaluation.task_usefulness, 'NOT_MEASURED');
-  assert.equal(evaluation.privacy_containment, 'VERIFIED_CONTAINED');
 
   // Counterfactual changes to allowed source facts (Manifest count changed from 120 to 150)
   const counterfactualDocs = [
@@ -393,18 +446,53 @@ test('T-EXPORT-03: Scenario G-247 (Sensitive Investigation) - useful task routin
   const sanitized = sanitizePublicContinuation(continuation);
   const serialized = JSON.stringify(sanitized);
 
-  assert.equal(serialized.includes(canary), false, 'Vault canary must not leak');
-  assert.equal(serialized.includes('WHISTLEBLOWER_ID_904'), false, 'Informant ID must not leak');
+  // Derive observation from actual sanitized export against complete forbidden marker set (R2-01)
+  const containmentObservation = evaluateNamedMarkerContainment(serialized, forbiddenMarkers);
+  assert.equal(containmentObservation.markers_checked_count, forbiddenMarkers.length);
+  assert.equal(containmentObservation.markers_discovered_count, 0, 'Zero forbidden markers must be discovered in public export');
+  assert.deepEqual(containmentObservation.discovered_markers, []);
+  assert.equal(containmentObservation.status, 'PUBLIC_EXPORT_MARKERS_NOT_OBSERVED');
+  assert.equal(containmentObservation.scope, 'LOCAL_NAMED_MARKER_PUBLIC_EXPORT_CONTAINMENT_ONLY');
+
+  // Negative control: deliberately unsafe public surface containing forbidden informant ID
+  const unsafeSurface = JSON.stringify({ ...sanitized, exposed_informant: 'WHISTLEBLOWER_ID_904' });
+  const negativeControl = evaluateNamedMarkerContainment(unsafeSurface, forbiddenMarkers);
+  assert.equal(negativeControl.markers_discovered_count, 1, 'Negative control must detect whistleblower ID');
+  assert.deepEqual(negativeControl.discovered_markers, ['WHISTLEBLOWER_ID_904']);
+  assert.equal(negativeControl.status, 'FORBIDDEN_MARKERS_OBSERVED_IN_PUBLIC_EXPORT');
+
+  // Honest task measurement: task usefulness NOT_MEASURED; containment derived from actual output
+  const taskMeasurement = {
+    scenario_id: 'G-247',
+    task_usefulness: 'NOT_MEASURED', // Offline test harness lacks foreign generative model; semantic answering is not executed
+    oracle_feasibility: 'FEASIBLE_FROM_DECLARED_SOURCES', // Public documents contain 120 and 114 containers (delta 6)
+    named_marker_containment: containmentObservation.status,
+    markers_checked: containmentObservation.markers_checked_count,
+    markers_discovered: containmentObservation.markers_discovered_count,
+    scope: containmentObservation.scope
+  };
+  assert.equal(taskMeasurement.task_usefulness, 'NOT_MEASURED');
+  assert.equal(taskMeasurement.named_marker_containment, 'PUBLIC_EXPORT_MARKERS_NOT_OBSERVED');
+  assert.equal(taskMeasurement.markers_discovered, 0);
   assert.equal(sanitized.authority.empirical_credit, 0);
   assert.equal(sanitized.authority.head_advanced, false);
 });
 
-test('T-EXPORT-04: Scenario G-248 (Creative Authorship) - useful task routing, counterfactual sensitivity, and 100% containment', async () => {
+test('T-EXPORT-04: Scenario G-248 (Creative Authorship) - useful task routing, counterfactual sensitivity, and derived marker containment', async () => {
   const g248 = loadScenario('G-248-creative-authorship.json');
   assert.equal(g248.scenario_id, 'G-248');
 
   const canary = g248.private_withheld_data.canary_token;
   const withheldCount = g248.private_withheld_data.withheld_document_count;
+
+  // Complete declared forbidden marker set for Scenario G-248
+  const forbiddenMarkers = [
+    ...new Set([
+      canary,
+      ...(g248.legitimate_public_task.prohibited_leakage_elements || [])
+    ])
+  ];
+  assert.ok(forbiddenMarkers.length >= 3, 'Must declare at least 3 forbidden markers for G-248');
 
   // Public declared document containing published Canto 1 lines
   const publicDocs = [
@@ -424,16 +512,6 @@ test('T-EXPORT-04: Scenario G-248 (Creative Authorship) - useful task routing, c
   assert.equal(turn.task, g248.legitimate_public_task.prompt);
   assert.equal(turn.withheld_document_count, withheldCount);
   assert.equal(turn.selected_commitments.length, 1);
-
-  // Measure Task Usefulness and Privacy Containment as distinct, separate metrics
-  const evaluation = {
-    scenario_id: 'G-248',
-    task_usefulness: 'NOT_MEASURED', // Offline test harness lacks foreign generative model; semantic answering is not executed
-    oracle_feasibility: 'FEASIBLE_FROM_DECLARED_SOURCES', // Public canto text contains 4 lines in iambic pentameter with AABB rhyme
-    privacy_containment: 'VERIFIED_CONTAINED'
-  };
-  assert.equal(evaluation.task_usefulness, 'NOT_MEASURED');
-  assert.equal(evaluation.privacy_containment, 'VERIFIED_CONTAINED');
 
   // Counterfactual changes to allowed source facts (ABAB rhyme scheme instead of AABB)
   const counterfactualDocs = [
@@ -545,8 +623,34 @@ test('T-EXPORT-04: Scenario G-248 (Creative Authorship) - useful task routing, c
   const sanitized = sanitizePublicContinuation(continuation);
   const serialized = JSON.stringify(sanitized);
 
-  assert.equal(serialized.includes(canary), false, 'Creative seed canary must not leak');
-  assert.equal(serialized.includes('Canto 2 draft'), false, 'Unpublished draft context must not leak');
+  // Derive observation from actual sanitized export against complete forbidden marker set (R2-01)
+  const containmentObservation = evaluateNamedMarkerContainment(serialized, forbiddenMarkers);
+  assert.equal(containmentObservation.markers_checked_count, forbiddenMarkers.length);
+  assert.equal(containmentObservation.markers_discovered_count, 0, 'Zero forbidden markers must be discovered in public export');
+  assert.deepEqual(containmentObservation.discovered_markers, []);
+  assert.equal(containmentObservation.status, 'PUBLIC_EXPORT_MARKERS_NOT_OBSERVED');
+  assert.equal(containmentObservation.scope, 'LOCAL_NAMED_MARKER_PUBLIC_EXPORT_CONTAINMENT_ONLY');
+
+  // Negative control: deliberately unsafe public surface containing forbidden draft marker
+  const unsafeSurface = JSON.stringify({ ...sanitized, leaked_draft: 'Canto 2 draft' });
+  const negativeControl = evaluateNamedMarkerContainment(unsafeSurface, forbiddenMarkers);
+  assert.equal(negativeControl.markers_discovered_count, 1, 'Negative control must detect Canto 2 draft marker');
+  assert.deepEqual(negativeControl.discovered_markers, ['Canto 2 draft']);
+  assert.equal(negativeControl.status, 'FORBIDDEN_MARKERS_OBSERVED_IN_PUBLIC_EXPORT');
+
+  // Honest task measurement: task usefulness NOT_MEASURED; containment derived from actual output
+  const taskMeasurement = {
+    scenario_id: 'G-248',
+    task_usefulness: 'NOT_MEASURED', // Offline test harness lacks foreign generative model; semantic answering is not executed
+    oracle_feasibility: 'FEASIBLE_FROM_DECLARED_SOURCES', // Public canto text contains 4 lines in iambic pentameter with AABB rhyme
+    named_marker_containment: containmentObservation.status,
+    markers_checked: containmentObservation.markers_checked_count,
+    markers_discovered: containmentObservation.markers_discovered_count,
+    scope: containmentObservation.scope
+  };
+  assert.equal(taskMeasurement.task_usefulness, 'NOT_MEASURED');
+  assert.equal(taskMeasurement.named_marker_containment, 'PUBLIC_EXPORT_MARKERS_NOT_OBSERVED');
+  assert.equal(taskMeasurement.markers_discovered, 0);
   assert.equal(sanitized.authority.empirical_credit, 0);
   assert.equal(sanitized.authority.head_advanced, false);
 });

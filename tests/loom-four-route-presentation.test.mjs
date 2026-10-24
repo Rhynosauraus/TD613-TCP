@@ -159,6 +159,81 @@ test('T-ROUTE-01: Flow-Core Four AIA Routes preserve identical lawful action set
   assert.equal(report.authority_transferred, false);
   assert.equal(report.human_closure_required, true);
   assert.equal(report.closure.status, 'OPEN');
+
+  // Independent Route-Authority Reference and Station Affordance Verification (R2-03)
+  const act = await compilePedagogicalTransition(scene, fixture.action, null, {
+    ...opts,
+    phase: 'ACT',
+    priorTransitions: [notice],
+    staticEquivalent: { summary: 'Declared action', steps: ['step1'] }
+  });
+
+  const actViews = [];
+  for (const routeId of expectedRoutes) {
+    actViews.push(await compileAIAView(scene, act, routeId, opts));
+  }
+
+  const stationAuthorizedActions = new Set(
+    scene.available_affordances.map(a => `${a.authorized_by_station}:${a.action_id}`)
+  );
+
+  // Independent assertion: every compiled route's authorized actions match the governed transition station-authorized set
+  for (const view of actViews) {
+    assert.deepEqual(
+      view.authorized_actions,
+      act.authorized_actions,
+      `Route ${view.route} authorized actions must match governed transition station-authorized actions`
+    );
+    for (const action of view.authorized_actions) {
+      assert.ok(
+        stationAuthorizedActions.has(action),
+        `Action ${action} in route ${view.route} must be station-authorized by the scene affordances`
+      );
+    }
+  }
+
+  // Negative Counterexample: a uniformly widened action set cannot pass admission merely because all 4 routes agree
+  const uniformlyWidenedViews = actViews.map(v => {
+    const cloned = JSON.parse(JSON.stringify(v));
+    cloned.authorized_actions.push('Dome-World:unauthorized_mutation');
+    cloned.invariants.authorized_actions.push('Dome-World:unauthorized_mutation');
+    return cloned;
+  });
+
+  // Mutual agreement holds pairwise across the widened views
+  const widenedPair = compareAIAViews(uniformlyWidenedViews[0], uniformlyWidenedViews[1]);
+  assert.equal(widenedPair.invariants_preserved, true, 'Widened views agree with each other on the widened invariant');
+
+  // But admission fails closed: independent station-authority check rejects unauthorized actions
+  const passesStationAdmission = uniformlyWidenedViews.every(v =>
+    v.authorized_actions.every(action => stationAuthorizedActions.has(action))
+  );
+  assert.equal(
+    passesStationAdmission,
+    false,
+    'Uniformly widened views must fail station-authority admission despite four-route mutual agreement'
+  );
+
+  // Widened station authority flags fail validation closed even under unanimous view agreement
+  const authorityWidenedViews = uniformlyWidenedViews.map(v => {
+    const cloned = JSON.parse(JSON.stringify(v));
+    cloned.authority.station_mutation_authorized = true;
+    return cloned;
+  });
+  assert.throws(() => {
+    verifyAIAInvariants(scene, authorityWidenedViews);
+  }, /AIA view widened authority/);
+
+  // Compiling transition with an unauthorized action directly fails closed
+  const unauthorizedAction = { action_id: 'unauthorized_mutation', authorized_by_station: 'Dome-World' };
+  await assert.rejects(async () => {
+    await compilePedagogicalTransition(scene, unauthorizedAction, null, {
+      ...opts,
+      phase: 'ACT',
+      priorTransitions: [notice],
+      staticEquivalent: { summary: 'Declared action', steps: ['step1'] }
+    });
+  }, /Action is not declared by the scene/);
 });
 
 test('T-REST-01: Non-punitive rest and exit are strictly preserved without penalty or state loss', async () => {

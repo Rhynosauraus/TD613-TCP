@@ -286,7 +286,72 @@ test('T-REENTRY-07: verifyPortableLoomSeedIntegrity recomputes integrity without
   assert.equal(typeof verified.stage, 'undefined');
 });
 
-test('T-CUSTODY-01: custodian.stage with invalid withheld count or illegal input fails closed', async () => {
+test('T-CUSTODY-01: custodian.check and admit reject returned turns with substituted session root or anchor reference fail-closed', async () => {
+  const r = await createActiveCustodianRoute();
+
+  // Probe A: Substituted session_root_ref
+  const badSessionRootReturn = {
+    ...r.value,
+    session_root_ref: '0'.repeat(64) // Incorrect session root reference
+  };
+
+  const checkSessionRoot = await r.custody.check({
+    returns: [{ raw: JSON.stringify(badSessionRootReturn), policy_review: 'ROOT_RULES_RETAINED' }],
+    challenge: null
+  });
+
+  assert.equal(checkSessionRoot.status, 'HELD');
+  assert.ok(
+    checkSessionRoot.reasons.includes('SUBSTITUTED_SESSION_ROOT_REF:1'),
+    'Must record SUBSTITUTED_SESSION_ROOT_REF reason'
+  );
+
+  // Attempting admission of held candidate fails closed
+  const decision1 = {
+    expected_head_ref: checkSessionRoot.expected_head_ref,
+    reviewed_candidate_ref: checkSessionRoot.ref,
+    gesture: 'ADMIT_RETURNED_WORK',
+    accept_unresolved: true
+  };
+  const admitSessionRoot = await r.custody.admit(checkSessionRoot, decision1);
+  assert.equal(admitSessionRoot.status, 'HELD');
+  assert.equal(admitSessionRoot.local_ledger_advanced, false);
+
+  // Probe B: Substituted anchor_work_unit_ref
+  const badAnchorReturn = {
+    ...r.value,
+    anchor_work_unit_ref: 'f'.repeat(64) // Incorrect anchor reference
+  };
+
+  const checkAnchor = await r.custody.check({
+    returns: [{ raw: JSON.stringify(badAnchorReturn), policy_review: 'ROOT_RULES_RETAINED' }],
+    challenge: null
+  });
+
+  assert.equal(checkAnchor.status, 'HELD');
+  assert.ok(
+    checkAnchor.reasons.includes('SUBSTITUTED_ANCHOR_WORK_UNIT_REF:1'),
+    'Must record SUBSTITUTED_ANCHOR_WORK_UNIT_REF reason'
+  );
+
+  // Attempting admission of held candidate fails closed
+  const decision2 = {
+    expected_head_ref: checkAnchor.expected_head_ref,
+    reviewed_candidate_ref: checkAnchor.ref,
+    gesture: 'ADMIT_RETURNED_WORK',
+    accept_unresolved: true
+  };
+  const admitAnchor = await r.custody.admit(checkAnchor, decision2);
+  assert.equal(admitAnchor.status, 'HELD');
+  assert.equal(admitAnchor.local_ledger_advanced, false);
+
+  // Verify local ledger has zero advancement
+  const state = r.custody.inspect();
+  assert.equal(state.current_work_unit_ref, null);
+  assert.equal(state.work_unit_count, 0);
+});
+
+test('T-CUSTODY-03: custodian.stage with invalid withheld count or illegal input fails closed', async () => {
   const r = await createActiveCustodianRoute();
   await assert.rejects(async () => {
     await r.custody.stage({
