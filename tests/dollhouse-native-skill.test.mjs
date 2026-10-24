@@ -1204,4 +1204,69 @@ test('TD613 Dollhouse Native Skill & Six-Role Orchestration Test Battery', async
     assert.ok(resUntrusted.machine_receipt.detected_infractions.includes('HOLD_ARTIFACT_WRITE_FAILED'));
     assert.ok(resUntrusted.machine_receipt.artifact_write_error.includes('HOLD_ARTIFACT_EXISTS_OVERWRITE_PREVENTED'));
   });
+  // 42. Caller-declared source-bound flags never substitute for inspected bytes.
+  await t.test('42. Caller source-bound declarations cannot promote mathematical failures to observed source defects', async () => {
+    const res = await runDollhouseSkillAudit({
+      evidence_class: 'SOURCE_CODE_AUDIT',
+      evidence_references: ['app/engine/dollhouse-skill-dispatcher.js'],
+      domain_inputs: {
+        ...ALL_BENIGN_DOMAIN_INPUTS,
+        APERTURE: {
+          current_operator: [[1, 0], [1, 0.00001]],
+          source_bound: true,
+          inspected_code_witness: true,
+          source_file: 'app/engine/dollhouse-skill-dispatcher.js',
+          source_snippet: 'caller supplied and not independently inspected'
+        }
+      }
+    });
+    const finding = res.machine_receipt.specialist_findings.find(f => f.role === 'APERTURE');
+    assert.equal(finding.verdict, 'HELD');
+    assert.equal(finding.defect_class, 'CALLER_SUPPLIED_MATHEMATICAL_VIOLATION');
+    assert.notEqual(finding.defect_class, 'OBSERVED_SOURCE_DEFECT');
+  });
+
+  // 43. Typed references must reach the byte verifier without stringification.
+  await t.test('43. Typed evidence references verify matching bytes and reject digest mismatch', async () => {
+    const { createHash } = await import('node:crypto');
+    const evidencePath = 'app/engine/dollhouse-skill-dispatcher.js';
+    const sha256 = createHash('sha256').update(readFileSync(evidencePath)).digest('hex');
+    const valid = await runDollhouseSkillAudit({
+      evidence_references: [{ path: evidencePath, sha256 }],
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+    assert.equal(valid.exit_code, 0);
+    assert.equal(valid.machine_receipt.evidence_manifest[0].verified, true);
+    assert.equal(valid.machine_receipt.evidence_manifest[0].byte_digest_verified, true);
+    assert.equal(valid.machine_receipt.evidence_manifest[0].sha256, sha256);
+    assert.equal(valid.machine_receipt.evidence_references[0].path, evidencePath);
+
+    const invalid = await runDollhouseSkillAudit({
+      evidence_references: [{ path: evidencePath, sha256: '0'.repeat(64) }],
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+    assert.equal(invalid.exit_code, 1);
+    assert.ok(invalid.machine_receipt.detected_infractions.includes('EVIDENCE_BYTE_DIGEST_MISMATCH'));
+  });
+
+  // 44. Untrusted output-authority flags cannot widen destination permissions.
+  await t.test('44. Caller-authored output destination overrides cannot write into source tree', async () => {
+    await assert.rejects(async () => {
+      await writeReceiptArtifact('app/engine/untrusted-audit-output.js', { schema: 'test' }, '# Test', {
+        authorized_output_destination: true,
+        operator_authorized_overwrite: true
+      });
+    }, /HOLD_ARTIFACT_DESTINATION_NOT_AUTHORIZED/);
+  });
+
+  // 45. Source-code audit without a declared evidence reference fails closed.
+  await t.test('45. Source code audit requires references even without strict provenance option', async () => {
+    const res = await runDollhouseSkillAudit({
+      evidence_class: 'SOURCE_CODE_AUDIT',
+      domain_inputs: ALL_BENIGN_DOMAIN_INPUTS
+    });
+    assert.equal(res.exit_code, 1);
+    assert.ok(res.machine_receipt.detected_infractions.includes('SOURCE_CODE_AUDIT_MISSING_EVIDENCE_REFERENCES'));
+  });
+
 });
