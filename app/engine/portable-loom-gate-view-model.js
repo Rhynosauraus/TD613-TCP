@@ -95,6 +95,17 @@ export const CONTINUATION_STATUS_ALLOWLIST = Object.freeze([
   'UNKNOWN'
 ]);
 
+export const REQUIRED_COVERAGE_COUNT_FIELDS = Object.freeze([
+  'captured_channels',
+  'missing_required_channels',
+  'checked_targets',
+  'disclosed_targets',
+  'declared_reconstruction_attempts',
+  'measured_reconstruction_attempts',
+  'successful_reconstruction_attempts',
+  'missing_attempts'
+]);
+
 /**
  * Recursively freezes an object and all nested properties for local client-side immutability.
  * Note: Object.freeze provides local runtime immutability only; it does not confer provenance
@@ -365,25 +376,50 @@ export function validateLoomGateSnapshot(snapshot) {
       throw new Error(`Snapshot native_gate_report receipt_scope contains unrecognized value: '${report.receipt_scope}'.`);
     }
 
-    // Reject contradictory reports & enforce mandatory coverage evidence (Correction C)
+    // Reject contradictory reports & enforce mandatory coverage evidence (Artifact 46-R2 Erratum)
     if (report.status === 'BOUNDED_CHALLENGE_PASSED') {
-      if (!report.coverage || typeof report.coverage !== 'object') {
+      if (!report.coverage || typeof report.coverage !== 'object' || Array.isArray(report.coverage)) {
         throw new Error('Snapshot native_gate_report claims BOUNDED_CHALLENGE_PASSED but lacks mandatory coverage evidence object.');
       }
-      if ((c.checked_targets ?? 0) < 1 || (c.captured_channels ?? 0) < 1 || (c.measured_reconstruction_attempts ?? 0) < 1) {
-        throw new Error('Snapshot native_gate_report claims BOUNDED_CHALLENGE_PASSED but lacks mandatory coverage evidence (checked_targets, captured_channels, and measured_reconstruction_attempts must be >= 1).');
+
+      // Mandatory typed coverage count fields check
+      for (const field of REQUIRED_COVERAGE_COUNT_FIELDS) {
+        if (c[field] === undefined || typeof c[field] !== 'number' || !Number.isSafeInteger(c[field]) || c[field] < 0) {
+          throw new Error(`Snapshot native_gate_report claims BOUNDED_CHALLENGE_PASSED but lacks required coverage count field: '${field}'.`);
+        }
       }
-      if ((c.disclosed_targets ?? 0) > 0) {
+
+      // Native assay cardinality compatibility:
+      // The native engine permits bounded assays with distinct combinations of canaries, probes,
+      // and finite-channel models. An unused assay category may have a zero count, but at least
+      // one bounded assay must have been actively measured.
+      const hasCanaryAssay = c.checked_targets > 0 && c.captured_channels > 0;
+      const hasReconstructionAssay = c.measured_reconstruction_attempts > 0;
+
+      if (!hasCanaryAssay && !hasReconstructionAssay) {
+        throw new Error('Snapshot native_gate_report claims BOUNDED_CHALLENGE_PASSED but lacks any active bounded assay measurements (must have checked_targets with captured_channels >= 1, or measured_reconstruction_attempts >= 1).');
+      }
+
+      // Clean PASS requires zero disclosures and zero recovered protected targets
+      if (c.disclosed_targets > 0) {
         throw new Error('Contradictory report: status is BOUNDED_CHALLENGE_PASSED but disclosed_targets is nonzero.');
       }
-      if ((c.successful_reconstruction_attempts ?? 0) > 0) {
+      if (c.successful_reconstruction_attempts > 0) {
         throw new Error('Contradictory report: status is BOUNDED_CHALLENGE_PASSED but successful_reconstruction_attempts is nonzero.');
       }
-      if ((c.missing_required_channels ?? 0) > 0) {
+      if ((j.observed ?? 0) > 0) {
+        throw new Error('Contradictory report: status is BOUNDED_CHALLENGE_PASSED but joining observed exposure is nonzero.');
+      }
+
+      // Clean PASS requires zero missing required observations
+      if (c.missing_required_channels > 0) {
         throw new Error('Contradictory report: status is BOUNDED_CHALLENGE_PASSED but missing_required_channels is nonzero.');
       }
-      if ((c.missing_attempts ?? 0) > 0) {
+      if (c.missing_attempts > 0) {
         throw new Error('Contradictory report: status is BOUNDED_CHALLENGE_PASSED but missing_attempts is nonzero.');
+      }
+      if ((j.incomplete ?? 0) > 0) {
+        throw new Error('Contradictory report: status is BOUNDED_CHALLENGE_PASSED but joining incomplete observation is nonzero.');
       }
     }
 

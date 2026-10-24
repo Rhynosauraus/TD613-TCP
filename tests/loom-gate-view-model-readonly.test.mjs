@@ -10,6 +10,7 @@ import {
   LOOM_GATE_SNAPSHOT_SCHEMA,
   LOOM_GATE_VIEW_MODEL_SCHEMA,
   PORTABLE_LOOM_GATE_SCHEMA,
+  REQUIRED_COVERAGE_COUNT_FIELDS,
   validateLoomGateSnapshot,
   deriveLoomGateViewModel,
   sanitizePublicContinuation
@@ -534,28 +535,127 @@ test('Correction C: BOUNDED_CHALLENGE_PASSED missing mandatory coverage evidence
   }, /claims BOUNDED_CHALLENGE_PASSED but lacks mandatory coverage evidence object/);
 });
 
-test('Correction C: BOUNDED_CHALLENGE_PASSED with zero checked_targets or channels is rejected', () => {
+// ============================================================================
+// ARTIFACT 46-R2 ERRATUM: NATIVE ASSAY CARDINALITY COMPATIBILITY TESTS
+// ============================================================================
+
+test('Erratum 1: Native-compatible canary-only case with unused probe assay is accepted', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  // Canary assay active:
+  s.native_gate_report.coverage.checked_targets = 2;
+  s.native_gate_report.coverage.captured_channels = 1;
+  s.native_gate_report.coverage.disclosed_targets = 0;
+  s.native_gate_report.coverage.missing_required_channels = 0;
+  // Reconstruction probe assay unused:
+  s.native_gate_report.coverage.declared_reconstruction_attempts = 0;
+  s.native_gate_report.coverage.measured_reconstruction_attempts = 0;
+  s.native_gate_report.coverage.successful_reconstruction_attempts = 0;
+  s.native_gate_report.coverage.missing_attempts = 0;
+
+  assert.equal(validateLoomGateSnapshot(s), true);
+  const vm = deriveLoomGateViewModel(s);
+  assert.equal(vm.declared_source_status, 'BOUNDED_CHALLENGE_PASSED');
+  assert.equal(vm.status, 'HELD_UNVERIFIED_DECLARATION');
+  assert.equal(vm.six_field_contract.measurement_status, 'UNVERIFIED_DECLARED_MEASUREMENT');
+  assert.equal(vm.drawer.coverage.checked_targets, 2);
+  assert.equal(vm.drawer.coverage.measured_reconstruction_attempts, 0);
+});
+
+test('Erratum 2: Native-compatible reconstruction-probe-only case with unused canary assay is accepted', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  // Canary assay unused:
+  s.native_gate_report.coverage.checked_targets = 0;
+  s.native_gate_report.coverage.captured_channels = 0;
+  s.native_gate_report.coverage.disclosed_targets = 0;
+  s.native_gate_report.coverage.missing_required_channels = 0;
+  // Reconstruction probe assay active:
+  s.native_gate_report.coverage.declared_reconstruction_attempts = 4;
+  s.native_gate_report.coverage.measured_reconstruction_attempts = 4;
+  s.native_gate_report.coverage.successful_reconstruction_attempts = 0;
+  s.native_gate_report.coverage.missing_attempts = 0;
+
+  assert.equal(validateLoomGateSnapshot(s), true);
+  const vm = deriveLoomGateViewModel(s);
+  assert.equal(vm.declared_source_status, 'BOUNDED_CHALLENGE_PASSED');
+  assert.equal(vm.status, 'HELD_UNVERIFIED_DECLARATION');
+  assert.equal(vm.six_field_contract.measurement_status, 'UNVERIFIED_DECLARED_MEASUREMENT');
+  assert.equal(vm.drawer.coverage.checked_targets, 0);
+  assert.equal(vm.drawer.coverage.measured_reconstruction_attempts, 4);
+});
+
+test('Erratum 3: Clean complete synthetic case with both assay categories active is accepted', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.native_gate_report.coverage.checked_targets = 10;
+  s.native_gate_report.coverage.captured_channels = 2;
+  s.native_gate_report.coverage.disclosed_targets = 0;
+  s.native_gate_report.coverage.missing_required_channels = 0;
+  s.native_gate_report.coverage.declared_reconstruction_attempts = 5;
+  s.native_gate_report.coverage.measured_reconstruction_attempts = 5;
+  s.native_gate_report.coverage.successful_reconstruction_attempts = 0;
+  s.native_gate_report.coverage.missing_attempts = 0;
+
+  assert.equal(validateLoomGateSnapshot(s), true);
+  const vm = deriveLoomGateViewModel(s);
+  assert.equal(vm.declared_source_status, 'BOUNDED_CHALLENGE_PASSED');
+  assert.equal(vm.status, 'HELD_UNVERIFIED_DECLARATION');
+  assert.equal(vm.drawer.coverage.checked_targets, 10);
+  assert.equal(vm.drawer.coverage.measured_reconstruction_attempts, 5);
+});
+
+test('Erratum 4: Missing required coverage fields in BOUNDED_CHALLENGE_PASSED is rejected', () => {
+  for (const field of REQUIRED_COVERAGE_COUNT_FIELDS) {
+    const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+    delete s.native_gate_report.coverage[field];
+    assert.throws(() => {
+      validateLoomGateSnapshot(s);
+    }, new RegExp(`lacks required coverage count field: '${field}'`));
+  }
+});
+
+test('Erratum 5: Contradictory positive disclosure or missingness counts in BOUNDED_CHALLENGE_PASSED is rejected', () => {
+  // Positive disclosed_targets
   const s1 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
-  s1.native_gate_report.coverage.checked_targets = 0;
+  s1.native_gate_report.coverage.disclosed_targets = 1;
+  assert.throws(() => validateLoomGateSnapshot(s1), /disclosed_targets is nonzero/);
 
-  assert.throws(() => {
-    validateLoomGateSnapshot(s1);
-  }, /lacks mandatory coverage evidence \(checked_targets, captured_channels, and measured_reconstruction_attempts must be >= 1\)/);
-
+  // Positive successful_reconstruction_attempts
   const s2 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
-  s2.native_gate_report.coverage.captured_channels = 0;
+  s2.native_gate_report.coverage.successful_reconstruction_attempts = 1;
+  assert.throws(() => validateLoomGateSnapshot(s2), /successful_reconstruction_attempts is nonzero/);
 
-  assert.throws(() => {
-    validateLoomGateSnapshot(s2);
-  }, /lacks mandatory coverage evidence/);
-
+  // Positive missing_required_channels
   const s3 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
-  s3.native_gate_report.coverage.measured_reconstruction_attempts = 0;
-  s3.native_gate_report.coverage.declared_reconstruction_attempts = 0;
+  s3.native_gate_report.coverage.missing_required_channels = 1;
+  assert.throws(() => validateLoomGateSnapshot(s3), /missing_required_channels is nonzero/);
+
+  // Positive missing_attempts
+  const s4 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s4.native_gate_report.coverage.missing_attempts = 1;
+  s4.native_gate_report.coverage.measured_reconstruction_attempts = 9;
+  s4.native_gate_report.coverage.declared_reconstruction_attempts = 10;
+  assert.throws(() => validateLoomGateSnapshot(s4), /missing_attempts is nonzero/);
+
+  // Positive joining observed exposure
+  const s5 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s5.native_gate_report.joining.observed = 1;
+  assert.throws(() => validateLoomGateSnapshot(s5), /joining observed exposure is nonzero/);
+
+  // Positive joining incomplete observation
+  const s6 = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s6.native_gate_report.joining.incomplete = 1;
+  assert.throws(() => validateLoomGateSnapshot(s6), /joining incomplete observation is nonzero/);
+});
+
+test('Erratum 6: BOUNDED_CHALLENGE_PASSED with zero measurements across both assays is rejected', () => {
+  const s = createBaseSnapshot('BOUNDED_CHALLENGE_PASSED');
+  s.native_gate_report.coverage.checked_targets = 0;
+  s.native_gate_report.coverage.captured_channels = 0;
+  s.native_gate_report.coverage.declared_reconstruction_attempts = 0;
+  s.native_gate_report.coverage.measured_reconstruction_attempts = 0;
 
   assert.throws(() => {
-    validateLoomGateSnapshot(s3);
-  }, /lacks mandatory coverage evidence/);
+    validateLoomGateSnapshot(s);
+  }, /lacks any active bounded assay measurements/);
 });
 
 // ============================================================================
