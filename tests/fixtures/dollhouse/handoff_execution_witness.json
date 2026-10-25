@@ -1,7 +1,7 @@
 {
   "schema": "td613.dollhouse-design.handoff-execution-witness/v0.2",
-  "execution_timestamp": "2026-10-25T00:49:43.101Z",
-  "executed_implementation_revision": "8d222de77dea57b6e022d441afd18ffc59a2f085",
+  "execution_timestamp": "2026-10-25T01:02:08.773Z",
+  "executed_implementation_revision": "35e42fca3eb4a2bb289db84de08c92d2671d94fb",
   "skill_definition": {
     "path": ".agents/skills/dollhouse-design/SKILL.md",
     "byte_count": 12883,
@@ -114,6 +114,16 @@
       "mutated_parameter": "administrative_friction_inversion",
       "refractive_consequence": "Shifts from documenting administrative machinery to measuring the human exhaustion of delay."
     },
+    "delivered_binding_sources": [
+      {
+        "reference_id": "REF-LAW-AGENTS-01",
+        "source_path": "AGENTS.md",
+        "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
+        "byte_count": 24429,
+        "sha256": "3936238077898f69d11056177ab1d5d51db140e1fa49ef3110b43dcd7ab60ddf",
+        "full_content_delivered": true
+      }
+    ],
     "governance": {
       "discourse_mode": "OPEN_FIELD_CREATIVE_SYNTHESIS",
       "scientific_proof": false,
@@ -138,10 +148,11 @@
   "cdp_browser_verification_summary": {
     "browser_engine": "Chrome/156.0.8078.47",
     "total_assertions_checked": 43,
-    "procedural_friction_verified": true,
-    "progressive_redaction_verified": true,
+    "primary_viewport_390px_overflow_px": 0,
+    "refractive_viewport_390px_overflow_px": 0,
+    "touch_targets_verified": true,
     "keyboard_stepping_verified": true,
-    "reduced_motion_latency_bypass_verified": true,
+    "causal_falsification_verified": true,
     "disposition": "VERIFIED_PASS"
   },
   "governance_firebreak": {

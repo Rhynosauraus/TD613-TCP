@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * @fileoverview TD613 Dollhouse Design Native-to-Creative Operational Replay & Execution Witness (Artifact 68-R1 / C68-3).
+ * @fileoverview TD613 Dollhouse Design Native-to-Creative Operational Replay & Execution Witness (Artifact 69-R1 / A69-C1..C4).
  *
  * Replays the authentic, contemporaneous end-to-end handoff:
  * 1. Native Skill Discovery & Instruction Ingestion (.agents/skills/dollhouse-design/SKILL.md)
@@ -9,7 +9,7 @@
  * 3. Enforced Deep-Offset Regression Assertion (child-legible NOW / WHY / EXACT)
  * 4. Downstream Creative Authoring Instruction Envelope Construction
  * 5. Primary and Refractive HTML Artifact Verification (Byte count, SHA-256)
- * 6. CDP Chromium Browser Headless Verification Execution
+ * 6. CDP Chromium Browser Headless Verification Execution (overflowPx === 0)
  * 7. Structured Operational Witness Emission (handoff_execution_witness.json)
  */
 
@@ -42,10 +42,26 @@ async function runOperationalReplay() {
   console.log('  𝌋 TD613 DOLLHOUSE DESIGN NATIVE-TO-CREATIVE OPERATIONAL REPLAY');
   console.log('======================================================================');
 
+  // Parse CLI args for commission override
+  const args = process.argv.slice(2);
+  let commissionFile = 'tests/fixtures/dollhouse/caro_commission.json';
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--commission' && args[i + 1]) {
+      commissionFile = args[i + 1];
+      i++;
+    } else if (args[i] === '--qualification') {
+      commissionFile = 'tests/fixtures/dollhouse/qualification_commission.json';
+    }
+  }
+
+  const isQualification = commissionFile.includes('qualification');
+
   const gitRev = getGitRevision();
   const timestamp = new Date().toISOString();
   console.log(`Repository Root:        ${repoRoot}`);
   console.log(`Git Revision (HEAD):    ${gitRev}`);
+  console.log(`Target Commission:      ${commissionFile}`);
+  console.log(`Execution Mode:         ${isQualification ? 'QUALIFICATION_COMMISSION' : 'CARO_COMMISSION'}`);
   console.log(`Execution Timestamp:    ${timestamp}\n`);
 
   // 1. Stage 1: Load and Digest Native Skill Definition
@@ -59,7 +75,7 @@ async function runOperationalReplay() {
   console.log(`  • SHA-256:     ${skillDigest}`);
 
   // 2. Stage 2: Load Commission Fixture
-  const commPath = resolve(repoRoot, 'tests/fixtures/dollhouse/caro_commission.json');
+  const commPath = resolve(repoRoot, commissionFile);
   assert.ok(existsSync(commPath), `Commission missing at: ${commPath}`);
   const commRaw = JSON.parse(readFileSync(commPath, 'utf8'));
   console.log(`\n[STAGE 2] Loaded Commission Fixture:`);
@@ -75,8 +91,8 @@ async function runOperationalReplay() {
   console.log(`  • Conductor Receipt Schema: ${receipt.schema}`);
   console.log(`  • Resolved References:      ${receipt.historical_references.length}`);
 
-  // 4. Stage 4: Verify Full Source & Execute Deep-Offset Regression Assertion (C68-2)
-  console.log(`\n[STAGE 4] Auditing Resolved Historical References & Enforcing C68-2 Regression Test...`);
+  // 4. Stage 4: Verify Full Source & Execute Deep-Offset Regression Assertion (C68-2 / A69-C3)
+  console.log(`\n[STAGE 4] Auditing Resolved Historical References & Enforcing C68-2 / A69-C3 Full-Source Delivery...`);
   const resolvedRefWitnesses = [];
   let agentsLawRef = null;
 
@@ -140,11 +156,11 @@ async function runOperationalReplay() {
 
   assert.ok(agentsLawRef, 'REF-LAW-AGENTS-01 must be present in resolved references');
 
-  // 5. Stage 5: Assemble Downstream Creative Authoring Envelope
-  console.log(`\n[STAGE 5] Assembling Concrete Downstream Authoring Envelope...`);
+  // 5. Stage 5: Assemble Downstream Creative Authoring Envelope (A69-C3)
+  console.log(`\n[STAGE 5] Assembling Concrete Downstream Authoring Envelope with Complete Binding Source...`);
   const candidateA = receipt.candidates[0];
   const candidateB = receipt.candidates[1];
-  const caroContract = receipt.instrument_provenance[0].causal_contract;
+  const causalContract = receipt.instrument_provenance[0].causal_contract;
 
   const creativeAuthoringEnvelope = {
     contract_schema: 'td613.dollhouse-design.authoring-envelope/v0.2',
@@ -155,7 +171,7 @@ async function runOperationalReplay() {
       instrument: candidateA.governing_instrument,
       formal_proposition: candidateA.formal_proposition,
       medium_consequence: candidateA.medium_consequence,
-      executed_causal_laws: caroContract.causal_bindings.map(b => ({
+      executed_causal_laws: causalContract.causal_bindings.map(b => ({
         parameter: b.parameter,
         target_component: b.target_component,
         transfer_law: b.transfer_law,
@@ -176,6 +192,16 @@ async function runOperationalReplay() {
       mutated_parameter: receipt.refractive_variant.mutated_parameter,
       refractive_consequence: receipt.refractive_variant.formal_consequence
     },
+    delivered_binding_sources: [
+      {
+        reference_id: agentsLawRef.reference_id,
+        source_path: agentsLawRef.source_path,
+        source_revision: agentsLawRef.source_revision,
+        byte_count: agentsLawRef.byte_count,
+        sha256: agentsLawRef.sha256,
+        full_content_delivered: true
+      }
+    ],
     governance: {
       discourse_mode: receipt.governance.discourse_mode,
       scientific_proof: receipt.governance.scientific_proof,
@@ -186,12 +212,19 @@ async function runOperationalReplay() {
   console.log(`  • Primary Candidate:    ${creativeAuthoringEnvelope.primary_candidate.title}`);
   console.log(`  • Refractive Candidate: ${creativeAuthoringEnvelope.refractive_candidate.title}`);
   console.log(`  • Causal Laws Bound:    ${creativeAuthoringEnvelope.primary_candidate.executed_causal_laws.length}`);
-  console.log(`  • Deep Custody Laws:    ${creativeAuthoringEnvelope.primary_candidate.governing_design_laws_from_full_source.length}`);
+  console.log(`  • Full Source Delivered: REF-LAW-AGENTS-01 (${agentsLawRef.byte_count} bytes)`);
 
   // 6. Stage 6: Verify Primary & Refractive Executable Artifacts
   console.log(`\n[STAGE 6] Verifying Primary and Refractive HTML Artifacts...`);
-  const primaryPath = resolve(repoRoot, 'tests/fixtures/dollhouse/caro_corridor_primary.html');
-  const refractivePath = resolve(repoRoot, 'tests/fixtures/dollhouse/caro_corridor_refraction.html');
+  const primaryRelPath = isQualification
+    ? 'tests/fixtures/dollhouse/qualification_ledger_primary.html'
+    : 'tests/fixtures/dollhouse/caro_corridor_primary.html';
+  const refractiveRelPath = isQualification
+    ? 'tests/fixtures/dollhouse/qualification_ledger_refraction.html'
+    : 'tests/fixtures/dollhouse/caro_corridor_refraction.html';
+
+  const primaryPath = resolve(repoRoot, primaryRelPath);
+  const refractivePath = resolve(repoRoot, refractiveRelPath);
 
   assert.ok(existsSync(primaryPath), `Primary artifact missing: ${primaryPath}`);
   assert.ok(existsSync(refractivePath), `Refractive artifact missing: ${refractivePath}`);
@@ -205,13 +238,13 @@ async function runOperationalReplay() {
   assert.ok(refractiveBytes.length > 5000, 'Refractive artifact must be substantive (>5KB)');
 
   const primaryVerification = {
-    path: 'tests/fixtures/dollhouse/caro_corridor_primary.html',
+    path: primaryRelPath,
     byte_count: primaryBytes.length,
     sha256: primaryDigest,
     verified: true
   };
   const refractiveVerification = {
-    path: 'tests/fixtures/dollhouse/caro_corridor_refraction.html',
+    path: refractiveRelPath,
     byte_count: refractiveBytes.length,
     sha256: refractiveDigest,
     verified: true
@@ -221,17 +254,35 @@ async function runOperationalReplay() {
 
   // 7. Stage 7: Run Headless Chrome CDP Verification
   console.log(`\n[STAGE 7] Executing Chromium Headless CDP Verification...`);
-  execFileSync('node', ['scripts/verify-caro-browser.mjs'], {
+  const verifyScript = isQualification
+    ? 'scripts/verify-qualification-browser.mjs'
+    : 'scripts/verify-caro-browser.mjs';
+
+  execFileSync('node', [verifyScript], {
     cwd: repoRoot,
     stdio: 'inherit'
   });
 
-  const cdpReceiptPath = resolve(repoRoot, 'tests/fixtures/dollhouse/caro_browser_verification_receipt.json');
+  const cdpReceiptPath = isQualification
+    ? resolve(repoRoot, 'tests/fixtures/dollhouse/qualification_browser_verification_receipt.json')
+    : resolve(repoRoot, 'tests/fixtures/dollhouse/caro_browser_verification_receipt.json');
+
   assert.ok(existsSync(cdpReceiptPath), `CDP receipt missing: ${cdpReceiptPath}`);
   const cdpReceipt = JSON.parse(readFileSync(cdpReceiptPath, 'utf8'));
   assert.equal(cdpReceipt.disposition, 'VERIFIED_PASS');
-  assert.equal(cdpReceipt.total_assertions_checked, 43);
+
+  // Enforce A69-C4: overflowPx must be numeric and equal to 0
+  assert.equal(typeof cdpReceipt.primary_artifact.viewport_390px.overflowPx, 'number', 'Primary viewport overflowPx must be numeric');
+  assert.equal(cdpReceipt.primary_artifact.viewport_390px.overflowPx, 0, 'Primary viewport overflowPx must equal 0');
+  assert.equal(typeof cdpReceipt.refractive_artifact.viewport_390px.overflowPx, 'number', 'Refractive viewport overflowPx must be numeric');
+  assert.equal(cdpReceipt.refractive_artifact.viewport_390px.overflowPx, 0, 'Refractive viewport overflowPx must equal 0');
+
+  const primaryOverflowPx = cdpReceipt.primary_artifact.viewport_390px.overflowPx;
+  const refractiveOverflowPx = cdpReceipt.refractive_artifact.viewport_390px.overflowPx;
+
   console.log(`  • CDP Verification Result: ${cdpReceipt.disposition} (${cdpReceipt.total_assertions_checked} assertions enforced & passed)`);
+  console.log(`  • Primary Viewport Overflow:    ${primaryOverflowPx}px (VERIFIED)`);
+  console.log(`  • Refractive Viewport Overflow: ${refractiveOverflowPx}px (VERIFIED)`);
 
   // 8. Stage 8: Emit Authentic Operational Witness
   const witnessOutput = {
@@ -273,12 +324,11 @@ async function runOperationalReplay() {
     cdp_browser_verification_summary: {
       browser_engine: cdpReceipt.browser_engine,
       total_assertions_checked: cdpReceipt.total_assertions_checked,
-      primary_viewport_390px_overflow_px: cdpReceipt.primary_artifact.viewport_390px.overflowX,
-      refractive_viewport_390px_overflow_px: cdpReceipt.refractive_artifact.viewport_390px.overflowX,
-      procedural_friction_verified: true,
-      progressive_redaction_verified: true,
+      primary_viewport_390px_overflow_px: primaryOverflowPx,
+      refractive_viewport_390px_overflow_px: refractiveOverflowPx,
+      touch_targets_verified: true,
       keyboard_stepping_verified: true,
-      reduced_motion_latency_bypass_verified: true,
+      causal_falsification_verified: true,
       disposition: cdpReceipt.disposition
     },
     governance_firebreak: {

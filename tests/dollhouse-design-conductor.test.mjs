@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   DOLLHOUSE_DESIGN_SCHEMA,
   DOLLHOUSE_DESIGN_VERSION,
@@ -490,4 +492,26 @@ test('TD613 Dollhouse Design Conductor v0.2 - Caro Executed Demonstration Laws v
   assert.ok(redactionBinding.transfer_law.includes('redacted_word_count = chamber_index * 4'), 'Transfer law must accurately describe discrete chamber redaction');
   assert.ok(redactionBinding.declarative_alternative.includes('text_opacity'), 'Must distinguish declarative opacity alternative');
   assert.equal(redactionBinding.execution_status, 'EXECUTED_DEMONSTRATION_LAW');
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - Qualification Commission Full Ingestion & Resolution (A69-C2/C3)', async () => {
+  const qualCommPath = resolve(process.cwd(), 'tests/fixtures/dollhouse/qualification_commission.json');
+  const qualComm = JSON.parse(readFileSync(qualCommPath, 'utf8'));
+
+  const receipt = await runDollhouseDesignCycle(qualComm);
+  assert.equal(receipt.commission_id, 'COMM-QUAL-01');
+  assert.equal(receipt.historical_references.length, 2);
+
+  const refLaw = receipt.historical_references.find(r => r.reference_id === 'REF-LAW-AGENTS-01');
+  assert.ok(refLaw);
+  assert.equal(refLaw.resolved, true);
+  assert.equal(refLaw.classification, 'BINDING_CUSTODY_LAW');
+  assert.equal(refLaw.revision_type, 'IMMUTABLE_40HEX_COMMIT');
+  assert.equal(refLaw.content_manifest.inspection_protocol, 'FULL_SOURCE_INGESTION');
+  assert.ok(refLaw.full_content.length > 20000);
+  assert.equal(getReferenceFullContent(refLaw), refLaw.full_content);
+
+  const deepInstruction = 'child-legible NOW / WHY / EXACT where human consequence is involved';
+  assert.equal(refLaw.content_excerpt.includes(deepInstruction), false);
+  assert.equal(refLaw.full_content.includes(deepInstruction), true);
 });
