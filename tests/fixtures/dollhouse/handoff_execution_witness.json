@@ -1,7 +1,7 @@
 {
   "schema": "td613.dollhouse-design.handoff-execution-witness/v0.2",
-  "execution_timestamp": "2026-10-25T01:20:59.056Z",
-  "executed_implementation_revision": "9a66a15043b5bea06ba199358741f7b169a4e554",
+  "execution_timestamp": "2026-10-25T01:40:44.633Z",
+  "executed_implementation_revision": "d7b74e1b36169f480c7e1ff7cf85676becb471e1",
   "skill_definition": {
     "path": ".agents/skills/dollhouse-design/SKILL.md",
     "byte_count": 12883,
@@ -137,6 +137,58 @@
     "skill_digest": "614b99c83ef989f12f5676fcaadf4618e13d712a49fd24e20f559961d445335e",
     "commission_file": "tests/fixtures/dollhouse/qualification_commission.json",
     "conductor_receipt_file": "tests/fixtures/dollhouse/qualification_return_receipt.json",
+    "subagent_provenance_witness": {
+      "schema": "td613.dollhouse-design.subagent-provenance-witness/v0.1",
+      "conversation_id": "3438ee3e-0bf0-4034-9ea5-5076683a8e92",
+      "type_name": "dollhouse-creative-author",
+      "role": "Creative Materialization Author",
+      "parent_conversation_id": "7a8eb538-a2de-4f69-960a-d8a971824655",
+      "start_timestamp": "2026-10-25T01:13:18Z",
+      "completion_timestamp": "2026-10-25T01:19:57Z",
+      "total_steps": 93,
+      "dispatch_evidence": {
+        "step_index": 0,
+        "timestamp": "2026-10-25T01:13:18Z",
+        "sender": "7a8eb538-a2de-4f69-960a-d8a971824655",
+        "commission_ref": "COMM-QUAL-01",
+        "binding_receipt_ref": "qualification_return_receipt.json"
+      },
+      "materialization_tool_calls": [
+        {
+          "step_index": 69,
+          "tool": "write_file",
+          "target_path": "tests/fixtures/dollhouse/qualification_ledger_primary.html",
+          "timestamp": "2026-10-25T01:15:51Z"
+        },
+        {
+          "step_index": 71,
+          "tool": "write_file",
+          "target_path": "tests/fixtures/dollhouse/qualification_ledger_refraction.html",
+          "timestamp": "2026-10-25T01:17:47Z"
+        }
+      ],
+      "verification_tool_calls": [
+        {
+          "step_index": 73,
+          "command": "node scripts/verify-qualification-browser.mjs"
+        },
+        {
+          "step_index": 79,
+          "command": "node --test tests/dollhouse-design-conductor.test.mjs"
+        },
+        {
+          "step_index": 85,
+          "command": "node scripts/verify-qualification-browser.mjs"
+        }
+      ],
+      "completion_message": {
+        "step_index": 89,
+        "recipient": "7a8eb538-a2de-4f69-960a-d8a971824655",
+        "timestamp": "2026-10-25T01:19:44Z",
+        "excerpt": "### Creative Authoring Execution Report: Qualification Commission COMM-QUAL-01\\n\\nThe two standalone HTML artifacts for Qualification Commission **COMM-QUAL-01** have been materialized and verified against all causal contracts, governing design laws, viewport constraints, and CDP automated test sui"
+      },
+      "provenance_status": "AUTHENTIC_NATIVE_SUBAGENT_EXECUTION_VERIFIED"
+    },
     "creative_agent": {
       "agent_type": "dollhouse-creative-author",
       "role": "Creative Materialization Author",
@@ -159,25 +211,28 @@
   "produced_artifacts_verification": {
     "primary": {
       "path": "tests/fixtures/dollhouse/qualification_ledger_primary.html",
-      "byte_count": 32570,
-      "sha256": "d37317367d4bd527f52f5ec3e56bed32b1701a7b0e37502c4214fb3d7f78f25d",
+      "byte_count": 35875,
+      "sha256": "c841c067c45db1567706090b247bd86812a449ee051a45a57f01ad44ca5d5ccb",
       "verified": true
     },
     "refractive": {
       "path": "tests/fixtures/dollhouse/qualification_ledger_refraction.html",
-      "byte_count": 28203,
-      "sha256": "2707a2e771f211d538843ca12dd726dc2a79fda9a8be929b0a048181b5740c6b",
+      "byte_count": 31786,
+      "sha256": "1c2af308c524479292bb8d948efb74b29da2d053be72152b2549c521b029e3bd",
       "verified": true
     }
   },
   "cdp_browser_verification_summary": {
     "browser_engine": "Chrome/156.0.8078.47",
-    "total_assertions_checked": 32,
+    "total_assertions_checked": 72,
     "primary_viewport_390px_overflow_px": 0,
     "refractive_viewport_390px_overflow_px": 0,
     "touch_targets_verified": true,
     "keyboard_stepping_verified": true,
     "causal_falsification_verified": true,
+    "behavioral_rest_verified": true,
+    "route_history_survival_verified": true,
+    "human_closure_demonstration_verified": true,
     "disposition": "VERIFIED_PASS"
   },
   "governance_firebreak": {

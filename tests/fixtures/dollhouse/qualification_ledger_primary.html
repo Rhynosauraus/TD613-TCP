@@ -782,8 +782,11 @@
   let isClearing = false;
   let lastClearanceDurationMs = 0;
   let clearanceTimer = null;
-  let routeHistory = [1];
+  let routeHistory = [{ step: 1, name: 'Ingress', timestamp: new Date().toISOString() }];
   let restCount = 0;
+  let isResting = false;
+  let isClosed = false;
+  let closureReceipt = null;
 
   const STEPS = [
     { num: 1, name: 'Ingress', mu: 0.2, beta: 0.25, badge: 'INGRESS' },
@@ -866,16 +869,36 @@
     }
 
     // 7. Update Route History Display
-    document.getElementById('routeHistoryLog').textContent = routeHistory.map(stepNum => `Step ${stepNum} (${STEPS[stepNum-1].name})`).join(' → ');
+    document.getElementById('routeHistoryLog').textContent = routeHistory.map(entry => {
+      if (typeof entry === 'object') {
+        return entry.isRest ? `[Rest ${entry.restNum}]` : `Step ${entry.step} (${entry.name})`;
+      }
+      return `Step ${entry}`;
+    }).join(' → ');
 
     // 8. Navigation Button States
-    document.getElementById('btnPrev').disabled = (currentStep <= 1 || isClearing);
-    document.getElementById('btnNext').disabled = (currentStep >= 4 || isClearing);
-    document.getElementById('btnClosure').disabled = !isSealReady;
+    const navLocked = isClearing || isResting || isClosed;
+    document.getElementById('btnPrev').disabled = (currentStep <= 1 || navLocked);
+    document.getElementById('btnNext').disabled = (currentStep >= 4 || navLocked);
+    document.getElementById('btnClosure').disabled = (!isSealReady || isResting || isClosed);
+
+    if (isClosed) {
+      document.getElementById('btnClosure').textContent = '✓ Folio Sealed (Human Closure Affirmed)';
+      document.getElementById('btnClosure').style.background = '#2e7d32';
+      document.getElementById('btnClosure').style.borderColor = '#2e7d32';
+
+      sealBanner.classList.add('ready');
+      sealTitle.textContent = 'FOLIO COMMITTED UNDER HUMAN CLOSURE (DEMONSTRATION SEAL)';
+      sealDetail.textContent = 'Direct operator closure gesture received. Folio 47 sealed in local demonstration state. External immutable persistence remains governed by platform custody service under issue #405.';
+      sealBadge.textContent = 'SEALED';
+      sealBadge.style.borderColor = '#2e7d32';
+      sealBadge.style.color = '#2e7d32';
+      sealBadge.style.background = '#e8f5e9';
+    }
   }
 
   function setStep(n) {
-    if (n < 1 || n > 4 || n === currentStep) return;
+    if (n < 1 || n > 4 || n === currentStep || isResting || isClosed) return;
     if (clearanceTimer) {
       clearTimeout(clearanceTimer);
       clearanceTimer = null;
@@ -897,7 +920,7 @@
 
       clearanceTimer = setTimeout(() => {
         currentStep = n;
-        routeHistory.push(n);
+        routeHistory.push({ step: n, name: STEPS[n-1].name, timestamp: new Date().toISOString() });
         isClearing = false;
         clearanceTimer = null;
         notice.classList.remove('active');
@@ -906,7 +929,7 @@
     } else {
       isClearing = false;
       currentStep = n;
-      routeHistory.push(n);
+      routeHistory.push({ step: n, name: STEPS[n-1].name, timestamp: new Date().toISOString() });
       const notice = document.getElementById('clearanceNotice');
       if (notice) notice.classList.remove('active');
       renderState();
@@ -918,9 +941,9 @@
       clearTimeout(clearanceTimer);
       clearanceTimer = null;
     }
-    if (n >= 1 && n <= 4) {
+    if (n >= 1 && n <= 4 && !isResting && !isClosed) {
       currentStep = n;
-      routeHistory.push(n);
+      routeHistory.push({ step: n, name: STEPS[n-1].name, timestamp: new Date().toISOString() });
       isClearing = false;
       const notice = document.getElementById('clearanceNotice');
       if (notice) notice.classList.remove('active');
@@ -929,10 +952,12 @@
   }
 
   function stepStep(delta) {
+    if (isResting || isClosed) return;
     setStep(currentStep + delta);
   }
 
   function toggleFalsification() {
+    if (isClosed) return;
     if (clearanceTimer) {
       clearTimeout(clearanceTimer);
       clearanceTimer = null;
@@ -957,12 +982,27 @@
     }
     forceZeroBalance = false;
     currentStep = 1;
-    routeHistory = [1];
+    routeHistory = [{ step: 1, name: 'Ingress', timestamp: new Date().toISOString() }];
     isClearing = false;
+    isResting = false;
+    isClosed = false;
+    closureReceipt = null;
     const notice = document.getElementById('clearanceNotice');
     if (notice) notice.classList.remove('active');
     const restCard = document.getElementById('restNoticeCard');
     if (restCard) restCard.classList.remove('visible');
+    const btnRest = document.getElementById('btnRest');
+    if (btnRest) {
+      btnRest.textContent = 'Rest / Pause (No Penalty)';
+      btnRest.classList.remove('btn-primary');
+    }
+    const btnClosure = document.getElementById('btnClosure');
+    if (btnClosure) {
+      btnClosure.textContent = 'Human Closure: Strike Seal';
+      btnClosure.classList.add('btn-closure');
+      btnClosure.style.background = '';
+      btnClosure.style.borderColor = '';
+    }
     const btn = document.getElementById('btnFalsify');
     btn.classList.remove('falsify-active');
     btn.textContent = 'Invert Balance (Force β = 0.0, Lock Seal)';
@@ -970,15 +1010,39 @@
   }
 
   function triggerRest() {
-    restCount++;
+    if (isClosed) return;
+    isResting = !isResting;
     const restCard = document.getElementById('restNoticeCard');
-    restCard.textContent = `Rest Period ${restCount} Activated: Scribe paused. Zero penalty incurred. Route history (${routeHistory.length} events) preserved.`;
-    restCard.classList.add('visible');
+    const btnRest = document.getElementById('btnRest');
+
+    if (isResting) {
+      restCount++;
+      routeHistory.push({ isRest: true, restNum: restCount, step: currentStep, timestamp: new Date().toISOString() });
+      restCard.innerHTML = `<strong>Route Paused (Rest Affordance Active):</strong> Traversal suspended without penalty or score deduction. Route memory intact with ${routeHistory.length} ledger events recorded. Inscription controls locked until route resumption.`;
+      restCard.classList.add('visible');
+      btnRest.textContent = 'Resume Route (Rest Complete)';
+      btnRest.classList.add('btn-primary');
+    } else {
+      restCard.classList.remove('visible');
+      btnRest.textContent = 'Rest / Pause (No Penalty)';
+      btnRest.classList.remove('btn-primary');
+    }
+    renderState();
   }
 
   function triggerHumanClosure() {
-    if (currentStep === 4 && !forceZeroBalance) {
-      alert('Human Closure Affirmed: Sovereign seal struck by direct human operator gesture. Folio 47 committed to immutable archive.');
+    if (currentStep === 4 && !forceZeroBalance && !isClosed && !isResting) {
+      isClosed = true;
+      closureReceipt = {
+        closureTimestamp: new Date().toISOString(),
+        folio: 'Folio 47',
+        terminalStep: 4,
+        balanceBeta: 1.0,
+        sealStatus: 'AFFIXED_BY_OPERATOR_GESTURE',
+        simulatedSealDigest: 'SIMULATED-SEAL-7a8eb538-' + Date.now().toString(16),
+        custodyNotice: 'Demonstration seal recorded in local state. External immutable archival custody remains governed by platform custody service under issue #405.'
+      };
+      renderState();
     }
   }
 
@@ -987,6 +1051,7 @@
     if (e.target && e.target.tagName === 'BUTTON') {
       if (e.key === ' ' || e.code === 'Space') return;
     }
+    if (isResting || isClosed) return;
     if (e.key === '1') setStep(1);
     else if (e.key === '2') setStep(2);
     else if (e.key === '3') setStep(3);
@@ -1005,15 +1070,21 @@
       balanceBeta: forceZeroBalance ? 0.0 : STEPS[currentStep - 1].beta,
       forceZeroBalance,
       isSealReady: (currentStep === 4 && !forceZeroBalance),
-      routeHistoryPreserved: true,
-      restAffordanceAvailable: true,
+      isResting,
+      isClosed,
+      restCount,
+      closureReceipt,
+      routeHistory: [...routeHistory],
+      routeHistoryLength: routeHistory.length,
       lastClearanceDurationMs,
       isClearing
     }),
     setStepInstant,
     setStep,
     toggleFalsification,
-    resetLedger
+    resetLedger,
+    triggerRest,
+    triggerHumanClosure
   };
 
   // Initial render

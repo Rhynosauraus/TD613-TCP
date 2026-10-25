@@ -251,10 +251,58 @@ export async function runQualificationBrowserTest() {
     console.log(`  • Step 1: Step ${s1.currentStep}, Friction μ=${s1.frictionMu}, Balance β=${s1.balanceBeta}, Seal=${s1.isSealReady ? 'READY' : 'LOCKED'}`);
     verifiedAssert(s1.currentStep === 1, 'Initial step must be 1');
     verifiedAssert(s1.isSealReady === false, 'Seal must be locked at Step 1');
-    verifiedAssert(s1.routeHistoryPreserved === true, 'Route history must be preserved');
-    verifiedAssert(s1.restAffordanceAvailable === true, 'Rest and Exit must be available without penalty');
+    verifiedAssert(s1.isResting === false, 'Initial state must not be resting');
+    verifiedAssert(s1.isClosed === false, 'Initial state must not be closed');
+    verifiedAssert(s1.routeHistory.length === 1, 'Initial route history must contain exactly 1 entry');
 
-    // 5. Terminal State Assertions (Step 4: Sealing)
+    // 5. Behavioral Rest & Route History Preservation
+    // Step to Step 2
+    await client.send('Runtime.evaluate', { expression: `window.testAPI.setStepInstant(2)` });
+    await new Promise(r => setTimeout(r, 60));
+    const evalStateStep2 = await client.send('Runtime.evaluate', { expression: `window.testAPI.getState()`, returnByValue: true });
+    const s2 = evalStateStep2.result.value;
+    verifiedAssert(s2.currentStep === 2, 'Must advance to Step 2');
+    verifiedAssert(s2.routeHistory.length === 2, 'Route history must contain 2 entries after Step 2');
+
+    // Trigger Rest Affordance
+    await client.send('Runtime.evaluate', { expression: `window.testAPI.triggerRest()` });
+    await new Promise(r => setTimeout(r, 60));
+    const evalResting = await client.send('Runtime.evaluate', {
+      expression: `({
+        state: window.testAPI.getState(),
+        prevDisabled: document.getElementById('btnPrev').disabled,
+        nextDisabled: document.getElementById('btnNext').disabled,
+        restCardVisible: document.getElementById('restNoticeCard').classList.contains('visible')
+      })`,
+      returnByValue: true
+    });
+    const restingCheck = evalResting.result.value;
+    console.log(`  • Rest Affordance: Resting=${restingCheck.state.isResting}, PrevDisabled=${restingCheck.prevDisabled}, NextDisabled=${restingCheck.nextDisabled}, CardVisible=${restingCheck.restCardVisible}`);
+    verifiedAssert(restingCheck.state.isResting === true, 'isResting must be true when rest is triggered');
+    verifiedAssert(restingCheck.prevDisabled === true && restingCheck.nextDisabled === true, 'Navigation must be locked during Rest');
+    verifiedAssert(restingCheck.restCardVisible === true, 'Rest notice card must be visible');
+    verifiedAssert(restingCheck.state.routeHistory.length === 3, 'Route history must record Rest event');
+
+    // Resume from Rest without penalty
+    await client.send('Runtime.evaluate', { expression: `window.testAPI.triggerRest()` });
+    await new Promise(r => setTimeout(r, 60));
+    const evalResumed = await client.send('Runtime.evaluate', {
+      expression: `({
+        state: window.testAPI.getState(),
+        prevDisabled: document.getElementById('btnPrev').disabled,
+        nextDisabled: document.getElementById('btnNext').disabled,
+        restCardVisible: document.getElementById('restNoticeCard').classList.contains('visible')
+      })`,
+      returnByValue: true
+    });
+    const resumedCheck = evalResumed.result.value;
+    console.log(`  • Resumed from Rest: Resting=${resumedCheck.state.isResting}, PrevDisabled=${resumedCheck.prevDisabled}, NextDisabled=${resumedCheck.nextDisabled}, CardVisible=${resumedCheck.restCardVisible}`);
+    verifiedAssert(resumedCheck.state.isResting === false, 'isResting must be false after resuming');
+    verifiedAssert(resumedCheck.prevDisabled === false && resumedCheck.nextDisabled === false, 'Navigation must re-enable upon resuming');
+    verifiedAssert(resumedCheck.restCardVisible === false, 'Rest notice card must hide upon resuming');
+    verifiedAssert(resumedCheck.state.routeHistory.length === 3, 'Route history must survive Rest action intact');
+
+    // 6. Terminal State & Human Closure Affordance (Step 4: Sealing)
     await client.send('Runtime.evaluate', { expression: `window.testAPI.setStepInstant(4)` });
     await new Promise(r => setTimeout(r, 100));
 
@@ -266,8 +314,34 @@ export async function runQualificationBrowserTest() {
     console.log(`  • Step 4: Step ${s4.currentStep}, Friction μ=${s4.frictionMu}, Balance β=${s4.balanceBeta}, Seal=${s4.isSealReady ? 'READY' : 'LOCKED'}`);
     verifiedAssert(s4.currentStep === 4, 'Terminal step must be 4');
     verifiedAssert(s4.isSealReady === true, 'Seal must be ready at Step 4');
+    verifiedAssert(s4.isClosed === false, 'Folio must not be closed prior to operator gesture');
 
-    // 6. Causal Falsification Probe (Invert Balance β = 0)
+    // Trigger Human Closure
+    await client.send('Runtime.evaluate', { expression: `window.testAPI.triggerHumanClosure()` });
+    await new Promise(r => setTimeout(r, 80));
+    const evalClosed = await client.send('Runtime.evaluate', {
+      expression: `({
+        state: window.testAPI.getState(),
+        closureDisabled: document.getElementById('btnClosure').disabled,
+        sealBadgeText: document.getElementById('sealBadge').textContent
+      })`,
+      returnByValue: true
+    });
+    const closedCheck = evalClosed.result.value;
+    console.log(`  • Human Closure: Closed=${closedCheck.state.isClosed}, ClosureDisabled=${closedCheck.closureDisabled}, Badge=${closedCheck.sealBadgeText}`);
+    verifiedAssert(closedCheck.state.isClosed === true, 'isClosed must be true after human closure gesture');
+    verifiedAssert(closedCheck.state.closureReceipt !== null, 'closureReceipt must be recorded');
+    verifiedAssert(closedCheck.state.closureReceipt.custodyNotice.includes('Demonstration seal'), 'closureReceipt must declare demonstration custody distinction');
+    verifiedAssert(closedCheck.closureDisabled === true, 'Closure button must be disabled after closure is sealed');
+    verifiedAssert(closedCheck.sealBadgeText === 'SEALED', 'Seal badge must reflect SEALED state');
+
+    // 7. Causal Falsification Probe (Invert Balance β = 0)
+    // Reset back to standard
+    await client.send('Runtime.evaluate', { expression: `window.testAPI.resetLedger()` });
+    await new Promise(r => setTimeout(r, 80));
+    await client.send('Runtime.evaluate', { expression: `window.testAPI.setStepInstant(4)` });
+    await new Promise(r => setTimeout(r, 80));
+
     await client.send('Runtime.evaluate', { expression: `window.testAPI.toggleFalsification()` });
     await new Promise(r => setTimeout(r, 80));
 
@@ -285,7 +359,7 @@ export async function runQualificationBrowserTest() {
     await client.send('Runtime.evaluate', { expression: `window.testAPI.resetLedger()` });
     await new Promise(r => setTimeout(r, 80));
 
-    // 7. Keyboard Navigation (CDP Input.dispatchKeyEvent ArrowRight)
+    // 8. Keyboard Navigation (CDP Input.dispatchKeyEvent ArrowRight)
     await pressKey(client, 'ArrowRight', 'ArrowRight', 39);
     await new Promise(r => setTimeout(r, 300));
 
@@ -296,7 +370,7 @@ export async function runQualificationBrowserTest() {
     console.log(`    - Advanced to Step ${evalStateKey.result.value.currentStep} via keyboard ArrowRight`);
     verifiedAssert(evalStateKey.result.value.currentStep === 2, 'Keyboard ArrowRight must advance to Step 2');
 
-    // 8. Runtime Exceptions Check
+    // 9. Runtime Exceptions Check
     verifiedAssert(exceptions1.length === 0, `Primary artifact produced ${exceptions1.length} runtime exceptions`);
 
     receipt.primary_artifact = {
@@ -373,7 +447,7 @@ export async function runQualificationBrowserTest() {
       verifiedAssert(b.minHeightPassed, `Refractive button [${b.id}] height ${b.height}px < 44px touch target minimum`);
     }
 
-    // Refractive state check
+    // 4. Initial Refractive State Assertions (Station 1: Outer Desk)
     const evalRefState1 = await client2.send('Runtime.evaluate', {
       expression: `window.testAPI.getState()`,
       returnByValue: true
@@ -381,7 +455,59 @@ export async function runQualificationBrowserTest() {
     const rs1 = evalRefState1.result.value;
     console.log(`  • Station 1: Station ${rs1.currentStation}, Scribe Fatigue=${rs1.scribeFatigue}, Ink Balance=${rs1.marginalGlossCount}`);
     verifiedAssert(rs1.currentStation === 1, 'Initial refractive station must be 1');
+    verifiedAssert(rs1.isClosureReady === false, 'Closure must be locked at Station 1');
+    verifiedAssert(rs1.isResting === false, 'Initial refractive state must not be resting');
+    verifiedAssert(rs1.isClosed === false, 'Initial refractive state must not be closed');
+    verifiedAssert(rs1.routeHistory.length === 1, 'Initial refractive route history must contain exactly 1 entry');
 
+    // 5. Behavioral Rest & Route History Preservation in Refraction
+    // Advance to Station 2
+    await client2.send('Runtime.evaluate', { expression: `window.testAPI.setStation(2)` });
+    await new Promise(r => setTimeout(r, 60));
+    const evalRefState2 = await client2.send('Runtime.evaluate', { expression: `window.testAPI.getState()`, returnByValue: true });
+    const rs2 = evalRefState2.result.value;
+    verifiedAssert(rs2.currentStation === 2, 'Must advance to Station 2');
+    verifiedAssert(rs2.routeHistory.length === 2, 'Route history must contain 2 entries after Station 2');
+
+    // Trigger Rest Affordance
+    await client2.send('Runtime.evaluate', { expression: `window.testAPI.triggerRest()` });
+    await new Promise(r => setTimeout(r, 60));
+    const evalRefResting = await client2.send('Runtime.evaluate', {
+      expression: `({
+        state: window.testAPI.getState(),
+        prevDisabled: document.getElementById('btnPrev').disabled,
+        nextDisabled: document.getElementById('btnNext').disabled,
+        restCardVisible: document.getElementById('restNoticeCard').classList.contains('visible')
+      })`,
+      returnByValue: true
+    });
+    const refRestingCheck = evalRefResting.result.value;
+    console.log(`  • Refractive Rest Affordance: Resting=${refRestingCheck.state.isResting}, PrevDisabled=${refRestingCheck.prevDisabled}, NextDisabled=${refRestingCheck.nextDisabled}, CardVisible=${refRestingCheck.restCardVisible}`);
+    verifiedAssert(refRestingCheck.state.isResting === true, 'Refractive isResting must be true when rest is triggered');
+    verifiedAssert(refRestingCheck.prevDisabled === true && refRestingCheck.nextDisabled === true, 'Refractive navigation must be locked during Rest');
+    verifiedAssert(refRestingCheck.restCardVisible === true, 'Refractive rest notice card must be visible');
+    verifiedAssert(refRestingCheck.state.routeHistory.length === 3, 'Refractive route history must record Rest event');
+
+    // Resume from Rest without penalty
+    await client2.send('Runtime.evaluate', { expression: `window.testAPI.triggerRest()` });
+    await new Promise(r => setTimeout(r, 60));
+    const evalRefResumed = await client2.send('Runtime.evaluate', {
+      expression: `({
+        state: window.testAPI.getState(),
+        prevDisabled: document.getElementById('btnPrev').disabled,
+        nextDisabled: document.getElementById('btnNext').disabled,
+        restCardVisible: document.getElementById('restNoticeCard').classList.contains('visible')
+      })`,
+      returnByValue: true
+    });
+    const refResumedCheck = evalRefResumed.result.value;
+    console.log(`  • Resumed Refractive Vantage: Resting=${refResumedCheck.state.isResting}, PrevDisabled=${refResumedCheck.prevDisabled}, NextDisabled=${refResumedCheck.nextDisabled}, CardVisible=${refResumedCheck.restCardVisible}`);
+    verifiedAssert(refResumedCheck.state.isResting === false, 'Refractive isResting must be false after resuming');
+    verifiedAssert(refResumedCheck.prevDisabled === false && refResumedCheck.nextDisabled === false, 'Refractive navigation must re-enable upon resuming');
+    verifiedAssert(refResumedCheck.restCardVisible === false, 'Refractive rest notice card must hide upon resuming');
+    verifiedAssert(refResumedCheck.state.routeHistory.length === 3, 'Refractive route history must survive Rest action intact');
+
+    // 6. Terminal Refractive State & Human Closure Affordance (Station 4: Oblivion Threshold)
     await client2.send('Runtime.evaluate', { expression: `window.testAPI.setStation(4)` });
     await new Promise(r => setTimeout(r, 100));
 
@@ -392,8 +518,35 @@ export async function runQualificationBrowserTest() {
     const rs4 = evalRefState4.result.value;
     console.log(`  • Station 4: Station ${rs4.currentStation}, Scribe Fatigue=${rs4.scribeFatigue}, Marginal Entries=${rs4.marginalGlossCount}`);
     verifiedAssert(rs4.currentStation === 4, 'Terminal refractive station must be 4');
+    verifiedAssert(rs4.isClosureReady === true, 'Closure must be ready at Station 4');
+    verifiedAssert(rs4.isClosed === false, 'Marginal record must not be closed prior to operator gesture');
 
-    // Falsification check
+    // Trigger Human Closure
+    await client2.send('Runtime.evaluate', { expression: `window.testAPI.triggerHumanClosure()` });
+    await new Promise(r => setTimeout(r, 80));
+    const evalRefClosed = await client2.send('Runtime.evaluate', {
+      expression: `({
+        state: window.testAPI.getState(),
+        closureDisabled: document.getElementById('btnClosure').disabled,
+        bannerTitle: document.getElementById('inversionTitle').textContent
+      })`,
+      returnByValue: true
+    });
+    const refClosedCheck = evalRefClosed.result.value;
+    console.log(`  • Refractive Human Closure: Closed=${refClosedCheck.state.isClosed}, ClosureDisabled=${refClosedCheck.closureDisabled}, Title=${refClosedCheck.bannerTitle}`);
+    verifiedAssert(refClosedCheck.state.isClosed === true, 'Refractive isClosed must be true after human closure gesture');
+    verifiedAssert(refClosedCheck.state.closureReceipt !== null, 'Refractive closureReceipt must be recorded');
+    verifiedAssert(refClosedCheck.state.closureReceipt.custodyNotice.includes('Demonstration attestation'), 'closureReceipt must declare demonstration custody distinction');
+    verifiedAssert(refClosedCheck.closureDisabled === true, 'Refractive closure button must be disabled after closure is sealed');
+    verifiedAssert(refClosedCheck.bannerTitle.includes('SCRIBE MARGINAL RECORD ATTESTED'), 'Inversion banner title must reflect human closure');
+
+    // 7. Refractive Falsification check (Sovereign Silence)
+    // Reset back to standard
+    await client2.send('Runtime.evaluate', { expression: `window.testAPI.resetRefraction()` });
+    await new Promise(r => setTimeout(r, 80));
+    await client2.send('Runtime.evaluate', { expression: `window.testAPI.setStation(4)` });
+    await new Promise(r => setTimeout(r, 80));
+
     await client2.send('Runtime.evaluate', { expression: `window.testAPI.toggleFalsification()` });
     await new Promise(r => setTimeout(r, 80));
 
@@ -404,11 +557,14 @@ export async function runQualificationBrowserTest() {
     const rsFalsified = evalRefFalsified.result.value;
     console.log(`  • Falsified Probe: Sovereign Suppression=${rsFalsified.sovereignSilence}, Entries=${rsFalsified.marginalGlossCount}`);
     verifiedAssert(rsFalsified.sovereignSilence === true, 'Refractive falsification probe must be active');
+    verifiedAssert(rsFalsified.marginalGlossCount === 0, 'Refractive falsification must suppress marginal glosses');
+    verifiedAssert(rsFalsified.isClosureReady === false, 'Refractive falsification must lock closure');
 
+    // Reset back to standard
     await client2.send('Runtime.evaluate', { expression: `window.testAPI.resetRefraction()` });
     await new Promise(r => setTimeout(r, 80));
 
-    // Keyboard ArrowRight
+    // 8. Keyboard Navigation (ArrowRight)
     await pressKey(client2, 'ArrowRight', 'ArrowRight', 39);
     await new Promise(r => setTimeout(r, 200));
 
@@ -419,6 +575,7 @@ export async function runQualificationBrowserTest() {
     console.log(`    - Advanced to Station ${evalRefStateKey.result.value.currentStation} via keyboard ArrowRight`);
     verifiedAssert(evalRefStateKey.result.value.currentStation === 2, 'Keyboard ArrowRight must advance to Station 2');
 
+    // 9. Runtime Exceptions Check
     verifiedAssert(exceptions2.length === 0, `Refractive artifact produced ${exceptions2.length} runtime exceptions`);
 
     receipt.refractive_artifact = {
@@ -442,6 +599,11 @@ export async function runQualificationBrowserTest() {
     console.log(`Total Assertions Enforced & Passed: ${totalAssertions}`);
   } finally {
     chromeProc.kill();
+    try {
+      rmSync(tmpProfileDir, { recursive: true, force: true });
+    } catch {
+      // Ignore directory cleanup error if locks are still settling
+    }
   }
 
   console.log('\n======================================================================');

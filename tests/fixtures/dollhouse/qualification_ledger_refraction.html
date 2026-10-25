@@ -693,8 +693,11 @@
 <script>
   let currentStation = 1;
   let sovereignSilence = false;
-  let routeHistory = [1];
+  let routeHistory = [{ station: 1, name: 'Outer Desk', timestamp: new Date().toISOString() }];
   let restCount = 0;
+  let isResting = false;
+  let isClosed = false;
+  let closureReceipt = null;
 
   const STATIONS = [
     { num: 1, name: 'Outer Desk', fatigue: '1h', glossCount: 1, text: '"The inkwell is thin; the master counts every gram. They watch the ledger balance while my hand remains steady."' },
@@ -706,6 +709,7 @@
   function renderState() {
     const station = STATIONS[currentStation - 1];
     const effectiveGlosses = sovereignSilence ? 0 : station.glossCount;
+    const isClosureReady = (currentStation === 4 && !sovereignSilence);
 
     // 1. Update Telemetry HUD
     document.getElementById('hudStation').textContent = `Station ${currentStation}: ${station.name}`;
@@ -761,30 +765,53 @@
     const bannerTitle = document.getElementById('inversionTitle');
     const bannerDesc = document.getElementById('inversionDesc');
 
-    if (sovereignSilence) {
+    if (isClosed) {
+      banner.classList.remove('silenced');
+      banner.style.background = '#e8f5e9';
+      banner.style.borderColor = '#81c784';
+      bannerTitle.textContent = 'SCRIBE MARGINAL RECORD ATTESTED UNDER HUMAN CLOSURE';
+      bannerDesc.textContent = 'Direct operator closure gesture received. Marginal survival testimonies attested in local demonstration state. External immutable persistence remains governed by platform custody service under issue #405.';
+    } else if (sovereignSilence) {
       banner.classList.add('silenced');
+      banner.style.background = '';
+      banner.style.borderColor = '';
       bannerTitle.textContent = 'SOVEREIGN SILENCE IMPOSED · MARGINS SUPPRESSED';
       bannerDesc.textContent = 'All marginal testimonies are suppressed. Only the state-imposed rule lines and censorship bars remain legible.';
     } else {
       banner.classList.remove('silenced');
+      banner.style.background = '';
+      banner.style.borderColor = '';
       bannerTitle.textContent = 'COUNTERFACTUAL INVERSION ACTIVE';
       bannerDesc.textContent = `Administrative balance is re-anchored into human bodily expenditure: ${effectiveGlosses} of 4 clandestine marginal glosses decoded.`;
     }
 
     // 6. Update Route History Display
-    document.getElementById('routeHistoryLog').textContent = routeHistory.map(num => `Station ${num} (${STATIONS[num-1].name})`).join(' → ');
+    document.getElementById('routeHistoryLog').textContent = routeHistory.map(entry => {
+      if (typeof entry === 'object') {
+        return entry.isRest ? `[Rest ${entry.restNum}]` : `Station ${entry.station} (${entry.name})`;
+      }
+      return `Station ${entry}`;
+    }).join(' → ');
 
     // 7. Navigation Buttons
-    document.getElementById('btnPrev').disabled = (currentStation <= 1);
-    document.getElementById('btnNext').disabled = (currentStation >= 4);
+    const navLocked = isResting || isClosed;
+    document.getElementById('btnPrev').disabled = (currentStation <= 1 || navLocked);
+    document.getElementById('btnNext').disabled = (currentStation >= 4 || navLocked);
+    document.getElementById('btnClosure').disabled = (!isClosureReady || isResting || isClosed);
+
+    if (isClosed) {
+      const btnClosure = document.getElementById('btnClosure');
+      btnClosure.textContent = '✓ Record Attested (Human Closure Affirmed)';
+      btnClosure.style.background = '#2e7d32';
+      btnClosure.style.borderColor = '#2e7d32';
+    }
   }
 
   function setStation(n) {
-    if (n >= 1 && n <= 4 && n !== currentStation) {
-      currentStation = n;
-      routeHistory.push(n);
-      renderState();
-    }
+    if (n < 1 || n > 4 || n === currentStation || isResting || isClosed) return;
+    currentStation = n;
+    routeHistory.push({ station: n, name: STATIONS[n-1].name, timestamp: new Date().toISOString() });
+    renderState();
   }
 
   function setStationInstant(n) {
@@ -792,10 +819,12 @@
   }
 
   function stepStation(delta) {
+    if (isResting || isClosed) return;
     setStation(currentStation + delta);
   }
 
   function toggleFalsification() {
+    if (isClosed) return;
     sovereignSilence = !sovereignSilence;
     const btn = document.getElementById('btnFalsify');
     if (sovereignSilence) {
@@ -811,9 +840,23 @@
   function resetRefraction() {
     sovereignSilence = false;
     currentStation = 1;
-    routeHistory = [1];
+    routeHistory = [{ station: 1, name: 'Outer Desk', timestamp: new Date().toISOString() }];
+    isResting = false;
+    isClosed = false;
+    closureReceipt = null;
     const restCard = document.getElementById('restNoticeCard');
     if (restCard) restCard.classList.remove('visible');
+    const btnRest = document.getElementById('btnRest');
+    if (btnRest) {
+      btnRest.textContent = 'Rest / Pause (No Penalty)';
+      btnRest.classList.remove('btn-primary');
+    }
+    const btnClosure = document.getElementById('btnClosure');
+    if (btnClosure) {
+      btnClosure.textContent = 'Human Closure: Attest Scribe Record';
+      btnClosure.style.background = '';
+      btnClosure.style.borderColor = '';
+    }
     const btn = document.getElementById('btnFalsify');
     btn.classList.remove('falsify-active');
     btn.textContent = 'Suppress Margins (Impose Sovereign Silence)';
@@ -821,14 +864,40 @@
   }
 
   function triggerRest() {
-    restCount++;
+    if (isClosed) return;
+    isResting = !isResting;
     const restCard = document.getElementById('restNoticeCard');
-    restCard.textContent = `Rest Period ${restCount} Activated: Scribe laid down stylus. Zero penalty assessed. Route history preserved.`;
-    restCard.classList.add('visible');
+    const btnRest = document.getElementById('btnRest');
+
+    if (isResting) {
+      restCount++;
+      routeHistory.push({ isRest: true, restNum: restCount, station: currentStation, timestamp: new Date().toISOString() });
+      restCard.innerHTML = `<strong>Vantage Paused (Rest Affordance Active):</strong> Scribe laid down stylus. Zero penalty or fatigue deduction assessed. Route custody intact with ${routeHistory.length} ledger events. Navigation locked until vantage resumption.`;
+      restCard.classList.add('visible');
+      btnRest.textContent = 'Resume Vantage (Rest Complete)';
+      btnRest.classList.add('btn-primary');
+    } else {
+      restCard.classList.remove('visible');
+      btnRest.textContent = 'Rest / Pause (No Penalty)';
+      btnRest.classList.remove('btn-primary');
+    }
+    renderState();
   }
 
   function triggerHumanClosure() {
-    alert('Human Closure Affirmed: Scribe marginal record attested by direct human gesture. Witness retained.');
+    if (currentStation === 4 && !sovereignSilence && !isClosed && !isResting) {
+      isClosed = true;
+      closureReceipt = {
+        closureTimestamp: new Date().toISOString(),
+        station: 4,
+        name: 'Oblivion Threshold',
+        marginalGlossesDecoded: 4,
+        sealStatus: 'ATTESTED_BY_OPERATOR_GESTURE',
+        simulatedAttestationDigest: 'SIMULATED-MARGIN-7a8eb538-' + Date.now().toString(16),
+        custodyNotice: 'Demonstration attestation recorded in local state. External immutable archival custody remains governed by platform custody service under issue #405.'
+      };
+      renderState();
+    }
   }
 
   // Keyboard navigation
@@ -836,6 +905,7 @@
     if (e.target && e.target.tagName === 'BUTTON') {
       if (e.key === ' ' || e.code === 'Space') return;
     }
+    if (isResting || isClosed) return;
     if (e.key === '1') setStation(1);
     else if (e.key === '2') setStation(2);
     else if (e.key === '3') setStation(3);
@@ -853,13 +923,20 @@
       scribeFatigue: STATIONS[currentStation - 1].fatigue,
       marginalGlossCount: sovereignSilence ? 0 : STATIONS[currentStation - 1].glossCount,
       sovereignSilence,
-      routeHistoryPreserved: true,
-      restAffordanceAvailable: true
+      isClosureReady: (currentStation === 4 && !sovereignSilence),
+      isResting,
+      isClosed,
+      restCount,
+      closureReceipt,
+      routeHistory: [...routeHistory],
+      routeHistoryLength: routeHistory.length
     }),
     setStation,
     setStationInstant,
     toggleFalsification,
-    resetRefraction
+    resetRefraction,
+    triggerRest,
+    triggerHumanClosure
   };
 
   // Initial render
