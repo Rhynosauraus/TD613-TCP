@@ -1,13 +1,16 @@
 {
   "schema": "td613.dollhouse-design.browser-verification-receipt/v0.1",
-  "timestamp": "2026-10-25T01:40:46.427Z",
+  "timestamp": "2026-10-25T01:56:47.791Z",
   "browser_engine": "Chrome/156.0.8078.47",
   "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
   "cdp_protocol": "1.3",
-  "source_revision": "d7b74e1b36169f480c7e1ff7cf85676becb471e1",
+  "source_revision": "81c470d46085762795d621b458b1d99d7a7b9ccb",
   "total_assertions_checked": 72,
   "disposition": "VERIFIED_PASS",
   "primary_artifact": {
+    "path": "tests/fixtures/dollhouse/qualification_ledger_primary.html",
+    "byte_count": 35875,
+    "sha256": "c841c067c45db1567706090b247bd86812a449ee051a45a57f01ad44ca5d5ccb",
     "viewport_390px": {
       "innerWidth": 390,
       "scrollWidth": 390,
@@ -65,7 +68,7 @@
         {
           "step": 1,
           "name": "Ingress",
-          "timestamp": "2026-10-25T01:40:46.807Z"
+          "timestamp": "2026-10-25T01:56:48.123Z"
         }
       ],
       "routeHistoryLength": 1,
@@ -86,23 +89,23 @@
         {
           "step": 1,
           "name": "Ingress",
-          "timestamp": "2026-10-25T01:40:46.807Z"
+          "timestamp": "2026-10-25T01:56:48.123Z"
         },
         {
           "step": 2,
           "name": "Inscription",
-          "timestamp": "2026-10-25T01:40:47.426Z"
+          "timestamp": "2026-10-25T01:56:48.736Z"
         },
         {
           "isRest": true,
           "restNum": 1,
           "step": 2,
-          "timestamp": "2026-10-25T01:40:47.508Z"
+          "timestamp": "2026-10-25T01:56:48.858Z"
         },
         {
           "step": 4,
           "name": "Sealing",
-          "timestamp": "2026-10-25T01:40:47.668Z"
+          "timestamp": "2026-10-25T01:56:49.025Z"
         }
       ],
       "routeHistoryLength": 4,
@@ -123,12 +126,12 @@
         {
           "step": 1,
           "name": "Ingress",
-          "timestamp": "2026-10-25T01:40:47.884Z"
+          "timestamp": "2026-10-25T01:56:49.236Z"
         },
         {
           "step": 4,
           "name": "Sealing",
-          "timestamp": "2026-10-25T01:40:47.972Z"
+          "timestamp": "2026-10-25T01:56:49.328Z"
         }
       ],
       "routeHistoryLength": 2,
@@ -139,6 +142,9 @@
     "exceptions_count": 0
   },
   "refractive_artifact": {
+    "path": "tests/fixtures/dollhouse/qualification_ledger_refraction.html",
+    "byte_count": 31786,
+    "sha256": "1c2af308c524479292bb8d948efb74b29da2d053be72152b2549c521b029e3bd",
     "viewport_390px": {
       "innerWidth": 390,
       "scrollWidth": 390,
@@ -196,7 +202,7 @@
         {
           "station": 1,
           "name": "Outer Desk",
-          "timestamp": "2026-10-25T01:40:48.766Z"
+          "timestamp": "2026-10-25T01:56:50.179Z"
         }
       ],
       "routeHistoryLength": 1
@@ -215,23 +221,23 @@
         {
           "station": 1,
           "name": "Outer Desk",
-          "timestamp": "2026-10-25T01:40:48.766Z"
+          "timestamp": "2026-10-25T01:56:50.179Z"
         },
         {
           "station": 2,
           "name": "Night Vigil",
-          "timestamp": "2026-10-25T01:40:49.373Z"
+          "timestamp": "2026-10-25T01:56:50.786Z"
         },
         {
           "isRest": true,
           "restNum": 1,
           "station": 2,
-          "timestamp": "2026-10-25T01:40:49.441Z"
+          "timestamp": "2026-10-25T01:56:50.870Z"
         },
         {
           "station": 4,
           "name": "Oblivion Threshold",
-          "timestamp": "2026-10-25T01:40:49.593Z"
+          "timestamp": "2026-10-25T01:56:51.040Z"
         }
       ],
       "routeHistoryLength": 4
@@ -250,12 +256,12 @@
         {
           "station": 1,
           "name": "Outer Desk",
-          "timestamp": "2026-10-25T01:40:49.817Z"
+          "timestamp": "2026-10-25T01:56:51.245Z"
         },
         {
           "station": 4,
           "name": "Oblivion Threshold",
-          "timestamp": "2026-10-25T01:40:49.913Z"
+          "timestamp": "2026-10-25T01:56:51.334Z"
         }
       ],
       "routeHistoryLength": 2
