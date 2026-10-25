@@ -258,7 +258,12 @@ async function runOperationalReplay() {
     ? 'scripts/verify-qualification-browser.mjs'
     : 'scripts/verify-caro-browser.mjs';
 
-  execFileSync('node', [verifyScript], {
+  const verifyArgs = [verifyScript];
+  if (gitRev && gitRev !== 'UNKNOWN_REVISION') {
+    verifyArgs.push('--revision', gitRev);
+  }
+
+  execFileSync('node', verifyArgs, {
     cwd: repoRoot,
     stdio: 'inherit'
   });
@@ -288,8 +293,10 @@ async function runOperationalReplay() {
     let subagentWitness = null;
     if (isQualification && existsSync(provWitnessPath)) {
       subagentWitness = JSON.parse(readFileSync(provWitnessPath, 'utf8'));
-      assert.equal(subagentWitness.conversation_id, '3438ee3e-0bf0-4034-9ea5-5076683a8e92');
-      assert.equal(subagentWitness.provenance_status, 'AUTHENTIC_NATIVE_SUBAGENT_EXECUTION_VERIFIED');
+      const convId = subagentWitness.conversation_id || (subagentWitness.reconstructed_context && subagentWitness.reconstructed_context.subagent_conversation_id);
+      const status = subagentWitness.provenance_status || subagentWitness.provenance_classification;
+      assert.equal(convId, '3438ee3e-0bf0-4034-9ea5-5076683a8e92');
+      assert.equal(status, 'AUTHENTIC_NATIVE_SUBAGENT_EXECUTION_VERIFIED');
     }
 
     const witnessOutput = {

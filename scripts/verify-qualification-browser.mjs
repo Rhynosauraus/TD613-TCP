@@ -10,7 +10,8 @@
 
 import { spawn, execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { writeFileSync, existsSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import assert from 'node:assert/strict';
 
@@ -38,6 +39,14 @@ function findChromePath() {
 }
 
 function getGitRevision() {
+  if (process.env.TD613_EXECUTION_REVISION) {
+    return process.env.TD613_EXECUTION_REVISION.trim();
+  }
+  for (let i = 2; i < process.argv.length; i++) {
+    if (process.argv[i] === '--revision' && process.argv[i + 1]) {
+      return process.argv[i + 1].trim();
+    }
+  }
   try {
     return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   } catch {
@@ -373,7 +382,13 @@ export async function runQualificationBrowserTest() {
     // 9. Runtime Exceptions Check
     verifiedAssert(exceptions1.length === 0, `Primary artifact produced ${exceptions1.length} runtime exceptions`);
 
+    const primaryBytes = readFileSync(primaryPath);
+    const primaryDigest = createHash('sha256').update(primaryBytes).digest('hex');
+
     receipt.primary_artifact = {
+      path: 'tests/fixtures/dollhouse/qualification_ledger_primary.html',
+      byte_count: primaryBytes.length,
+      sha256: primaryDigest,
       viewport_390px: vp,
       touch_targets: buttons1,
       initial_state: s1,
@@ -578,7 +593,13 @@ export async function runQualificationBrowserTest() {
     // 9. Runtime Exceptions Check
     verifiedAssert(exceptions2.length === 0, `Refractive artifact produced ${exceptions2.length} runtime exceptions`);
 
+    const refractiveBytes = readFileSync(refractivePath);
+    const refractiveDigest = createHash('sha256').update(refractiveBytes).digest('hex');
+
     receipt.refractive_artifact = {
+      path: 'tests/fixtures/dollhouse/qualification_ledger_refraction.html',
+      byte_count: refractiveBytes.length,
+      sha256: refractiveDigest,
       viewport_390px: vp2,
       touch_targets: buttons2,
       initial_state: rs1,
