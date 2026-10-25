@@ -59,13 +59,21 @@ To support rich historical design briefs (such as the Holonomy Loom pre-M6 audit
   "source_path": "docs/reentry/RELATION_MAP.md",
   "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
   "classification": "BINDING_CUSTODY_LAW",
+  "provenance_class": "CONTEMPORANEOUS_ORIGINAL",
   "summary": "Registration, Check, Challenge, and Carrier continuation custody law."
 }
 ```
 
-- **`BINDING_CUSTODY_LAW` / `BINDING_CONSTRAINT`:** Invariants that the creative author must rigorously uphold.
-- **`NEGOTIABLE_AESTHETIC_DIRECTION`:** Historical visual cues or UX patterns that the author is free to reinterpret.
-- The conductor preserves these entries in `receipt.historical_references`, maintaining a clean separation between historical evidence, conductor heuristics, and author-invented forms.
+- **Four Epistemic Tiers (`classification`):**
+  - `BINDING_CUSTODY_LAW` / `BINDING_CONSTRAINT`: Invariants that the creative author must rigorously uphold. Fails closed (`ReferenceError`) if the file cannot be retrieved at the declared revision.
+  - `NEGOTIABLE_AESTHETIC_DIRECTION`: Historical visual cues or UX patterns that the author is free to reinterpret.
+  - `CONDUCTOR_HEURISTICS`: Deterministic scoring rules, candidate suggestions, and syntactic triggers.
+  - `AGENT_AUTHORED_DECISIONS`: Final concrete HTML, CSS, and layout selections created by the generative author.
+- **Three Provenance Classes (`provenance_class`):**
+  - `CONTEMPORANEOUS_ORIGINAL`: Contemporaneously captured source records bound to immutable commit revisions.
+  - `RECONSTRUCTED_RECORD`: Historical artifacts or structures reconstructed from subsequent analysis.
+  - `ANNOTATED_RECORD`: Historical records supplemented with interpretive or procedural metadata.
+- **Fail-Closed Resolution & Substantive Ingestion:** The conductor verifies and retrieves reference bytes via `git show <revision>:<path>` (or local filesystem), recording byte counts, SHA-256 digests, and substantive content excerpts in the return receipt so the authoring context reads actual source text rather than shallow summaries alone.
 
 ---
 
@@ -76,7 +84,7 @@ A single geometric framework must never be imposed across all inquiries. The aut
 | Instrument ID | Lineage / Foundation | Primary Generative Capability | Recommended Media |
 |---|---|---|---|
 | **`PHASONIC_COUNTERPOINT`** | Aperture v3.2-alpha Triple Overlay | Periodic scaffold ($T_\Delta$) + quasiperiodic counterlayer ($Q_\varphi$) + interference field ($H$); transmedia invariance | Visual, Motion, Hybrid, Theoretical |
-| **`CARO_INSTITUTIONAL_RECONSTRUCTION`** | Robert Caro (Thinkers Bin 2) | Procedural friction, statutory cross-reference, bureaucratic delay, and archival residue | Scholarly, Visual, Product, Hybrid |
+| **`CARO_INSTITUTIONAL_RECONSTRUCTION`** | Robert Caro (Thinkers Bin 2) | Procedural clearance latency ($T_{\text{clearance}} = \mu \times 400\text{ms}$), discrete petition redaction ($4 \times \text{chamber}$), and archival resistance | Scholarly, Visual, Product, Hybrid |
 | **`BUTLER_PERFORMATIVE_ITERATION`** | Judith Butler (Thinkers Bin 2) | Citational reiteration, ritualized normative convention, and subversive slippage across repetitions | Scholarly, Theoretical, Visual |
 | **`SEDGWICK_REPARATIVE_TEXTURE`** | Eve Kosofsky Sedgwick (Thinkers Bin 2) | Textural parataxis (beside-ness), affective survival, and resisting paranoid hermeneutic closure | Scholarly, Visual, Product |
 | **`DIALECTICAL_TENSION`** | Polyphonic Contrapuntalism | Irreducible antithesis, competing perspectives, and non-synthesized juxtaposition | Scholarly, Theoretical, Motion |
@@ -131,13 +139,14 @@ const result = await runDollhouseDesignCycle({
     {
       reference_id: "REF-01",
       source_path: "docs/reentry/RELATION_MAP.md",
+      source_revision: "e0a7ba5f3b76f545da11037833c269abd7623a04",
       classification: "BINDING_CUSTODY_LAW",
+      provenance_class: "CONTEMPORANEOUS_ORIGINAL",
       summary: "Custody boundary map."
     }
   ],
   scientific_audit_requested: false
 });
-```
 
 console.log(result.primary_materialization);
 console.log(result.refractive_variant);

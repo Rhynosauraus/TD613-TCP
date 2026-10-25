@@ -17,11 +17,34 @@
   ],
   "historical_references": [
     {
-      "reference_id": "REF-SYNTH-CARO-01",
-      "source_path": "tests/fixtures/dollhouse/caro_commission.json",
-      "source_revision": "5968eabd468a9dbc83961f3c75eb09e3d95a893f",
+      "reference_id": "REF-LAW-AGENTS-01",
+      "source_path": "AGENTS.md",
+      "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
       "classification": "BINDING_CUSTODY_LAW",
-      "summary": "Synthetic commission specifying 4-gate bureaucratic waiting room with petition redaction."
+      "provenance_class": "CONTEMPORANEOUS_ORIGINAL",
+      "summary": "TD613 Agent Entry Contract: Cistern law, consequence before ontology, child-legible NOW / WHY / EXACT, and human closure.",
+      "resolution_status": "RESOLVED",
+      "retrieval_method": "GIT_SHOW_IMMUTABLE_REVISION",
+      "sha256": "3936238077898f69d11056177ab1d5d51db140e1fa49ef3110b43dcd7ab60ddf",
+      "byte_count": 24429,
+      "line_count": 348,
+      "content_excerpt": "# TD613 Agent Entry Contract\n\n## OpenAI delegation custody — read before any other repository work\n\nTD613 distinguishes **three authority classes** even when they share OpenAI infrastructure or one installed GitHub App:\n\n1. **Interactive operator-direct labor** — a human operator is presently steering an active coding session and gives the task to that session directly.\n2. **Amari connector labor** — work the human operator explicitly asks Amari to perform through the ChatGPT GitHub connector.\n3. **Detached delegated OpenAI activity** — autonomous/background GitHub reviews, cloud tasks, security agents, mention-triggered work, event-triggered work, scheduled work, or another process that is not the active session receiving the human instruction.\n\nThese classes are not interchangeable.\n\nDefault posture:\n\n```text\ninteractive_operator_direct = AVAILABLE_BY_CONTEMPORANEOUS_HUMAN_PROMPT\namari_connector_authority = EXPLICIT_REQUEST_ONLY\ndetached_delegated_openai_authority = CLOSED\nissue_691 ... [TRUNCATED]",
+      "resolved": true
+    },
+    {
+      "reference_id": "REF-CARO-ANTECEDENT-01",
+      "source_path": "tests/fixtures/dollhouse/caro_corridor_primary.html",
+      "source_revision": "5968eabd468a9dbc83961f3c75eb09e3d95a893f",
+      "classification": "NEGOTIABLE_AESTHETIC_DIRECTION",
+      "provenance_class": "RECONSTRUCTED_RECORD",
+      "summary": "Historical demonstration of institutional redaction corridor with 4 chambers and operative procedural latency.",
+      "resolution_status": "RESOLVED",
+      "retrieval_method": "GIT_SHOW_IMMUTABLE_REVISION",
+      "sha256": "12db81690b992a998ecd7eb398b810bdae8dc86b686df1af7c99e64223faea77",
+      "byte_count": 20964,
+      "line_count": 662,
+      "content_excerpt": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>The Corridors of Erasure · Caro Institutional Reconstruction</title>\n  <style>\n    :root {\n      --parchment-bg: #f4efe6;\n      --paper-card: #fcfbf9;\n      --ink-primary: #1e1b18;\n      --ink-secondary: #5a544c;\n      --border-parchment: #d8cebe;\n      --stamp-red: #b71c1c;\n      --stamp-stamp-tint: rgba(183, 28, 28, 0.08);\n      --redaction-bar: #1e1b18;\n      --door-locked: #8c2d19;\n      --door-unlocked: #1b5e20;\n      --focus-ring: #0277bd;\n    }\n\n    * {\n      box-sizing: border-box;\n      margin: 0;\n      padding: 0;\n    }\n\n    body {\n      background-color: var(--parchment-bg);\n      color: var(--ink-primary);\n      font-family: -apple-system, BlinkMacSystemFont, \"Georgia\", \"Times New Roman\", serif;\n      line-height: 1.5;\n      padding: 16px;\n      display: flex;\n      flex-direction: column;\n      align-items: center;\n      min-hei... [TRUNCATED]",
+      "resolved": true
     }
   ],
   "candidates": [
@@ -148,15 +171,19 @@
         "causal_bindings": [
           {
             "parameter": "procedural_friction_coefficient_mu",
-            "target_component": "navigation_interaction_velocity",
-            "transfer_law": "scroll_delta_effective = scroll_delta_raw / (1 + mu * bureaucratic_layers)",
-            "falsification_probe": "mu = 0.0 eliminates navigation resistance across corridor"
+            "target_component": "procedural_clearance_latency",
+            "transfer_law": "T_clearance = mu * 400ms (chamber latency delay; navigation controls locked during administrative review; reduced-motion or falsification probe bypasses to 0ms)",
+            "declarative_alternative": "scroll_delta_effective = scroll_delta_raw / (1 + mu * bureaucratic_layers)",
+            "execution_status": "EXECUTED_DEMONSTRATION_LAW",
+            "falsification_probe": "mu = 0.0 collapses procedural clearance latency to 0ms (immediate transition across corridor)"
           },
           {
             "parameter": "archive_omission_index_lambda",
-            "target_component": "typography_redaction_opacity",
-            "transfer_law": "text_opacity = 1.0 - lambda * sovereign_censure_level",
-            "falsification_probe": "lambda = 0.0 renders all administrative records fully visible"
+            "target_component": "progressive_document_redaction",
+            "transfer_law": "redacted_word_count = chamber_index * 4 (discrete petition redaction; terminal door unlocks at 16/16 redactions)",
+            "declarative_alternative": "text_opacity = 1.0 - lambda * sovereign_censure_level",
+            "execution_status": "EXECUTED_DEMONSTRATION_LAW",
+            "falsification_probe": "lambda = 0.0 restores all 16 words to full visibility and keeps terminal door locked"
           }
         ],
         "causality_class": "OPERATIVE_TRANSFER"

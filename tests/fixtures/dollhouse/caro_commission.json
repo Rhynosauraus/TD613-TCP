@@ -15,11 +15,20 @@
   ],
   "historical_references": [
     {
-      "reference_id": "REF-SYNTH-CARO-01",
-      "source_path": "tests/fixtures/dollhouse/caro_commission.json",
-      "source_revision": "5968eabd468a9dbc83961f3c75eb09e3d95a893f",
+      "reference_id": "REF-LAW-AGENTS-01",
+      "source_path": "AGENTS.md",
+      "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
       "classification": "BINDING_CUSTODY_LAW",
-      "summary": "Synthetic commission specifying 4-gate bureaucratic waiting room with petition redaction."
+      "provenance_class": "CONTEMPORANEOUS_ORIGINAL",
+      "summary": "TD613 Agent Entry Contract: Cistern law, consequence before ontology, child-legible NOW / WHY / EXACT, and human closure."
+    },
+    {
+      "reference_id": "REF-CARO-ANTECEDENT-01",
+      "source_path": "tests/fixtures/dollhouse/caro_corridor_primary.html",
+      "source_revision": "5968eabd468a9dbc83961f3c75eb09e3d95a893f",
+      "classification": "NEGOTIABLE_AESTHETIC_DIRECTION",
+      "provenance_class": "RECONSTRUCTED_RECORD",
+      "summary": "Historical demonstration of institutional redaction corridor with 4 chambers and operative procedural latency."
     }
   ],
   "scientific_audit_requested": false

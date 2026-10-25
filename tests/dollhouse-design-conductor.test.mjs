@@ -5,10 +5,14 @@ import {
   DOLLHOUSE_DESIGN_VERSION,
   AVAILABLE_INSTRUMENTS,
   VALID_MEDIA,
+  VALID_REFERENCE_CLASSIFICATIONS,
+  VALID_PROVENANCE_CLASSES,
   normalizeCommission,
   analyzeSeedSemantics,
   deriveCommissionCandidates,
   buildInstrumentCausalContract,
+  resolveHistoricalReference,
+  resolveHistoricalReferences,
   runDollhouseDesignCycle
 } from '../app/engine/dollhouse-design-conductor.js';
 
@@ -260,7 +264,7 @@ test('TD613 Dollhouse Design Conductor v0.2 - Explicit Fail-Closed Validation (C
   );
 });
 
-test('TD613 Dollhouse Design Conductor v0.2 - First-Class Historical Reference Ingestion (Section VII)', async () => {
+test('TD613 Dollhouse Design Conductor v0.2 - First-Class Historical Reference Ingestion & Resolution (A67-C1)', async () => {
   const commInput = {
     commission_id: 'TEST-LOOM-REF-01',
     seed: 'Holonomy Loom returned-work custody under historical relation map',
@@ -271,14 +275,16 @@ test('TD613 Dollhouse Design Conductor v0.2 - First-Class Historical Reference I
         source_path: 'docs/reentry/RELATION_MAP.md',
         source_revision: 'e0a7ba5f3b76f545da11037833c269abd7623a04',
         classification: 'BINDING_CUSTODY_LAW',
+        provenance_class: 'CONTEMPORANEOUS_ORIGINAL',
         summary: 'Registration, Check, Challenge, and Carrier continuation custody law.'
       },
       {
         reference_id: 'REF-LOOM-SCREEN-02',
-        source_path: 'docs/reentry/LOOM_SCREENS.md',
+        source_path: 'docs/reentry/NONEXISTENT_LOOM_FILE.md',
         source_revision: 'e0a7ba5f3b76f545da11037833c269abd7623a04',
         classification: 'NEGOTIABLE_AESTHETIC_DIRECTION',
-        summary: 'Historical three-phase journey layout and stage progression cues.'
+        provenance_class: 'RECONSTRUCTED_RECORD',
+        summary: 'Non-binding aesthetic cues with unresolvable path.'
       }
     ]
   };
@@ -288,10 +294,73 @@ test('TD613 Dollhouse Design Conductor v0.2 - First-Class Historical Reference I
   assert.equal(receipt.commission_id, 'TEST-LOOM-REF-01');
   assert.ok(Array.isArray(receipt.historical_references), 'Receipt must contain historical_references array');
   assert.equal(receipt.historical_references.length, 2);
-  assert.equal(receipt.historical_references[0].reference_id, 'REF-RELATION-MAP-01');
-  assert.equal(receipt.historical_references[0].classification, 'BINDING_CUSTODY_LAW');
-  assert.equal(receipt.historical_references[1].reference_id, 'REF-LOOM-SCREEN-02');
-  assert.equal(receipt.historical_references[1].classification, 'NEGOTIABLE_AESTHETIC_DIRECTION');
+
+  // 1. Valid binding reference resolved against immutable git revision
+  const ref1 = receipt.historical_references[0];
+  assert.equal(ref1.reference_id, 'REF-RELATION-MAP-01');
+  assert.equal(ref1.classification, 'BINDING_CUSTODY_LAW');
+  assert.equal(ref1.provenance_class, 'CONTEMPORANEOUS_ORIGINAL');
+  assert.equal(ref1.resolution_status, 'RESOLVED');
+  assert.equal(ref1.resolved, true);
+  assert.equal(ref1.retrieval_method, 'GIT_SHOW_IMMUTABLE_REVISION');
+  assert.ok(/^[a-f0-9]{64}$/.test(ref1.sha256), 'Must contain 64-char sha256 digest of resolved bytes');
+  assert.ok(ref1.byte_count > 0, 'Byte count must be positive');
+  assert.ok(ref1.content_excerpt.includes('RELATION_MAP') || ref1.content_excerpt.length > 50, 'Must contain substantive source content snippet');
+
+  // 2. Non-binding reference with missing file records UNRESOLVED without halting cycle
+  const ref2 = receipt.historical_references[1];
+  assert.equal(ref2.reference_id, 'REF-LOOM-SCREEN-02');
+  assert.equal(ref2.classification, 'NEGOTIABLE_AESTHETIC_DIRECTION');
+  assert.equal(ref2.provenance_class, 'RECONSTRUCTED_RECORD');
+  assert.equal(ref2.resolution_status, 'UNRESOLVED');
+  assert.equal(ref2.resolved, false);
+  assert.ok(ref2.error, 'Unresolved reference must record retrieval error');
+
   assert.ok(Object.isFrozen(receipt.historical_references));
   assert.ok(Object.isFrozen(receipt.historical_references[0]));
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - Fail-Closed on Unresolvable Binding Historical Reference (A67-C1)', async () => {
+  const invalidBindingComm = {
+    seed: 'Testing fail-closed binding reference resolution',
+    medium: 'SCHOLARLY',
+    historical_references: [
+      {
+        reference_id: 'REF-BINDING-MISSING',
+        source_path: 'tests/fixtures/dollhouse/nonexistent_file_xyz.json',
+        source_revision: '5968eabd468a9dbc83961f3c75eb09e3d95a893f',
+        classification: 'BINDING_CUSTODY_LAW',
+        summary: 'Binding reference pointing to non-existent file must throw ReferenceError.'
+      }
+    ]
+  };
+
+  await assert.rejects(
+    async () => runDollhouseDesignCycle(invalidBindingComm),
+    {
+      name: 'ReferenceError',
+      message: /Binding historical reference "REF-BINDING-MISSING" could not be resolved/
+    },
+    'Failing to retrieve a BINDING_CUSTODY_LAW source file must fail closed with ReferenceError'
+  );
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - Caro Executed Demonstration Laws vs Declarative Alternatives (A67-C4)', () => {
+  const contract = buildInstrumentCausalContract('CARO_INSTITUTIONAL_RECONSTRUCTION', 'VISUAL');
+  assert.equal(contract.instrument_id, 'CARO_INSTITUTIONAL_RECONSTRUCTION');
+  assert.equal(contract.causal_bindings.length, 2);
+
+  const frictionBinding = contract.causal_bindings.find(b => b.parameter === 'procedural_friction_coefficient_mu');
+  assert.ok(frictionBinding, 'Must bind procedural_friction_coefficient_mu');
+  assert.equal(frictionBinding.target_component, 'procedural_clearance_latency');
+  assert.ok(frictionBinding.transfer_law.includes('T_clearance = mu * 400ms'), 'Transfer law must accurately describe implemented clearance latency');
+  assert.ok(frictionBinding.declarative_alternative.includes('scroll_delta_effective'), 'Must distinguish declarative scroll velocity alternative');
+  assert.equal(frictionBinding.execution_status, 'EXECUTED_DEMONSTRATION_LAW');
+
+  const redactionBinding = contract.causal_bindings.find(b => b.parameter === 'archive_omission_index_lambda');
+  assert.ok(redactionBinding, 'Must bind archive_omission_index_lambda');
+  assert.equal(redactionBinding.target_component, 'progressive_document_redaction');
+  assert.ok(redactionBinding.transfer_law.includes('redacted_word_count = chamber_index * 4'), 'Transfer law must accurately describe discrete chamber redaction');
+  assert.ok(redactionBinding.declarative_alternative.includes('text_opacity'), 'Must distinguish declarative opacity alternative');
+  assert.equal(redactionBinding.execution_status, 'EXECUTED_DEMONSTRATION_LAW');
 });

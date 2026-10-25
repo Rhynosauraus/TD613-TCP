@@ -22,10 +22,27 @@
  */
 
 import { createHash } from 'node:crypto';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { runDollhouseSkillAudit } from './dollhouse-skill-dispatcher.js';
 
 export const DOLLHOUSE_DESIGN_SCHEMA = 'td613.dollhouse-design.return-receipt/v0.2';
 export const DOLLHOUSE_DESIGN_VERSION = 'v0.2-candidate';
+
+export const VALID_REFERENCE_CLASSIFICATIONS = Object.freeze([
+  'BINDING_CUSTODY_LAW',
+  'BINDING_CONSTRAINT',
+  'NEGOTIABLE_AESTHETIC_DIRECTION',
+  'CONDUCTOR_HEURISTICS',
+  'AGENT_AUTHORED_DECISIONS'
+]);
+
+export const VALID_PROVENANCE_CLASSES = Object.freeze([
+  'CONTEMPORANEOUS_ORIGINAL',
+  'RECONSTRUCTED_RECORD',
+  'ANNOTATED_RECORD'
+]);
 
 export const AVAILABLE_INSTRUMENTS = Object.freeze({
   PHASONIC_COUNTERPOINT: {
@@ -89,6 +106,122 @@ function deepFreeze(value) {
 
 function sha256(data) {
   return createHash('sha256').update(typeof data === 'string' ? data : JSON.stringify(data)).digest('hex');
+}
+
+/**
+ * Resolves and reads a historical source reference against git or local filesystem.
+ * Fails closed (throws ReferenceError) if a binding reference cannot be retrieved.
+ *
+ * @param {object} ref
+ * @param {object} [options={}]
+ * @returns {object}
+ */
+export function resolveHistoricalReference(ref, options = {}) {
+  const repoRoot = options.repoRoot || process.cwd();
+  const refId = String(ref.reference_id || 'REF-UNNAMED').trim();
+  const sourcePath = String(ref.source_path || ref.path || '').trim();
+  const sourceRevision = String(ref.source_revision || ref.commit || ref.revision || '').trim();
+  const rawClass = String(ref.classification || 'NEGOTIABLE_AESTHETIC_DIRECTION').trim().toUpperCase();
+  const classification = VALID_REFERENCE_CLASSIFICATIONS.includes(rawClass) ? rawClass : 'NEGOTIABLE_AESTHETIC_DIRECTION';
+  const rawProv = String(ref.provenance_class || (sourceRevision ? 'CONTEMPORANEOUS_ORIGINAL' : 'RECONSTRUCTED_RECORD')).trim().toUpperCase();
+  const provenanceClass = VALID_PROVENANCE_CLASSES.includes(rawProv) ? rawProv : 'RECONSTRUCTED_RECORD';
+  const summary = String(ref.summary || ref.description || '').trim();
+
+  const isBinding = classification === 'BINDING_CUSTODY_LAW' || classification === 'BINDING_CONSTRAINT';
+
+  if (!sourcePath) {
+    if (isBinding) {
+      throw new ReferenceError(`Binding historical reference "${refId}" missing source_path`);
+    }
+  }
+
+  let rawContent = null;
+  let retrievalMethod = 'UNRESOLVED';
+  let retrievalError = null;
+
+  // 1. If source_revision is specified and looks like a git commit/ref (not working tree), attempt git show
+  if (sourceRevision && sourceRevision !== 'WORKING_TREE' && sourceRevision !== 'HEAD') {
+    try {
+      rawContent = execFileSync('git', ['show', `${sourceRevision}:${sourcePath}`], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+      retrievalMethod = 'GIT_SHOW_IMMUTABLE_REVISION';
+    } catch (err) {
+      retrievalError = String(err && err.message ? err.message : err).trim();
+    }
+  }
+
+  // 2. Fallback to local filesystem if git show wasn't applicable or if working tree was explicitly requested
+  if (rawContent === null && (!sourceRevision || sourceRevision === 'WORKING_TREE' || sourceRevision === 'HEAD')) {
+    const fullPath = resolve(repoRoot, sourcePath);
+    if (existsSync(fullPath)) {
+      try {
+        rawContent = readFileSync(fullPath, 'utf8');
+        retrievalMethod = 'LOCAL_FILESYSTEM_READ';
+      } catch (err) {
+        retrievalError = String(err && err.message ? err.message : err).trim();
+      }
+    } else {
+      retrievalError = `File not found on filesystem: ${sourcePath}`;
+    }
+  }
+
+  // 3. Handle retrieval failure
+  if (rawContent === null) {
+    if (isBinding) {
+      throw new ReferenceError(
+        `Binding historical reference "${refId}" could not be resolved at revision ${sourceRevision || 'HEAD'}:${sourcePath}. Reason: ${retrievalError}`
+      );
+    }
+    return Object.freeze({
+      reference_id: refId,
+      source_path: sourcePath,
+      source_revision: sourceRevision,
+      classification,
+      provenance_class: provenanceClass,
+      summary,
+      resolution_status: 'UNRESOLVED',
+      retrieval_method: 'FAILED',
+      error: retrievalError,
+      resolved: false
+    });
+  }
+
+  // 4. Handle retrieval success
+  const contentDigest = sha256(rawContent);
+  const byteCount = Buffer.byteLength(rawContent, 'utf8');
+  const lineCount = rawContent.split(/\r?\n/).length;
+  // Substantive content snippet (first 1000 characters) so agent context receives actual source text
+  const contentExcerpt = rawContent.length > 1000 ? rawContent.slice(0, 1000) + '... [TRUNCATED]' : rawContent;
+
+  return Object.freeze({
+    reference_id: refId,
+    source_path: sourcePath,
+    source_revision: sourceRevision,
+    classification,
+    provenance_class: provenanceClass,
+    summary,
+    resolution_status: 'RESOLVED',
+    retrieval_method: retrievalMethod,
+    sha256: contentDigest,
+    byte_count: byteCount,
+    line_count: lineCount,
+    content_excerpt: contentExcerpt,
+    resolved: true
+  });
+}
+
+/**
+ * Resolves a list of historical references against git or local filesystem.
+ * @param {Array<object>} references
+ * @param {object} [options={}]
+ * @returns {Array<object>}
+ */
+export function resolveHistoricalReferences(references = [], options = {}) {
+  if (!Array.isArray(references)) return Object.freeze([]);
+  return Object.freeze(references.map(ref => resolveHistoricalReference(ref, options)));
 }
 
 export const THEMATIC_CLUSTERS = Object.freeze({
@@ -211,15 +344,19 @@ export function buildInstrumentCausalContract(instrumentId, medium, seedTerms = 
       causal_bindings: [
         {
           parameter: 'procedural_friction_coefficient_mu',
-          target_component: 'navigation_interaction_velocity',
-          transfer_law: 'scroll_delta_effective = scroll_delta_raw / (1 + mu * bureaucratic_layers)',
-          falsification_probe: 'mu = 0.0 eliminates navigation resistance across corridor'
+          target_component: 'procedural_clearance_latency',
+          transfer_law: 'T_clearance = mu * 400ms (chamber latency delay; navigation controls locked during administrative review; reduced-motion or falsification probe bypasses to 0ms)',
+          declarative_alternative: 'scroll_delta_effective = scroll_delta_raw / (1 + mu * bureaucratic_layers)',
+          execution_status: 'EXECUTED_DEMONSTRATION_LAW',
+          falsification_probe: 'mu = 0.0 collapses procedural clearance latency to 0ms (immediate transition across corridor)'
         },
         {
           parameter: 'archive_omission_index_lambda',
-          target_component: 'typography_redaction_opacity',
-          transfer_law: 'text_opacity = 1.0 - lambda * sovereign_censure_level',
-          falsification_probe: 'lambda = 0.0 renders all administrative records fully visible'
+          target_component: 'progressive_document_redaction',
+          transfer_law: 'redacted_word_count = chamber_index * 4 (discrete petition redaction; terminal door unlocks at 16/16 redactions)',
+          declarative_alternative: 'text_opacity = 1.0 - lambda * sovereign_censure_level',
+          execution_status: 'EXECUTED_DEMONSTRATION_LAW',
+          falsification_probe: 'lambda = 0.0 restores all 16 words to full visibility and keeps terminal door locked'
         }
       ],
       causality_class: 'OPERATIVE_TRANSFER'
@@ -461,13 +598,20 @@ export function normalizeCommission(raw = {}) {
 
   // Parse and freeze historical reference inputs (Pre-M6 Reference Ingestion)
   const rawRefs = Array.isArray(raw.historical_references) ? raw.historical_references : [];
-  const historicalReferences = Object.freeze(rawRefs.map((ref, idx) => Object.freeze({
-    reference_id: String(ref.reference_id || `REF-${idx + 1}`),
-    source_path: String(ref.source_path || ref.path || ''),
-    source_revision: String(ref.source_revision || ref.commit || ref.revision || ''),
-    classification: String(ref.classification || 'NEGOTIABLE_AESTHETIC_DIRECTION').toUpperCase(),
-    summary: String(ref.summary || ref.description || '')
-  })));
+  const historicalReferences = Object.freeze(rawRefs.map((ref, idx) => {
+    const rawClass = String(ref.classification || 'NEGOTIABLE_AESTHETIC_DIRECTION').toUpperCase();
+    const classification = VALID_REFERENCE_CLASSIFICATIONS.includes(rawClass) ? rawClass : 'NEGOTIABLE_AESTHETIC_DIRECTION';
+    const rawProv = String(ref.provenance_class || (ref.source_revision ? 'CONTEMPORANEOUS_ORIGINAL' : 'RECONSTRUCTED_RECORD')).toUpperCase();
+    const provenanceClass = VALID_PROVENANCE_CLASSES.includes(rawProv) ? rawProv : 'RECONSTRUCTED_RECORD';
+    return Object.freeze({
+      reference_id: String(ref.reference_id || `REF-${idx + 1}`),
+      source_path: String(ref.source_path || ref.path || ''),
+      source_revision: String(ref.source_revision || ref.commit || ref.revision || ''),
+      classification,
+      provenance_class: provenanceClass,
+      summary: String(ref.summary || ref.description || '')
+    });
+  }));
 
   return Object.freeze({
     commission_id: String(raw.commission_id || `COMM-${sha256(seed).slice(0, 8)}`),
@@ -485,13 +629,16 @@ export function normalizeCommission(raw = {}) {
 /**
  * Executes the generative authoring cycle.
  */
-export async function runDollhouseDesignCycle(commissionInput = {}) {
+export async function runDollhouseDesignCycle(commissionInput = {}, options = {}) {
   const commission = normalizeCommission(commissionInput);
 
-  // 1. SELECT INSTRUMENTS
+  // 1. RESOLVE HISTORICAL REFERENCES (Pre-M6 Reference Resolution - Fail-Closed on BINDING)
+  const resolvedReferences = resolveHistoricalReferences(commission.historical_references, options);
+
+  // 2. SELECT INSTRUMENTS
   const instruments = commission.instruments.map(id => AVAILABLE_INSTRUMENTS[id]);
 
-  // 2. GENERATE COMMISSION-DERIVED ALTERNATIVES
+  // 3. GENERATE COMMISSION-DERIVED ALTERNATIVES
   const candidates = deriveCommissionCandidates(commission);
   const [candidateA, candidateB] = candidates;
 
@@ -660,7 +807,7 @@ export async function runDollhouseDesignCycle(commissionInput = {}) {
     medium: commission.medium,
     human_coordinates: commission.human_coordinates,
     selected_instruments: commission.instruments,
-    historical_references: commission.historical_references,
+    historical_references: resolvedReferences,
     candidates: [candidateA, candidateB],
     primary_materialization: primaryMaterialization,
     refractive_variant: refractiveVariant,
