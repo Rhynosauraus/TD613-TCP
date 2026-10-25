@@ -121,17 +121,41 @@ export function resolveHistoricalReference(ref, options = {}) {
   const refId = String(ref.reference_id || 'REF-UNNAMED').trim();
   const sourcePath = String(ref.source_path || ref.path || '').trim();
   const sourceRevision = String(ref.source_revision || ref.commit || ref.revision || '').trim();
-  const rawClass = String(ref.classification || 'NEGOTIABLE_AESTHETIC_DIRECTION').trim().toUpperCase();
-  const classification = VALID_REFERENCE_CLASSIFICATIONS.includes(rawClass) ? rawClass : 'NEGOTIABLE_AESTHETIC_DIRECTION';
-  const rawProv = String(ref.provenance_class || (sourceRevision ? 'CONTEMPORANEOUS_ORIGINAL' : 'RECONSTRUCTED_RECORD')).trim().toUpperCase();
-  const provenanceClass = VALID_PROVENANCE_CLASSES.includes(rawProv) ? rawProv : 'RECONSTRUCTED_RECORD';
-  const summary = String(ref.summary || ref.description || '').trim();
+  
+  let classification = 'NEGOTIABLE_AESTHETIC_DIRECTION';
+  if (ref.classification !== undefined && ref.classification !== null) {
+    const rawClass = String(ref.classification).trim().toUpperCase();
+    if (!VALID_REFERENCE_CLASSIFICATIONS.includes(rawClass)) {
+      throw new TypeError(`Unrecognized historical reference classification "${ref.classification}". Allowed: ${VALID_REFERENCE_CLASSIFICATIONS.join(', ')}`);
+    }
+    classification = rawClass;
+  }
 
+  const isHexCommit = /^[a-f0-9]{40}$/i.test(sourceRevision);
+  let revisionType = 'UNSPECIFIED';
+  if (isHexCommit) {
+    revisionType = 'IMMUTABLE_40HEX_COMMIT';
+  } else if (sourceRevision && sourceRevision !== 'WORKING_TREE' && sourceRevision !== 'HEAD') {
+    revisionType = 'MUTABLE_SYMBOLIC_REF';
+  } else {
+    revisionType = 'WORKING_TREE';
+  }
+
+  let provenanceClass = sourceRevision ? 'CONTEMPORANEOUS_ORIGINAL' : 'RECONSTRUCTED_RECORD';
+  if (ref.provenance_class !== undefined && ref.provenance_class !== null) {
+    const rawProv = String(ref.provenance_class).trim().toUpperCase();
+    if (!VALID_PROVENANCE_CLASSES.includes(rawProv)) {
+      throw new TypeError(`Unrecognized provenance class "${ref.provenance_class}". Allowed: ${VALID_PROVENANCE_CLASSES.join(', ')}`);
+    }
+    provenanceClass = rawProv;
+  }
+
+  const summary = String(ref.summary || ref.description || '').trim();
   const isBinding = classification === 'BINDING_CUSTODY_LAW' || classification === 'BINDING_CONSTRAINT';
 
   if (!sourcePath) {
     if (isBinding) {
-      throw new ReferenceError(`Binding historical reference "${refId}" missing source_path`);
+      throw new TypeError(`Binding historical reference "${refId}" missing source_path`);
     }
   }
 
@@ -139,27 +163,27 @@ export function resolveHistoricalReference(ref, options = {}) {
   let retrievalMethod = 'UNRESOLVED';
   let retrievalError = null;
 
-  // 1. If source_revision is specified and looks like a git commit/ref (not working tree), attempt git show
-  if (sourceRevision && sourceRevision !== 'WORKING_TREE' && sourceRevision !== 'HEAD') {
+  // 1. If source_revision is specified and not working tree, attempt git show
+  if (sourceRevision && sourceRevision !== 'WORKING_TREE') {
     try {
       rawContent = execFileSync('git', ['show', `${sourceRevision}:${sourcePath}`], {
         cwd: repoRoot,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe']
       });
-      retrievalMethod = 'GIT_SHOW_IMMUTABLE_REVISION';
+      retrievalMethod = isHexCommit ? 'GIT_SHOW_IMMUTABLE_40HEX_COMMIT' : 'GIT_SHOW_MUTABLE_REF';
     } catch (err) {
       retrievalError = String(err && err.message ? err.message : err).trim();
     }
   }
 
-  // 2. Fallback to local filesystem if git show wasn't applicable or if working tree was explicitly requested
+  // 2. Fallback to local filesystem if git show wasn't applicable or if working tree was requested
   if (rawContent === null && (!sourceRevision || sourceRevision === 'WORKING_TREE' || sourceRevision === 'HEAD')) {
     const fullPath = resolve(repoRoot, sourcePath);
     if (existsSync(fullPath)) {
       try {
         rawContent = readFileSync(fullPath, 'utf8');
-        retrievalMethod = 'LOCAL_FILESYSTEM_READ';
+        retrievalMethod = 'LOCAL_FILESYSTEM_WORKING_TREE';
       } catch (err) {
         retrievalError = String(err && err.message ? err.message : err).trim();
       }
@@ -179,6 +203,7 @@ export function resolveHistoricalReference(ref, options = {}) {
       reference_id: refId,
       source_path: sourcePath,
       source_revision: sourceRevision,
+      revision_type: revisionType,
       classification,
       provenance_class: provenanceClass,
       summary,
@@ -193,13 +218,29 @@ export function resolveHistoricalReference(ref, options = {}) {
   const contentDigest = sha256(rawContent);
   const byteCount = Buffer.byteLength(rawContent, 'utf8');
   const lineCount = rawContent.split(/\r?\n/).length;
-  // Substantive content snippet (first 1000 characters) so agent context receives actual source text
+  const charCount = rawContent.length;
+
+  // Compact excerpt for summary cards / receipts
   const contentExcerpt = rawContent.length > 1000 ? rawContent.slice(0, 1000) + '... [TRUNCATED]' : rawContent;
+
+  // Complete source text retained so downstream creative author receives the entire document
+  // without losing critical rules beyond the 1,000-character boundary
+  const fullContent = rawContent;
+
+  const contentManifest = Object.freeze({
+    byte_count: byteCount,
+    char_count: charCount,
+    line_count: lineCount,
+    sha256: contentDigest,
+    is_complete: true,
+    inspection_protocol: 'FULL_SOURCE_INGESTION'
+  });
 
   return Object.freeze({
     reference_id: refId,
     source_path: sourcePath,
     source_revision: sourceRevision,
+    revision_type: revisionType,
     classification,
     provenance_class: provenanceClass,
     summary,
@@ -209,8 +250,27 @@ export function resolveHistoricalReference(ref, options = {}) {
     byte_count: byteCount,
     line_count: lineCount,
     content_excerpt: contentExcerpt,
+    full_content: fullContent,
+    content_manifest: contentManifest,
     resolved: true
   });
+}
+
+/**
+ * Retrieves the complete source content of a resolved reference, ensuring
+ * that instructions beyond any truncated excerpt are fully accessible to the author.
+ *
+ * @param {object} resolvedRef
+ * @returns {string}
+ */
+export function getReferenceFullContent(resolvedRef) {
+  if (!resolvedRef || typeof resolvedRef !== 'object') {
+    throw new TypeError('Reference must be an object');
+  }
+  if (!resolvedRef.resolved || !resolvedRef.full_content) {
+    throw new ReferenceError(`Reference "${resolvedRef.reference_id || 'UNKNOWN'}" has not been resolved or has no content`);
+  }
+  return resolvedRef.full_content;
 }
 
 /**
@@ -597,19 +657,56 @@ export function normalizeCommission(raw = {}) {
   }
 
   // Parse and freeze historical reference inputs (Pre-M6 Reference Ingestion)
-  const rawRefs = Array.isArray(raw.historical_references) ? raw.historical_references : [];
+  let rawRefs = [];
+  if (raw.historical_references !== undefined && raw.historical_references !== null) {
+    if (!Array.isArray(raw.historical_references)) {
+      throw new TypeError('Commission "historical_references" must be an array of reference objects');
+    }
+    rawRefs = raw.historical_references;
+  }
+
   const historicalReferences = Object.freeze(rawRefs.map((ref, idx) => {
-    const rawClass = String(ref.classification || 'NEGOTIABLE_AESTHETIC_DIRECTION').toUpperCase();
-    const classification = VALID_REFERENCE_CLASSIFICATIONS.includes(rawClass) ? rawClass : 'NEGOTIABLE_AESTHETIC_DIRECTION';
-    const rawProv = String(ref.provenance_class || (ref.source_revision ? 'CONTEMPORANEOUS_ORIGINAL' : 'RECONSTRUCTED_RECORD')).toUpperCase();
-    const provenanceClass = VALID_PROVENANCE_CLASSES.includes(rawProv) ? rawProv : 'RECONSTRUCTED_RECORD';
+    if (!ref || typeof ref !== 'object') {
+      throw new TypeError(`Historical reference at index ${idx} must be an object`);
+    }
+    const refId = String(ref.reference_id || `REF-${idx + 1}`).trim();
+    if (!refId) throw new TypeError(`Historical reference at index ${idx} missing reference_id`);
+
+    let classification = 'NEGOTIABLE_AESTHETIC_DIRECTION';
+    if (ref.classification !== undefined && ref.classification !== null) {
+      const cleanClass = String(ref.classification).trim().toUpperCase();
+      if (!VALID_REFERENCE_CLASSIFICATIONS.includes(cleanClass)) {
+        throw new TypeError(
+          `Unrecognized historical reference classification "${ref.classification}" in reference "${refId}". Allowed: ${VALID_REFERENCE_CLASSIFICATIONS.join(', ')}`
+        );
+      }
+      classification = cleanClass;
+    }
+
+    const sourceRevision = String(ref.source_revision || ref.commit || ref.revision || '').trim();
+    let provenanceClass = sourceRevision ? 'CONTEMPORANEOUS_ORIGINAL' : 'RECONSTRUCTED_RECORD';
+    if (ref.provenance_class !== undefined && ref.provenance_class !== null) {
+      const cleanProv = String(ref.provenance_class).trim().toUpperCase();
+      if (!VALID_PROVENANCE_CLASSES.includes(cleanProv)) {
+        throw new TypeError(
+          `Unrecognized provenance class "${ref.provenance_class}" in reference "${refId}". Allowed: ${VALID_PROVENANCE_CLASSES.join(', ')}`
+        );
+      }
+      provenanceClass = cleanProv;
+    }
+
+    const sourcePath = String(ref.source_path || ref.path || '').trim();
+    if (!sourcePath && (classification === 'BINDING_CUSTODY_LAW' || classification === 'BINDING_CONSTRAINT')) {
+      throw new TypeError(`Binding historical reference "${refId}" missing source_path`);
+    }
+
     return Object.freeze({
-      reference_id: String(ref.reference_id || `REF-${idx + 1}`),
-      source_path: String(ref.source_path || ref.path || ''),
-      source_revision: String(ref.source_revision || ref.commit || ref.revision || ''),
+      reference_id: refId,
+      source_path: sourcePath,
+      source_revision: sourceRevision,
       classification,
       provenance_class: provenanceClass,
-      summary: String(ref.summary || ref.description || '')
+      summary: String(ref.summary || ref.description || '').trim()
     });
   }));
 

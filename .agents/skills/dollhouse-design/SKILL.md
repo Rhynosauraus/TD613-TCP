@@ -51,21 +51,21 @@ COMMISSION
 
 ## Historical Reference Ingestion (Pre-M6 Standard)
 
-To support rich historical design briefs (such as the Holonomy Loom pre-M6 audition) without reducing complex records to shallow keywords, commissions support structured `historical_references`:
+To support rich historical design briefs without reducing complex repository records to shallow keywords, commissions support structured `historical_references`:
 
 ```json
 {
-  "reference_id": "REF-LOOM-CUSTODY-01",
-  "source_path": "docs/reentry/RELATION_MAP.md",
+  "reference_id": "REF-LAW-ENTRY-01",
+  "source_path": "AGENTS.md",
   "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
   "classification": "BINDING_CUSTODY_LAW",
   "provenance_class": "CONTEMPORANEOUS_ORIGINAL",
-  "summary": "Registration, Check, Challenge, and Carrier continuation custody law."
+  "summary": "TD613 Agent Entry Contract: Cistern law, consequence before ontology, child-legible NOW / WHY / EXACT, and human closure."
 }
 ```
 
-- **Four Epistemic Tiers (`classification`):**
-  - `BINDING_CUSTODY_LAW` / `BINDING_CONSTRAINT`: Invariants that the creative author must rigorously uphold. Fails closed (`ReferenceError`) if the file cannot be retrieved at the declared revision.
+- **Epistemic Classifications (`classification`):**
+  - `BINDING_CUSTODY_LAW` / `BINDING_CONSTRAINT`: Invariants that the creative author must rigorously uphold. Fails closed (`ReferenceError` or `TypeError`) if the file cannot be retrieved or verified at the declared revision. Full source is completely ingested.
   - `NEGOTIABLE_AESTHETIC_DIRECTION`: Historical visual cues or UX patterns that the author is free to reinterpret.
   - `CONDUCTOR_HEURISTICS`: Deterministic scoring rules, candidate suggestions, and syntactic triggers.
   - `AGENT_AUTHORED_DECISIONS`: Final concrete HTML, CSS, and layout selections created by the generative author.
@@ -73,7 +73,8 @@ To support rich historical design briefs (such as the Holonomy Loom pre-M6 audit
   - `CONTEMPORANEOUS_ORIGINAL`: Contemporaneously captured source records bound to immutable commit revisions.
   - `RECONSTRUCTED_RECORD`: Historical artifacts or structures reconstructed from subsequent analysis.
   - `ANNOTATED_RECORD`: Historical records supplemented with interpretive or procedural metadata.
-- **Fail-Closed Resolution & Substantive Ingestion:** The conductor verifies and retrieves reference bytes via `git show <revision>:<path>` (or local filesystem), recording byte counts, SHA-256 digests, and substantive content excerpts in the return receipt so the authoring context reads actual source text rather than shallow summaries alone.
+- **Fail-Closed Resolution & Full-Source Ingestion Protocol:**
+  The conductor verifies and retrieves reference bytes via `git show <revision>:<path>` (or local filesystem), recording byte counts, SHA-256 digests, and complete source text under `full_content` with `inspection_protocol: 'FULL_SOURCE_INGESTION'`. Downstream creative authors access the full text via `getReferenceFullContent(ref)`, ensuring governing instructions located deep in large contracts (e.g. at byte offset > 20,000) are fully accessible without excerpt starvation.
 
 ---
 
@@ -151,6 +152,50 @@ const result = await runDollhouseDesignCycle({
 console.log(result.primary_materialization);
 console.log(result.refractive_variant);
 ```
+
+---
+
+## Commission-Neutral Native Invocation Contract (Pre-M6 Readiness)
+
+The `/dollhouse-design` skill maintains strict **commission neutrality**. It does not pre-bake carrier selections, multi-phase layout structures, or specific instrument pairings. All substantive design constraints, historical visual baselines, carrier ontologies (e.g. 39-carrier vocabulary), and custody laws remain fully uncommitted, awaiting explicit direction from the human operator's forthcoming M6 prompt.
+
+### Abstract Commission Input Template
+
+When invoking `/dollhouse-design` natively in Antigravity or via CLI runner, the operator supplies an abstract commission:
+
+```json
+{
+  "commission_id": "COMM-OPERATOR-ASSIGNED",
+  "seed": "<abstract-intellectual-seed>",
+  "medium": "VISUAL | MOTION | SCHOLARLY | THEORETICAL | PRODUCT | HYBRID",
+  "instruments": [
+    "<SELECTABLE_INSTRUMENT>"
+  ],
+  "human_coordinates": {
+    "what": "<primary-material-subject>",
+    "who": "<participant-roles-and-tensions>",
+    "where": "<spatial-or-topological-arena>",
+    "how": "<governing-transformative-mechanisms>",
+    "when": "<temporal-cadence-or-stages>",
+    "why": "<consequential-purpose-and-human-stakes>"
+  },
+  "historical_references": [
+    {
+      "reference_id": "REF-01",
+      "source_path": "<repo-relative-source-path>",
+      "source_revision": "<40-hex-commit-sha | symbolic-ref | WORKING_TREE>",
+      "classification": "BINDING_CUSTODY_LAW | BINDING_CONSTRAINT | NEGOTIABLE_AESTHETIC_DIRECTION | CONDUCTOR_HEURISTICS | AGENT_AUTHORED_DECISIONS",
+      "provenance_class": "CONTEMPORANEOUS_ORIGINAL | RECONSTRUCTED_RECORD | ANNOTATED_RECORD",
+      "summary": "<concise-summary-of-reference>"
+    }
+  ],
+  "scientific_audit_requested": false
+}
+```
+
+- If `instruments` is omitted, the conductor infers instruments contextually from seed semantics.
+- If `historical_references` are supplied, all binding references are retrieved and fully ingested. If any binding reference cannot be resolved at the declared revision, the cycle fails closed (`ReferenceError`).
+- Downstream creative materialization consumes the resulting return receipt and produces dual structurally distinct candidates (Primary and Refraction) under `OPEN_FIELD_CREATIVE_SYNTHESIS`.
 
 ---
 

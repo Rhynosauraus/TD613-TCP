@@ -1,0 +1,157 @@
+{
+  "schema": "td613.dollhouse-design.handoff-execution-witness/v0.2",
+  "execution_timestamp": "2026-10-25T00:49:43.101Z",
+  "executed_implementation_revision": "8d222de77dea57b6e022d441afd18ffc59a2f085",
+  "skill_definition": {
+    "path": ".agents/skills/dollhouse-design/SKILL.md",
+    "byte_count": 12883,
+    "sha256": "614b99c83ef989f12f5676fcaadf4618e13d712a49fd24e20f559961d445335e"
+  },
+  "commission_input": {
+    "commission_id": "COMM-c0bd466c",
+    "seed": "A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.",
+    "medium": "VISUAL",
+    "instruments": [
+      "CARO_INSTITUTIONAL_RECONSTRUCTION"
+    ]
+  },
+  "conductor_execution": {
+    "schema": "td613.dollhouse-design.return-receipt/v0.2",
+    "version": "v0.2-candidate",
+    "primary_materialization_title": "Composition on: A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.",
+    "candidate_propositions": [
+      {
+        "candidate_id": "COMM-c0bd466c-CAND-A",
+        "title": "The Corridor Apparatus",
+        "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+        "formal_proposition": "Materializes administrative resistance and institutional friction through procedural delay and archival omission."
+      },
+      {
+        "candidate_id": "COMM-c0bd466c-CAND-B",
+        "title": "The Applicant's Corridor",
+        "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+        "formal_proposition": "Reframes the work through the sensory exhaustion of the delayed subject rather than the sovereign designer's blueprint."
+      }
+    ],
+    "refractive_variant": {
+      "mutated_parameter": "administrative_friction_inversion",
+      "formal_consequence": "Shifts from documenting administrative machinery to measuring the human exhaustion of delay."
+    }
+  },
+  "resolved_binding_references": [
+    {
+      "reference_id": "REF-LAW-AGENTS-01",
+      "source_path": "AGENTS.md",
+      "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
+      "revision_type": "IMMUTABLE_40HEX_COMMIT",
+      "classification": "BINDING_CUSTODY_LAW",
+      "provenance_class": "CONTEMPORANEOUS_ORIGINAL",
+      "sha256": "3936238077898f69d11056177ab1d5d51db140e1fa49ef3110b43dcd7ab60ddf",
+      "byte_count": 24429,
+      "line_count": 348,
+      "inspection_protocol": "FULL_SOURCE_INGESTION",
+      "deep_offset_assertion": {
+        "target_instruction": "child-legible NOW / WHY / EXACT where human consequence is involved",
+        "byte_offset": 20574,
+        "in_content_excerpt": false,
+        "in_full_content": true,
+        "adjacent_laws_verified": [
+          "consequence before ontology",
+          "rest and exit remain available without penalty",
+          "same endpoint does not erase route history"
+        ],
+        "status": "PASS"
+      }
+    },
+    {
+      "reference_id": "REF-CARO-ANTECEDENT-01",
+      "source_path": "tests/fixtures/dollhouse/caro_corridor_primary.html",
+      "source_revision": "5968eabd468a9dbc83961f3c75eb09e3d95a893f",
+      "revision_type": "IMMUTABLE_40HEX_COMMIT",
+      "classification": "NEGOTIABLE_AESTHETIC_DIRECTION",
+      "provenance_class": "RECONSTRUCTED_RECORD",
+      "sha256": "12db81690b992a998ecd7eb398b810bdae8dc86b686df1af7c99e64223faea77",
+      "byte_count": 20964,
+      "line_count": 662,
+      "inspection_protocol": "FULL_SOURCE_INGESTION"
+    }
+  ],
+  "creative_authoring_envelope": {
+    "contract_schema": "td613.dollhouse-design.authoring-envelope/v0.2",
+    "seed": "A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.",
+    "medium": "VISUAL",
+    "primary_candidate": {
+      "title": "The Corridor Apparatus",
+      "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+      "formal_proposition": "Materializes administrative resistance and institutional friction through procedural delay and archival omission.",
+      "medium_consequence": "In VISUAL, the work refuses singular closure by presenting distinct rival paths.",
+      "executed_causal_laws": [
+        {
+          "parameter": "procedural_friction_coefficient_mu",
+          "target_component": "procedural_clearance_latency",
+          "transfer_law": "T_clearance = mu * 400ms (chamber latency delay; navigation controls locked during administrative review; reduced-motion or falsification probe bypasses to 0ms)",
+          "falsification_probe": "mu = 0.0 collapses procedural clearance latency to 0ms (immediate transition across corridor)"
+        },
+        {
+          "parameter": "archive_omission_index_lambda",
+          "target_component": "progressive_document_redaction",
+          "transfer_law": "redacted_word_count = chamber_index * 4 (discrete petition redaction; terminal door unlocks at 16/16 redactions)",
+          "falsification_probe": "lambda = 0.0 restores all 16 words to full visibility and keeps terminal door locked"
+        }
+      ],
+      "governing_design_laws_from_full_source": [
+        "consequence before ontology",
+        "child-legible NOW / WHY / EXACT where human consequence is involved",
+        "rest and exit remain available without penalty",
+        "same endpoint does not erase route history",
+        "human closure remains required"
+      ]
+    },
+    "refractive_candidate": {
+      "title": "The Applicant's Corridor",
+      "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+      "formal_proposition": "Reframes the work through the sensory exhaustion of the delayed subject rather than the sovereign designer's blueprint.",
+      "mutated_parameter": "administrative_friction_inversion",
+      "refractive_consequence": "Shifts from documenting administrative machinery to measuring the human exhaustion of delay."
+    },
+    "governance": {
+      "discourse_mode": "OPEN_FIELD_CREATIVE_SYNTHESIS",
+      "scientific_proof": false,
+      "release_authority": false,
+      "human_closure_required": true
+    }
+  },
+  "produced_artifacts_verification": {
+    "primary": {
+      "path": "tests/fixtures/dollhouse/caro_corridor_primary.html",
+      "byte_count": 24253,
+      "sha256": "4a3dd5325f075e6aed2e7edc4b356f109f7811f2e9a1de7b792556aaa21cddc3",
+      "verified": true
+    },
+    "refractive": {
+      "path": "tests/fixtures/dollhouse/caro_corridor_refraction.html",
+      "byte_count": 20401,
+      "sha256": "bcb438d3a88fc98bb6a6248eba859b145782e23801c63657e4175334d823315f",
+      "verified": true
+    }
+  },
+  "cdp_browser_verification_summary": {
+    "browser_engine": "Chrome/156.0.8078.47",
+    "total_assertions_checked": 43,
+    "procedural_friction_verified": true,
+    "progressive_redaction_verified": true,
+    "keyboard_stepping_verified": true,
+    "reduced_motion_latency_bypass_verified": true,
+    "disposition": "VERIFIED_PASS"
+  },
+  "governance_firebreak": {
+    "discourse_mode": "OPEN_FIELD_CREATIVE_SYNTHESIS",
+    "scientific_proof": false,
+    "release_authority": false,
+    "deployment_authority": false,
+    "human_closure_required": true,
+    "governing_law": "Make the unresolved relation productive. Let distinct forms meet without forcing them to merge. Allow the work to discover its medium through consequence."
+  },
+  "handoff_status": "SUCCESS",
+  "disposition": "PRE_M6_READY"
+}

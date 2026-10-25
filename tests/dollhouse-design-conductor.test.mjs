@@ -13,6 +13,7 @@ import {
   buildInstrumentCausalContract,
   resolveHistoricalReference,
   resolveHistoricalReferences,
+  getReferenceFullContent,
   runDollhouseDesignCycle
 } from '../app/engine/dollhouse-design-conductor.js';
 
@@ -300,12 +301,18 @@ test('TD613 Dollhouse Design Conductor v0.2 - First-Class Historical Reference I
   assert.equal(ref1.reference_id, 'REF-RELATION-MAP-01');
   assert.equal(ref1.classification, 'BINDING_CUSTODY_LAW');
   assert.equal(ref1.provenance_class, 'CONTEMPORANEOUS_ORIGINAL');
+  assert.equal(ref1.revision_type, 'IMMUTABLE_40HEX_COMMIT');
   assert.equal(ref1.resolution_status, 'RESOLVED');
   assert.equal(ref1.resolved, true);
-  assert.equal(ref1.retrieval_method, 'GIT_SHOW_IMMUTABLE_REVISION');
+  assert.equal(ref1.retrieval_method, 'GIT_SHOW_IMMUTABLE_40HEX_COMMIT');
   assert.ok(/^[a-f0-9]{64}$/.test(ref1.sha256), 'Must contain 64-char sha256 digest of resolved bytes');
   assert.ok(ref1.byte_count > 0, 'Byte count must be positive');
   assert.ok(ref1.content_excerpt.includes('RELATION_MAP') || ref1.content_excerpt.length > 50, 'Must contain substantive source content snippet');
+  assert.equal(Buffer.byteLength(ref1.full_content, 'utf8'), ref1.byte_count, 'Byte length of full_content must match byte_count');
+  assert.equal(ref1.content_manifest.is_complete, true);
+  assert.equal(ref1.content_manifest.inspection_protocol, 'FULL_SOURCE_INGESTION');
+  assert.equal(ref1.content_manifest.sha256, ref1.sha256);
+  assert.equal(getReferenceFullContent(ref1), ref1.full_content);
 
   // 2. Non-binding reference with missing file records UNRESOLVED without halting cycle
   const ref2 = receipt.historical_references[1];
@@ -318,6 +325,126 @@ test('TD613 Dollhouse Design Conductor v0.2 - First-Class Historical Reference I
 
   assert.ok(Object.isFrozen(receipt.historical_references));
   assert.ok(Object.isFrozen(receipt.historical_references[0]));
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - Decisive Full-Source vs Excerpt Ingestion (C68-2 Regression Test)', async () => {
+  // Ingest AGENTS.md (24KB+) at immutable revision e0a7ba5f3b76f545da11037833c269abd7623a04
+  const agentsComm = {
+    commission_id: 'TEST-AGENTS-DEEP-INGESTION',
+    seed: 'Auditing deep binding instructions beyond 1000 character excerpt limit',
+    historical_references: [
+      {
+        reference_id: 'REF-AGENTS-LAW-DEEP',
+        source_path: 'AGENTS.md',
+        source_revision: 'e0a7ba5f3b76f545da11037833c269abd7623a04',
+        classification: 'BINDING_CUSTODY_LAW',
+        provenance_class: 'CONTEMPORANEOUS_ORIGINAL',
+        summary: 'TD613 Agent Entry Contract containing governing design law.'
+      }
+    ]
+  };
+
+  const receipt = await runDollhouseDesignCycle(agentsComm);
+  const ref = receipt.historical_references[0];
+
+  assert.equal(ref.reference_id, 'REF-AGENTS-LAW-DEEP');
+  assert.equal(ref.resolved, true);
+  assert.equal(ref.revision_type, 'IMMUTABLE_40HEX_COMMIT');
+  assert.equal(ref.content_manifest.inspection_protocol, 'FULL_SOURCE_INGESTION');
+  assert.ok(ref.byte_count > 20000, `Byte count must exceed 20,000 bytes (got ${ref.byte_count})`);
+
+  // Target deep instruction located at byte offset ~20,574
+  const targetInstruction = 'child-legible NOW / WHY / EXACT where human consequence is involved';
+
+  // Excerpt (first 1000 chars) MUST NOT contain the deep instruction
+  assert.equal(
+    ref.content_excerpt.includes(targetInstruction),
+    false,
+    'Truncated content_excerpt must NOT contain deep instruction located past byte 20,000'
+  );
+
+  // Full source retrieved via getReferenceFullContent MUST contain the deep instruction
+  const fullContent = getReferenceFullContent(ref);
+  assert.equal(
+    fullContent.includes(targetInstruction),
+    true,
+    'getReferenceFullContent must provide the complete source containing the deep instruction'
+  );
+
+  // Adjacent governing design laws must also be present in full content
+  assert.ok(fullContent.includes('rest and exit remain available without penalty'));
+  assert.ok(fullContent.includes('same endpoint does not erase route history'));
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - Strict Historical Reference Input Classification Validation (C68-2)', () => {
+  // 1. Unrecognized classification throws TypeError
+  assert.throws(
+    () => normalizeCommission({
+      seed: 'Test invalid classification',
+      historical_references: [
+        {
+          reference_id: 'REF-BAD-CLASS',
+          source_path: 'AGENTS.md',
+          classification: 'OPTIONAL_SUGGESTION'
+        }
+      ]
+    }),
+    {
+      name: 'TypeError',
+      message: /Unrecognized historical reference classification "OPTIONAL_SUGGESTION"/
+    }
+  );
+
+  // 2. Non-array historical_references throws TypeError
+  assert.throws(
+    () => normalizeCommission({
+      seed: 'Test non-array historical_references',
+      historical_references: 'not-an-array'
+    }),
+    {
+      name: 'TypeError',
+      message: /Commission "historical_references" must be an array of reference objects/
+    }
+  );
+
+  // 3. Binding reference missing source_path throws TypeError
+  assert.throws(
+    () => normalizeCommission({
+      seed: 'Test missing path on binding reference',
+      historical_references: [
+        {
+          reference_id: 'REF-NO-PATH',
+          classification: 'BINDING_CUSTODY_LAW'
+        }
+      ]
+    }),
+    {
+      name: 'TypeError',
+      message: /Binding historical reference "REF-NO-PATH" missing source_path/
+    }
+  );
+
+  // 4. Mutable symbolic ref classification
+  const mutableRef = resolveHistoricalReference({
+    reference_id: 'REF-MUTABLE-SYM',
+    source_path: 'AGENTS.md',
+    source_revision: 'feat/dollhouse-design-candidate',
+    classification: 'NEGOTIABLE_AESTHETIC_DIRECTION'
+  });
+  assert.equal(mutableRef.revision_type, 'MUTABLE_SYMBOLIC_REF');
+  assert.equal(mutableRef.retrieval_method, 'GIT_SHOW_MUTABLE_REF');
+  assert.equal(mutableRef.resolved, true);
+
+  // 5. Working tree reference classification
+  const wtRef = resolveHistoricalReference({
+    reference_id: 'REF-WORKING-TREE',
+    source_path: 'AGENTS.md',
+    source_revision: 'WORKING_TREE',
+    classification: 'NEGOTIABLE_AESTHETIC_DIRECTION'
+  });
+  assert.equal(wtRef.revision_type, 'WORKING_TREE');
+  assert.equal(wtRef.retrieval_method, 'LOCAL_FILESYSTEM_WORKING_TREE');
+  assert.equal(wtRef.resolved, true);
 });
 
 test('TD613 Dollhouse Design Conductor v0.2 - Fail-Closed on Unresolvable Binding Historical Reference (A67-C1)', async () => {
