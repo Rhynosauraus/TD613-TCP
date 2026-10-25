@@ -1,0 +1,274 @@
+{
+  "schema": "td613.dollhouse-design.handoff-execution-witness/v0.2",
+  "execution_timestamp": "2026-10-25T01:56:46.211Z",
+  "executed_implementation_revision": "81c470d46085762795d621b458b1d99d7a7b9ccb",
+  "skill_definition": {
+    "path": ".agents/skills/dollhouse-design/SKILL.md",
+    "byte_count": 12883,
+    "sha256": "614b99c83ef989f12f5676fcaadf4618e13d712a49fd24e20f559961d445335e"
+  },
+  "commission_input": {
+    "commission_id": "COMM-QUAL-01",
+    "seed": "An archival ledger where recording a transaction consumes the page, and the seal can only be struck when ink and paper are in exact balance.",
+    "medium": "VISUAL",
+    "instruments": [
+      "CARO_INSTITUTIONAL_RECONSTRUCTION"
+    ]
+  },
+  "conductor_execution": {
+    "schema": "td613.dollhouse-design.return-receipt/v0.2",
+    "version": "v0.2-candidate",
+    "primary_materialization_title": "Composition on: An archival ledger where recording a transaction consumes the page, and the seal can only be struck when ink and paper are in exact balance.",
+    "candidate_propositions": [
+      {
+        "candidate_id": "COMM-QUAL-01-CAND-A",
+        "title": "The Corridor Apparatus",
+        "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+        "formal_proposition": "Materializes administrative resistance and institutional friction through procedural delay and archival omission."
+      },
+      {
+        "candidate_id": "COMM-QUAL-01-CAND-B",
+        "title": "The Applicant's Corridor",
+        "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+        "formal_proposition": "Reframes the work through the sensory exhaustion of the delayed subject rather than the sovereign designer's blueprint."
+      }
+    ],
+    "refractive_variant": {
+      "mutated_parameter": "administrative_friction_inversion",
+      "formal_consequence": "Shifts from documenting administrative machinery to measuring the human exhaustion of delay."
+    }
+  },
+  "resolved_binding_references": [
+    {
+      "reference_id": "REF-LAW-AGENTS-01",
+      "source_path": "AGENTS.md",
+      "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
+      "revision_type": "IMMUTABLE_40HEX_COMMIT",
+      "classification": "BINDING_CUSTODY_LAW",
+      "provenance_class": "CONTEMPORANEOUS_ORIGINAL",
+      "sha256": "3936238077898f69d11056177ab1d5d51db140e1fa49ef3110b43dcd7ab60ddf",
+      "byte_count": 24429,
+      "line_count": 348,
+      "inspection_protocol": "FULL_SOURCE_INGESTION",
+      "deep_offset_assertion": {
+        "target_instruction": "child-legible NOW / WHY / EXACT where human consequence is involved",
+        "byte_offset": 20574,
+        "in_content_excerpt": false,
+        "in_full_content": true,
+        "adjacent_laws_verified": [
+          "consequence before ontology",
+          "rest and exit remain available without penalty",
+          "same endpoint does not erase route history"
+        ],
+        "status": "PASS"
+      }
+    },
+    {
+      "reference_id": "REF-CARO-ANTECEDENT-01",
+      "source_path": "tests/fixtures/dollhouse/caro_corridor_primary.html",
+      "source_revision": "5968eabd468a9dbc83961f3c75eb09e3d95a893f",
+      "revision_type": "IMMUTABLE_40HEX_COMMIT",
+      "classification": "NEGOTIABLE_AESTHETIC_DIRECTION",
+      "provenance_class": "RECONSTRUCTED_RECORD",
+      "sha256": "12db81690b992a998ecd7eb398b810bdae8dc86b686df1af7c99e64223faea77",
+      "byte_count": 20964,
+      "line_count": 662,
+      "inspection_protocol": "FULL_SOURCE_INGESTION"
+    }
+  ],
+  "creative_authoring_envelope": {
+    "contract_schema": "td613.dollhouse-design.authoring-envelope/v0.2",
+    "seed": "An archival ledger where recording a transaction consumes the page, and the seal can only be struck when ink and paper are in exact balance.",
+    "medium": "VISUAL",
+    "primary_candidate": {
+      "title": "The Corridor Apparatus",
+      "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+      "formal_proposition": "Materializes administrative resistance and institutional friction through procedural delay and archival omission.",
+      "medium_consequence": "In VISUAL, the work refuses singular closure by presenting distinct rival paths.",
+      "executed_causal_laws": [
+        {
+          "parameter": "procedural_friction_coefficient_mu",
+          "target_component": "procedural_clearance_latency",
+          "transfer_law": "T_clearance = mu * 400ms (chamber latency delay; navigation controls locked during administrative review; reduced-motion or falsification probe bypasses to 0ms)",
+          "falsification_probe": "mu = 0.0 collapses procedural clearance latency to 0ms (immediate transition across corridor)"
+        },
+        {
+          "parameter": "archive_omission_index_lambda",
+          "target_component": "progressive_document_redaction",
+          "transfer_law": "redacted_word_count = chamber_index * 4 (discrete petition redaction; terminal door unlocks at 16/16 redactions)",
+          "falsification_probe": "lambda = 0.0 restores all 16 words to full visibility and keeps terminal door locked"
+        }
+      ],
+      "governing_design_laws_from_full_source": [
+        "consequence before ontology",
+        "child-legible NOW / WHY / EXACT where human consequence is involved",
+        "rest and exit remain available without penalty",
+        "same endpoint does not erase route history",
+        "human closure remains required"
+      ]
+    },
+    "refractive_candidate": {
+      "title": "The Applicant's Corridor",
+      "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+      "formal_proposition": "Reframes the work through the sensory exhaustion of the delayed subject rather than the sovereign designer's blueprint.",
+      "mutated_parameter": "administrative_friction_inversion",
+      "refractive_consequence": "Shifts from documenting administrative machinery to measuring the human exhaustion of delay."
+    },
+    "delivered_binding_sources": [
+      {
+        "reference_id": "REF-LAW-AGENTS-01",
+        "source_path": "AGENTS.md",
+        "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
+        "byte_count": 24429,
+        "sha256": "3936238077898f69d11056177ab1d5d51db140e1fa49ef3110b43dcd7ab60ddf",
+        "full_content_delivered": true
+      }
+    ],
+    "governance": {
+      "discourse_mode": "OPEN_FIELD_CREATIVE_SYNTHESIS",
+      "scientific_proof": false,
+      "release_authority": false,
+      "human_closure_required": true
+    }
+  },
+  "native_authoring_execution_trace": {
+    "activation_instruction": "Execute Pre-M6 Bounded Qualification Commission for Native Authoring Handshake under OPEN_FIELD_CREATIVE_SYNTHESIS",
+    "skill_definition_file": ".agents/skills/dollhouse-design/SKILL.md",
+    "skill_digest": "614b99c83ef989f12f5676fcaadf4618e13d712a49fd24e20f559961d445335e",
+    "commission_file": "tests/fixtures/dollhouse/qualification_commission.json",
+    "conductor_receipt_file": "tests/fixtures/dollhouse/qualification_return_receipt.json",
+    "subagent_provenance_witness": {
+      "schema": "td613.dollhouse-design.subagent-provenance-witness/v0.2",
+      "provenance_classification": "AUTHENTIC_NATIVE_SUBAGENT_EXECUTION_VERIFIED",
+      "direct_transcript_facts": {
+        "transcript_file_size_bytes": 164519,
+        "transcript_sha256": "4782e87938409158275874cfdce69cfbcb2b2307534f832f0e8f5ac4e1e0d413",
+        "total_transcript_entries": 93,
+        "first_entry_timestamp": "2026-10-25T01:13:18Z",
+        "last_entry_timestamp": "2026-10-25T01:19:57Z",
+        "dispatch": {
+          "step_index": 0,
+          "line_num": 1,
+          "derived_sender": "7a8eb538-a2de-4f69-960a-d8a971824655",
+          "derived_dispatch_timestamp": "2026-10-25T01:13:18Z",
+          "derived_commission_ref": "COMM-QUAL-01",
+          "derived_receipt_ref": "qualification_return_receipt.json"
+        },
+        "materialization_tool_calls": [
+          {
+            "step_index": 69,
+            "line_num": 71,
+            "tool": "write_file",
+            "derived_target_artifact": "tests/fixtures/dollhouse/qualification_ledger_primary.html",
+            "timestamp": "2026-10-25T01:15:51Z",
+            "tool_action": "Writing qualification ledger primary artifact"
+          },
+          {
+            "step_index": 71,
+            "line_num": 73,
+            "tool": "write_file",
+            "derived_target_artifact": "tests/fixtures/dollhouse/qualification_ledger_refraction.html",
+            "timestamp": "2026-10-25T01:17:47Z",
+            "tool_action": "Writing qualification ledger refraction artifact"
+          }
+        ],
+        "verification_tool_calls": [
+          {
+            "step_index": 73,
+            "line_num": 75,
+            "derived_command": "node scripts/verify-qualification-browser.mjs",
+            "timestamp": "2026-10-25T01:18:55Z"
+          },
+          {
+            "step_index": 77,
+            "line_num": 79,
+            "derived_command": "npm test -- tests/dollhouse-design-conductor.test.mjs",
+            "timestamp": "2026-10-25T01:19:09Z"
+          },
+          {
+            "step_index": 79,
+            "line_num": 81,
+            "derived_command": "node --test tests/dollhouse-design-conductor.test.mjs",
+            "timestamp": "2026-10-25T01:19:13Z"
+          },
+          {
+            "step_index": 85,
+            "line_num": 87,
+            "derived_command": "node scripts/verify-qualification-browser.mjs",
+            "timestamp": "2026-10-25T01:19:26Z"
+          }
+        ],
+        "completion_handshake": {
+          "step_index": 89,
+          "line_num": 91,
+          "derived_recipient": "7a8eb538-a2de-4f69-960a-d8a971824655",
+          "timestamp": "2026-10-25T01:19:44Z",
+          "verified_recipient_matches_sender": true,
+          "summary_excerpt": "### Creative Authoring Execution Report: Qualification Commission COMM-QUAL-01"
+        }
+      },
+      "reconstructed_context": {
+        "subagent_conversation_id": "3438ee3e-0bf0-4034-9ea5-5076683a8e92",
+        "parent_conversation_id": "7a8eb538-a2de-4f69-960a-d8a971824655",
+        "subagent_role": "Creative Materialization Author",
+        "subagent_type": "dollhouse-creative-author",
+        "execution_environment": "Antigravity pair-programming session"
+      }
+    },
+    "creative_agent": {
+      "agent_type": "dollhouse-creative-author",
+      "role": "Creative Materialization Author",
+      "conversation_id": "3438ee3e-0bf0-4034-9ea5-5076683a8e92",
+      "execution_status": "COMPLETED",
+      "materialized_artifacts": [
+        "tests/fixtures/dollhouse/qualification_ledger_primary.html",
+        "tests/fixtures/dollhouse/qualification_ledger_refraction.html"
+      ]
+    },
+    "binding_source_delivery": {
+      "reference_id": "REF-LAW-AGENTS-01",
+      "source_path": "AGENTS.md",
+      "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
+      "inspection_protocol": "FULL_SOURCE_INGESTION",
+      "inspected_deep_offset": 20574,
+      "inspected_deep_instruction": "child-legible NOW / WHY / EXACT where human consequence is involved"
+    }
+  },
+  "produced_artifacts_verification": {
+    "primary": {
+      "path": "tests/fixtures/dollhouse/qualification_ledger_primary.html",
+      "byte_count": 35875,
+      "sha256": "c841c067c45db1567706090b247bd86812a449ee051a45a57f01ad44ca5d5ccb",
+      "verified": true
+    },
+    "refractive": {
+      "path": "tests/fixtures/dollhouse/qualification_ledger_refraction.html",
+      "byte_count": 31786,
+      "sha256": "1c2af308c524479292bb8d948efb74b29da2d053be72152b2549c521b029e3bd",
+      "verified": true
+    }
+  },
+  "cdp_browser_verification_summary": {
+    "browser_engine": "Chrome/156.0.8078.47",
+    "total_assertions_checked": 72,
+    "primary_viewport_390px_overflow_px": 0,
+    "refractive_viewport_390px_overflow_px": 0,
+    "touch_targets_verified": true,
+    "keyboard_stepping_verified": true,
+    "causal_falsification_verified": true,
+    "behavioral_rest_verified": true,
+    "route_history_survival_verified": true,
+    "human_closure_demonstration_verified": true,
+    "disposition": "VERIFIED_PASS"
+  },
+  "governance_firebreak": {
+    "discourse_mode": "OPEN_FIELD_CREATIVE_SYNTHESIS",
+    "scientific_proof": false,
+    "release_authority": false,
+    "deployment_authority": false,
+    "human_closure_required": true,
+    "governing_law": "Make the unresolved relation productive. Let distinct forms meet without forcing them to merge. Allow the work to discover its medium through consequence."
+  },
+  "handoff_status": "SUCCESS",
+  "disposition": "PRE_M6_READY"
+}

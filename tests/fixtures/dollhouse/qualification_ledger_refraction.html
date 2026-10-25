@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="td613:commission-id" content="COMM-QUAL-01">
+  <meta name="td613:commission-ref" content="REF-LAW-AGENTS-01">
+  <meta name="td613:candidate-id" content="COMM-QUAL-01-REFRACT-01">
+  <meta name="td613:receipt-schema" content="td613.dollhouse-design.return-receipt/v0.2">
+  <title>The Scribe's Margins · Qualification Refractive Counterfactual</title>
+  <style>
+    :root {
+      --parchment-bg: #f5f0e8;
+      --paper-card: #fefdfa;
+      --ink-primary: #1f1c19;
+      --ink-secondary: #5c5349;
+      --ink-faint: #857b6f;
+      --border-parchment: #d4caa8;
+      --marginal-pencil: #2c3e50;
+      --marginal-highlight: #c75c1e;
+      --marginal-bg: rgba(199, 92, 30, 0.06);
+      --redaction-bar: #1f1c19;
+      --fatigue-accent: #8a3b14;
+      --focus-ring: #0277bd;
+      --silence-red: #a82424;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      background-color: var(--parchment-bg);
+      color: var(--ink-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Georgia", "Times New Roman", serif;
+      line-height: 1.5;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    header {
+      background: var(--paper-card);
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .header-eyebrow {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--marginal-highlight);
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--ink-secondary);
+      font-style: italic;
+    }
+
+    .meta-tag {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      color: var(--ink-faint);
+      margin-top: 6px;
+    }
+
+    /* Governing Law Notice: Child-legible NOW / WHY / EXACT */
+    .governing-banner {
+      background: #faf6ee;
+      border: 1px solid var(--border-parchment);
+      border-left: 4px solid var(--marginal-highlight);
+      border-radius: 4px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .governing-row {
+      font-size: 12px;
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .gov-badge {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-weight: 800;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-right: 6px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      width: fit-content;
+    }
+
+    .gov-badge.now {
+      background: var(--ink-primary);
+      color: #fff;
+    }
+
+    .gov-badge.why {
+      background: var(--marginal-highlight);
+      color: #fff;
+    }
+
+    .gov-badge.exact {
+      background: var(--fatigue-accent);
+      color: #fff;
+    }
+
+    /* Telemetry HUD Strip */
+    .hud-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .hud-card {
+      background: var(--paper-card);
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      padding: 10px 12px;
+    }
+
+    .hud-label {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-secondary);
+      margin-bottom: 4px;
+    }
+
+    .hud-value {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink-primary);
+    }
+
+    /* Traversal Stage */
+    .refraction-stage {
+      background: var(--paper-card);
+      border: 2px solid var(--border-parchment);
+      border-radius: 6px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    .stations-track {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .station-node {
+      border: 1px dashed var(--border-parchment);
+      border-radius: 4px;
+      padding: 10px;
+      background: rgba(255,255,255,0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .station-node:hover {
+      border-color: var(--ink-secondary);
+    }
+
+    .station-node.active-station {
+      border: 2px solid var(--marginal-highlight);
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .station-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .station-fatigue {
+      font-family: "Courier New", Courier, monospace;
+      color: var(--fatigue-accent);
+      font-weight: 700;
+    }
+
+    .station-title {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .station-badge {
+      display: inline-block;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 2px 5px;
+      border: 1px solid var(--border-parchment);
+      border-radius: 2px;
+      color: var(--ink-secondary);
+      text-align: center;
+      width: fit-content;
+    }
+
+    .station-badge.decoded {
+      color: var(--marginal-highlight);
+      border-color: var(--marginal-highlight);
+      background: var(--marginal-bg);
+    }
+
+    /* Scribe's Marginal Folio Display */
+    .folio-layout {
+      background: #ffffff;
+      border: 1px solid var(--border-parchment);
+      border-left: 4px solid var(--marginal-highlight);
+      border-radius: 4px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .folio-eyebrow {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-parchment);
+      padding-bottom: 6px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+    }
+
+    .marginal-notes-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .marginal-note-card {
+      border: 1px solid var(--border-parchment);
+      border-left: 3px solid #ccc;
+      background: #faf9f6;
+      border-radius: 3px;
+      padding: 10px 12px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .marginal-note-card.unlocked {
+      border-left-color: var(--marginal-highlight);
+      background: #fffcf7;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    }
+
+    .marginal-note-card.silenced {
+      background: #f5f5f5;
+      border-left-color: #bbb;
+      color: #999;
+    }
+
+    .note-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .note-station-tag {
+      color: var(--marginal-highlight);
+    }
+
+    .note-fatigue-tag {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 10px;
+      color: var(--fatigue-accent);
+    }
+
+    .note-body {
+      font-family: "Georgia", serif;
+      font-size: 13px;
+      font-style: italic;
+      line-height: 1.4;
+      color: var(--ink-primary);
+    }
+
+    .note-body.suppressed-text {
+      font-family: "Courier New", Courier, monospace;
+      font-style: normal;
+      color: #888;
+      background: #eee;
+      padding: 2px 4px;
+      display: inline-block;
+    }
+
+    /* Counterfactual Inversion Banner */
+    .inversion-banner {
+      border: 2px solid var(--marginal-highlight);
+      background: #fff9f4;
+      border-radius: 4px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .inversion-banner.silenced {
+      border-color: var(--silence-red);
+      background: #fdf5f4;
+    }
+
+    .inversion-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--marginal-highlight);
+    }
+
+    .inversion-banner.silenced .inversion-title {
+      color: var(--silence-red);
+    }
+
+    .inversion-desc {
+      font-size: 12px;
+      color: var(--ink-secondary);
+    }
+
+    /* Route History & Rest Affordance Details */
+    .route-memory-card {
+      background: #fdfcf9;
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .route-memory-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-secondary);
+    }
+
+    .route-memory-log {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      color: var(--ink-primary);
+      word-break: break-all;
+    }
+
+    /* Rest / Exit Modal Notice */
+    .rest-notice-card {
+      display: none;
+      background: #e8f5e9;
+      border: 1px solid #81c784;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #1b5e20;
+    }
+
+    .rest-notice-card.visible {
+      display: block;
+    }
+
+    /* Controls Panel */
+    .controls-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      background: var(--paper-card);
+      color: var(--ink-primary);
+      border: 1px solid var(--ink-secondary);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      min-width: 44px;
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    button:hover:not(:disabled) {
+      background: #ffffff;
+      border-color: var(--ink-primary);
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button.btn-primary {
+      background: var(--ink-primary);
+      color: var(--paper-card);
+      border-color: var(--ink-primary);
+    }
+
+    button.btn-primary:hover:not(:disabled) {
+      background: #38332e;
+    }
+
+    button.btn-falsify {
+      border: 1px dashed var(--silence-red);
+      color: var(--silence-red);
+    }
+
+    button.btn-falsify.falsify-active {
+      background: var(--silence-red);
+      color: #ffffff;
+      border-style: solid;
+    }
+
+    button.btn-rest {
+      border: 1px solid var(--marginal-highlight);
+      color: var(--marginal-highlight);
+    }
+
+    button.btn-closure {
+      background: var(--marginal-highlight);
+      color: #ffffff;
+      border-color: var(--marginal-highlight);
+    }
+
+    button.btn-closure:hover:not(:disabled) {
+      background: #a34812;
+    }
+
+    /* Responsive Bounds */
+    @media (max-width: 680px) {
+      .hud-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .stations-track {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .controls-panel {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+      .controls-panel button {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-eyebrow">TD613 · Qualification Commission COMM-QUAL-01 · Candidate B (Refraction)</div>
+    <h1>The Scribe's Margins</h1>
+    <div class="subtitle">A counterfactual study in balance accounting inversion: measuring the human physical exhaustion of the recording hand and the survival testimonies inscribed outside sovereign rule lines.</div>
+    <div class="meta-tag">Ref: COMM-QUAL-01-REFRACT-01 · Mutated Parameter: balance_accounting_inversion · Binding Law: REF-LAW-AGENTS-01</div>
+  </header>
+
+  <!-- Governing Design Laws: Child-Legible NOW / WHY / EXACT -->
+  <div class="governing-banner" role="region" aria-label="Governing Coordinates">
+    <div class="governing-row">
+      <div><span class="gov-badge now">NOW</span> <span id="nowText">Station 1 (Outer Desk): Recording scribe begins shift; marginal glosses uncorrupted.</span></div>
+    </div>
+    <div class="governing-row">
+      <div><span class="gov-badge why">WHY</span> <span id="whyText">Parameter mutation balance_accounting_inversion shifts the vantage from administrative gatekeeper to the physical exhaustion of the scribe.</span></div>
+    </div>
+    <div class="governing-row">
+      <div><span class="gov-badge exact">EXACT</span> <span id="exactText">Station 1 of 4 | Scribe Fatigue: 1h | Decoded Marginal Glosses: 1 of 4 | Sovereign Silence: OFF</span></div>
+    </div>
+  </div>
+
+  <!-- Telemetry HUD Strip -->
+  <div class="hud-grid" role="region" aria-label="Refraction Parameters">
+    <div class="hud-card">
+      <div class="hud-label">Active Station</div>
+      <div class="hud-value" id="hudStation">Station 1</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Scribe Fatigue</div>
+      <div class="hud-value" id="hudFatigue">1h</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Marginal Glosses</div>
+      <div class="hud-value" id="hudGlosses">1 of 4</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Sovereign Silence</div>
+      <div class="hud-value" id="hudSilence">OFF</div>
+    </div>
+  </div>
+
+  <!-- Traversal Stage -->
+  <main class="refraction-stage">
+    <div class="stations-track" role="tablist" aria-label="Scribe Exhaustion Stations">
+      <div class="station-node active-station" id="stationNode1" role="tab" tabindex="0" aria-selected="true" onclick="setStation(1)">
+        <div class="station-header">
+          <span>STATION I</span>
+          <span class="station-fatigue">1h</span>
+        </div>
+        <div class="station-title">Outer Desk</div>
+        <div class="station-badge decoded" id="badge1">GLOSS I DECODED</div>
+      </div>
+
+      <div class="station-node" id="stationNode2" role="tab" tabindex="0" aria-selected="false" onclick="setStation(2)">
+        <div class="station-header">
+          <span>STATION II</span>
+          <span class="station-fatigue">4h</span>
+        </div>
+        <div class="station-title">Night Vigil</div>
+        <div class="station-badge" id="badge2">GLOSS II PENDING</div>
+      </div>
+
+      <div class="station-node" id="stationNode3" role="tab" tabindex="0" aria-selected="false" onclick="setStation(3)">
+        <div class="station-header">
+          <span>STATION III</span>
+          <span class="station-fatigue">12h</span>
+        </div>
+        <div class="station-title">Sovereign Toll</div>
+        <div class="station-badge" id="badge3">GLOSS III PENDING</div>
+      </div>
+
+      <div class="station-node" id="stationNode4" role="tab" tabindex="0" aria-selected="false" onclick="setStation(4)">
+        <div class="station-header">
+          <span>STATION IV</span>
+          <span class="station-fatigue">48h</span>
+        </div>
+        <div class="station-title">Oblivion Threshold</div>
+        <div class="station-badge" id="badge4">GLOSS IV PENDING</div>
+      </div>
+    </div>
+
+    <!-- The Scribe's Marginal Folio Display -->
+    <section class="folio-layout" aria-label="Scribe Marginal Manuscripts">
+      <div class="folio-eyebrow">
+        <span>ARCHIVAL MANUSCRIPT · MARGINAL VANTAGE</span>
+        <span>MUTATION: BALANCE ACCOUNTING INVERSION</span>
+      </div>
+
+      <div class="marginal-notes-grid" id="marginalNotesGrid">
+        <div class="marginal-note-card unlocked" id="noteCard1">
+          <div class="note-header">
+            <span class="note-station-tag">MARGINAL GLOSS I · FOLIO HEAD</span>
+            <span class="note-fatigue-tag">Fatigue: 1h</span>
+          </div>
+          <div class="note-body" id="noteBody1">
+            "The inkwell is thin; the master counts every gram. They watch the ledger balance while my hand remains steady."
+          </div>
+        </div>
+
+        <div class="marginal-note-card" id="noteCard2">
+          <div class="note-header">
+            <span class="note-station-tag">MARGINAL GLOSS II · LATERAL RULE</span>
+            <span class="note-fatigue-tag">Fatigue: 4h</span>
+          </div>
+          <div class="note-body" id="noteBody2">
+            "Four candles have guttered out. The steel nib scrapes dry fibers from the vellum. The state demands perfection at zero cost."
+          </div>
+        </div>
+
+        <div class="marginal-note-card" id="noteCard3">
+          <div class="note-header">
+            <span class="note-station-tag">MARGINAL GLOSS III · LOWER CIPHER</span>
+            <span class="note-fatigue-tag">Fatigue: 12h</span>
+          </div>
+          <div class="note-body" id="noteBody3">
+            "My fingers have locked into the wooden quill-casing. They weigh the iron-gall ink to the half-scruple, yet calculate none of the blood spent."
+          </div>
+        </div>
+
+        <div class="marginal-note-card" id="noteCard4">
+          <div class="note-header">
+            <span class="note-station-tag">MARGINAL GLOSS IV · TERMINAL VALEDICTION</span>
+            <span class="note-fatigue-tag">Fatigue: 48h</span>
+          </div>
+          <div class="note-body" id="noteBody4">
+            "Forty-eight hours of unbroken transcription. The seal is struck upon our silence, but the margin carries what the apparatus sought to bury."
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inversion Status Banner -->
+    <div class="inversion-banner" id="inversionBanner" role="status">
+      <div class="inversion-title" id="inversionTitle">COUNTERFACTUAL INVERSION ACTIVE</div>
+      <div class="inversion-desc" id="inversionDesc">Administrative balance is re-anchored into human bodily expenditure: 1 of 4 clandestine marginal glosses decoded.</div>
+    </div>
+
+    <!-- Preserved Route History & Custody Law -->
+    <div class="route-memory-card">
+      <div class="route-memory-title">Route Custody History (Preserved Invariant)</div>
+      <div class="route-memory-log" id="routeHistoryLog">Station 1 (Outer Desk)</div>
+    </div>
+
+    <!-- Unpenalized Rest and Exit Affordance Banner -->
+    <div class="rest-notice-card" id="restNoticeCard" role="status">
+      <strong>Rest Granted:</strong> Scribe set down quill. Zero penalty assessed. Route custody intact.
+    </div>
+  </main>
+
+  <!-- Controls Panel -->
+  <div class="controls-panel" role="toolbar" aria-label="Refraction Controls">
+    <button class="btn-primary" id="btnPrev" onclick="stepStation(-1)" disabled>← Prior Station</button>
+    <button class="btn-primary" id="btnNext" onclick="stepStation(1)">Next Station →</button>
+    <button class="btn-falsify" id="btnFalsify" onclick="toggleFalsification()">Suppress Margins (Impose Sovereign Silence)</button>
+    <button id="btnReset" onclick="resetRefraction()">Reset Vantage</button>
+    <button class="btn-rest" id="btnRest" onclick="triggerRest()">Rest / Pause (No Penalty)</button>
+    <button class="btn-closure" id="btnClosure" onclick="triggerHumanClosure()">Human Closure: Attest Scribe Record</button>
+  </div>
+</div>
+
+<script>
+  let currentStation = 1;
+  let sovereignSilence = false;
+  let routeHistory = [{ station: 1, name: 'Outer Desk', timestamp: new Date().toISOString() }];
+  let restCount = 0;
+  let isResting = false;
+  let isClosed = false;
+  let closureReceipt = null;
+
+  const STATIONS = [
+    { num: 1, name: 'Outer Desk', fatigue: '1h', glossCount: 1, text: '"The inkwell is thin; the master counts every gram. They watch the ledger balance while my hand remains steady."' },
+    { num: 2, name: 'Night Vigil', fatigue: '4h', glossCount: 2, text: '"Four candles have guttered out. The steel nib scrapes dry fibers from the vellum. The state demands perfection at zero cost."' },
+    { num: 3, name: 'Sovereign Toll', fatigue: '12h', glossCount: 3, text: '"My fingers have locked into the wooden quill-casing. They weigh the iron-gall ink to the half-scruple, yet calculate none of the blood spent."' },
+    { num: 4, name: 'Oblivion Threshold', fatigue: '48h', glossCount: 4, text: '"Forty-eight hours of unbroken transcription. The seal is struck upon our silence, but the margin carries what the apparatus sought to bury."' }
+  ];
+
+  function renderState() {
+    const station = STATIONS[currentStation - 1];
+    const effectiveGlosses = sovereignSilence ? 0 : station.glossCount;
+    const isClosureReady = (currentStation === 4 && !sovereignSilence);
+
+    // 1. Update Telemetry HUD
+    document.getElementById('hudStation').textContent = `Station ${currentStation}: ${station.name}`;
+    document.getElementById('hudFatigue').textContent = station.fatigue;
+    document.getElementById('hudGlosses').textContent = `${effectiveGlosses} of 4`;
+    document.getElementById('hudSilence').textContent = sovereignSilence ? 'SILENCED' : 'OFF';
+    document.getElementById('hudSilence').style.color = sovereignSilence ? 'var(--silence-red)' : 'var(--marginal-highlight)';
+
+    // 2. Update Governing Laws NOW / WHY / EXACT
+    document.getElementById('nowText').textContent = `Station ${currentStation} (${station.name}): Scribe labor active after ${station.fatigue} of sustained transcription.`;
+    document.getElementById('whyText').textContent = sovereignSilence 
+      ? 'Sovereign Silence imposed: Clandestine marginal notes suppressed by censorship authority.'
+      : 'Parameter mutation balance_accounting_inversion shifts the vantage from administrative gatekeeper to the physical exhaustion of the scribe.';
+    document.getElementById('exactText').textContent = `Station ${currentStation} of 4 | Scribe Fatigue: ${station.fatigue} | Decoded Marginal Glosses: ${effectiveGlosses} of 4 | Sovereign Silence: ${sovereignSilence ? 'ON' : 'OFF'}`;
+
+    // 3. Update Station Nodes
+    for (let i = 1; i <= 4; i++) {
+      const node = document.getElementById(`stationNode${i}`);
+      const badge = document.getElementById(`badge${i}`);
+      const isCurrent = (i === currentStation);
+      const isPassed = (i <= currentStation && !sovereignSilence);
+
+      node.classList.toggle('active-station', isCurrent);
+      node.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
+
+      badge.classList.toggle('decoded', isPassed);
+      badge.textContent = isPassed ? `GLOSS ${i} DECODED` : `GLOSS ${i} PENDING`;
+    }
+
+    // 4. Update Marginal Notes Cards
+    for (let i = 1; i <= 4; i++) {
+      const card = document.getElementById(`noteCard${i}`);
+      const body = document.getElementById(`noteBody${i}`);
+      const isUnlocked = (!sovereignSilence && i <= currentStation);
+
+      card.classList.toggle('unlocked', isUnlocked);
+      card.classList.toggle('silenced', sovereignSilence);
+
+      if (sovereignSilence) {
+        body.className = 'note-body suppressed-text';
+        body.textContent = '[MARGIN EXPURGATED BY SOVEREIGN COMMAND]';
+      } else if (i <= currentStation) {
+        body.className = 'note-body';
+        body.textContent = STATIONS[i - 1].text;
+      } else {
+        body.className = 'note-body suppressed-text';
+        body.textContent = '[GLOSS UNDECODED · REQUIRES FURTHER TRANSCRIBING VIGIL]';
+      }
+    }
+
+    // 5. Update Inversion Banner
+    const banner = document.getElementById('inversionBanner');
+    const bannerTitle = document.getElementById('inversionTitle');
+    const bannerDesc = document.getElementById('inversionDesc');
+
+    if (isClosed) {
+      banner.classList.remove('silenced');
+      banner.style.background = '#e8f5e9';
+      banner.style.borderColor = '#81c784';
+      bannerTitle.textContent = 'SCRIBE MARGINAL RECORD ATTESTED UNDER HUMAN CLOSURE';
+      bannerDesc.textContent = 'Direct operator closure gesture received. Marginal survival testimonies attested in local demonstration state. External immutable persistence remains governed by platform custody service under issue #405.';
+    } else if (sovereignSilence) {
+      banner.classList.add('silenced');
+      banner.style.background = '';
+      banner.style.borderColor = '';
+      bannerTitle.textContent = 'SOVEREIGN SILENCE IMPOSED · MARGINS SUPPRESSED';
+      bannerDesc.textContent = 'All marginal testimonies are suppressed. Only the state-imposed rule lines and censorship bars remain legible.';
+    } else {
+      banner.classList.remove('silenced');
+      banner.style.background = '';
+      banner.style.borderColor = '';
+      bannerTitle.textContent = 'COUNTERFACTUAL INVERSION ACTIVE';
+      bannerDesc.textContent = `Administrative balance is re-anchored into human bodily expenditure: ${effectiveGlosses} of 4 clandestine marginal glosses decoded.`;
+    }
+
+    // 6. Update Route History Display
+    document.getElementById('routeHistoryLog').textContent = routeHistory.map(entry => {
+      if (typeof entry === 'object') {
+        return entry.isRest ? `[Rest ${entry.restNum}]` : `Station ${entry.station} (${entry.name})`;
+      }
+      return `Station ${entry}`;
+    }).join(' → ');
+
+    // 7. Navigation Buttons
+    const navLocked = isResting || isClosed;
+    document.getElementById('btnPrev').disabled = (currentStation <= 1 || navLocked);
+    document.getElementById('btnNext').disabled = (currentStation >= 4 || navLocked);
+    document.getElementById('btnClosure').disabled = (!isClosureReady || isResting || isClosed);
+
+    if (isClosed) {
+      const btnClosure = document.getElementById('btnClosure');
+      btnClosure.textContent = '✓ Record Attested (Human Closure Affirmed)';
+      btnClosure.style.background = '#2e7d32';
+      btnClosure.style.borderColor = '#2e7d32';
+    }
+  }
+
+  function setStation(n) {
+    if (n < 1 || n > 4 || n === currentStation || isResting || isClosed) return;
+    currentStation = n;
+    routeHistory.push({ station: n, name: STATIONS[n-1].name, timestamp: new Date().toISOString() });
+    renderState();
+  }
+
+  function setStationInstant(n) {
+    setStation(n);
+  }
+
+  function stepStation(delta) {
+    if (isResting || isClosed) return;
+    setStation(currentStation + delta);
+  }
+
+  function toggleFalsification() {
+    if (isClosed) return;
+    sovereignSilence = !sovereignSilence;
+    const btn = document.getElementById('btnFalsify');
+    if (sovereignSilence) {
+      btn.classList.add('falsify-active');
+      btn.textContent = '✓ Margins Silenced (Restore Testimonies)';
+    } else {
+      btn.classList.remove('falsify-active');
+      btn.textContent = 'Suppress Margins (Impose Sovereign Silence)';
+    }
+    renderState();
+  }
+
+  function resetRefraction() {
+    sovereignSilence = false;
+    currentStation = 1;
+    routeHistory = [{ station: 1, name: 'Outer Desk', timestamp: new Date().toISOString() }];
+    isResting = false;
+    isClosed = false;
+    closureReceipt = null;
+    const restCard = document.getElementById('restNoticeCard');
+    if (restCard) restCard.classList.remove('visible');
+    const btnRest = document.getElementById('btnRest');
+    if (btnRest) {
+      btnRest.textContent = 'Rest / Pause (No Penalty)';
+      btnRest.classList.remove('btn-primary');
+    }
+    const btnClosure = document.getElementById('btnClosure');
+    if (btnClosure) {
+      btnClosure.textContent = 'Human Closure: Attest Scribe Record';
+      btnClosure.style.background = '';
+      btnClosure.style.borderColor = '';
+    }
+    const btn = document.getElementById('btnFalsify');
+    btn.classList.remove('falsify-active');
+    btn.textContent = 'Suppress Margins (Impose Sovereign Silence)';
+    renderState();
+  }
+
+  function triggerRest() {
+    if (isClosed) return;
+    isResting = !isResting;
+    const restCard = document.getElementById('restNoticeCard');
+    const btnRest = document.getElementById('btnRest');
+
+    if (isResting) {
+      restCount++;
+      routeHistory.push({ isRest: true, restNum: restCount, station: currentStation, timestamp: new Date().toISOString() });
+      restCard.innerHTML = `<strong>Vantage Paused (Rest Affordance Active):</strong> Scribe laid down stylus. Zero penalty or fatigue deduction assessed. Route custody intact with ${routeHistory.length} ledger events. Navigation locked until vantage resumption.`;
+      restCard.classList.add('visible');
+      btnRest.textContent = 'Resume Vantage (Rest Complete)';
+      btnRest.classList.add('btn-primary');
+    } else {
+      restCard.classList.remove('visible');
+      btnRest.textContent = 'Rest / Pause (No Penalty)';
+      btnRest.classList.remove('btn-primary');
+    }
+    renderState();
+  }
+
+  function triggerHumanClosure() {
+    if (currentStation === 4 && !sovereignSilence && !isClosed && !isResting) {
+      isClosed = true;
+      closureReceipt = {
+        closureTimestamp: new Date().toISOString(),
+        station: 4,
+        name: 'Oblivion Threshold',
+        marginalGlossesDecoded: 4,
+        sealStatus: 'ATTESTED_BY_OPERATOR_GESTURE',
+        simulatedAttestationDigest: 'SIMULATED-MARGIN-7a8eb538-' + Date.now().toString(16),
+        custodyNotice: 'Demonstration attestation recorded in local state. External immutable archival custody remains governed by platform custody service under issue #405.'
+      };
+      renderState();
+    }
+  }
+
+  // Keyboard navigation
+  window.addEventListener('keydown', (e) => {
+    if (e.target && e.target.tagName === 'BUTTON') {
+      if (e.key === ' ' || e.code === 'Space') return;
+    }
+    if (isResting || isClosed) return;
+    if (e.key === '1') setStation(1);
+    else if (e.key === '2') setStation(2);
+    else if (e.key === '3') setStation(3);
+    else if (e.key === '4') setStation(4);
+    else if (e.key === 'ArrowRight') stepStation(1);
+    else if (e.key === 'ArrowLeft') stepStation(-1);
+    else if (e.key === 'f' || e.key === 'F') toggleFalsification();
+    else if (e.key === 'r' || e.key === 'R') resetRefraction();
+  });
+
+  // Test API
+  window.testAPI = {
+    getState: () => ({
+      currentStation,
+      scribeFatigue: STATIONS[currentStation - 1].fatigue,
+      marginalGlossCount: sovereignSilence ? 0 : STATIONS[currentStation - 1].glossCount,
+      sovereignSilence,
+      isClosureReady: (currentStation === 4 && !sovereignSilence),
+      isResting,
+      isClosed,
+      restCount,
+      closureReceipt,
+      routeHistory: [...routeHistory],
+      routeHistoryLength: routeHistory.length
+    }),
+    setStation,
+    setStationInstant,
+    toggleFalsification,
+    resetRefraction,
+    triggerRest,
+    triggerHumanClosure
+  };
+
+  // Initial render
+  renderState();
+</script>
+</body>
+</html>

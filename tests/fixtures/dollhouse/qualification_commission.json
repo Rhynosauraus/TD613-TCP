@@ -1,0 +1,35 @@
+{
+  "commission_id": "COMM-QUAL-01",
+  "seed": "An archival ledger where recording a transaction consumes the page, and the seal can only be struck when ink and paper are in exact balance.",
+  "medium": "VISUAL",
+  "human_coordinates": {
+    "what": "Archival transaction ledger with ink-to-surface balance and progressive page consumption",
+    "who": "The recording scribe vs the sovereign archival seal",
+    "where": "Desktop and 390px mobile viewport in monochrome iron-gall parchment styling",
+    "how": "Procedural friction mu delays ledger inscription; balance parameter beta determines seal readiness",
+    "when": "Four transaction steps (Ingress, Inscription, Calibration, Sealing) with manual still-state stepping",
+    "why": "To demonstrate material balance and route custody before sovereign closure"
+  },
+  "instruments": [
+    "CARO_INSTITUTIONAL_RECONSTRUCTION"
+  ],
+  "historical_references": [
+    {
+      "reference_id": "REF-LAW-AGENTS-01",
+      "source_path": "AGENTS.md",
+      "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
+      "classification": "BINDING_CUSTODY_LAW",
+      "provenance_class": "CONTEMPORANEOUS_ORIGINAL",
+      "summary": "TD613 Agent Entry Contract: Cistern law, consequence before ontology, child-legible NOW / WHY / EXACT, and human closure."
+    },
+    {
+      "reference_id": "REF-CARO-ANTECEDENT-01",
+      "source_path": "tests/fixtures/dollhouse/caro_corridor_primary.html",
+      "source_revision": "5968eabd468a9dbc83961f3c75eb09e3d95a893f",
+      "classification": "NEGOTIABLE_AESTHETIC_DIRECTION",
+      "provenance_class": "RECONSTRUCTED_RECORD",
+      "summary": "Historical institutional procedural latency and discrete stepping baseline."
+    }
+  ],
+  "scientific_audit_requested": false
+}
