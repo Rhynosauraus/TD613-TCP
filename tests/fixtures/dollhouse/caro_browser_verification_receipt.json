@@ -1,10 +1,10 @@
 {
   "schema": "td613.dollhouse-design.browser-verification-receipt/v0.1",
-  "timestamp": "2026-10-25T00:28:04.622Z",
+  "timestamp": "2026-10-25T00:30:07.348Z",
   "browser_engine": "Chrome/156.0.8078.47",
   "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
   "cdp_protocol": "1.3",
-  "source_revision": "fc51013550bea4ece9539b9d6b4f8b56dedfef9d",
+  "source_revision": "a99132ca9a7dd68500d2b17789997386ae8300ef",
   "total_assertions_checked": 43,
   "disposition": "VERIFIED_PASS",
   "primary_artifact": {
