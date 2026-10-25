@@ -1227,7 +1227,7 @@ def main(vault: Path, output: Path):
             milestone["origin"] = "archive-inferred"
             milestone["provenance_mode"] = "INFERRED"
 
-    hypothesis_path = vault / "05-OPERATIONS" / "hypotheses" / "2026-08-24-Human Operator / TD613 Heritage Custodian-recompilation-topology-seeds.jsonl"
+    hypothesis_path = vault / "05-OPERATIONS" / "hypotheses" / "2026-08-24-amari-recompilation-topology-seeds.jsonl"
     hypotheses = [row for _, row in read_jsonl(hypothesis_path)]
     hypothesis_additions = [
         {

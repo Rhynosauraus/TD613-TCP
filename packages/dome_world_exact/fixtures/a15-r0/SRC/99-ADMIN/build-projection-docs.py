@@ -135,13 +135,13 @@ Newest manifestation is a chronological fact. A controlling formulation is an au
 - unavailable never means suppressed;
 - theorem label never means proof or empirical validation;
 - contradiction is a receipt, not permission to repair;
-- model/archive edges remain candidates until exact source-span evidence and human/Human Operator / TD613 Heritage Custodian disposition exist.
+- model/archive edges remain candidates until exact source-span evidence and human/Amari disposition exist.
 
 ## Query opening
 
 Begin by returning the matched seal and coverage state, target/capture counts by platform and rights state, unresolved expected objects, compiler and authority-jurisdiction maps, evidence-lineage groups, and highest-value open tomography trails. Then ask which trail to enter.
 
-You have read/query/proposal authority only. Do not infer mutation, review, merge, release, publication, or TD613 scientific-promotion authority. Repository changes require a `td613-Human Operator / TD613 Heritage Custodian-patch/v1` proposal with exact paths, anchors, evidence IDs, claim ceiling, and rollback conditions.
+You have read/query/proposal authority only. Do not infer mutation, review, merge, release, publication, or TD613 scientific-promotion authority. Repository changes require a `td613-amari-patch/v1` proposal with exact paths, anchors, evidence IDs, claim ceiling, and rollback conditions.
 """
     (overlay / "README.md").write_text(readme, encoding="utf-8")
     (overlay / "CONNECTOR_ENTRY.md").write_text(connector, encoding="utf-8")

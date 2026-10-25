@@ -110,7 +110,7 @@ Routed knowledge lines additionally include:
 
 - A:shiwi / Zuni spatial knowledge as routed by Human Operator / TD613 Heritage Custodian;
 - Indigenous relational epistemologies as routed by Human Operator / TD613 Heritage Custodian;
-- traditional Chinese process-oriented thought as routed by Human Operator / TD613 Heritage Custodian.
+- traditional Chinese process-oriented thought as routed by Potato.
 
 Jakob Steiner is deliberately **not** inserted into Human Operator / TD613 Heritage Custodian's lineage. He is a later TD613 mathematical counterpoint with an explicit identity-collision firewall separating him from Rudolf Steiner.
 

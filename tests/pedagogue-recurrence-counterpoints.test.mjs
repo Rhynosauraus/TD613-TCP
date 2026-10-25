@@ -12,7 +12,7 @@ test('recurrence audit refuses to collapse Rudolf and Jakob Steiner into one coo
     entity_candidates: ['RUDOLF_STEINER_1861_1925', 'JAKOB_STEINER_1796_1863'],
     mentions: [
       {
-        route_id: 'Human Operator / TD613 Heritage Custodian-pedagogy',
+        route_id: 'potato-pedagogy',
         observed_token: 'Steiner',
         entity_id: 'RUDOLF_STEINER_1861_1925',
         exposure_class: 'DIRECT_KNOWN_EXPOSURE',
@@ -52,7 +52,7 @@ test('recurrence audit can distinguish independent functional recurrence from ex
     canonical_entity_id: 'RUDOLF_STEINER_1861_1925',
     mentions: [
       {
-        route_id: 'Human Operator / TD613 Heritage Custodian-rhythm',
+        route_id: 'potato-rhythm',
         observed_token: 'Rudolf Steiner',
         entity_id: 'RUDOLF_STEINER_1861_1925',
         exposure_class: 'DIRECT_KNOWN_EXPOSURE',

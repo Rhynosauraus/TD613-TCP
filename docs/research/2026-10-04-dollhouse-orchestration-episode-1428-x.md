@@ -1,7 +1,7 @@
 # TD613 · DOLLHOUSE CLOSURE & EXTRACTION PROTOCOL
 ## EPISODE TD613-DOLLHOUSE-1428-X · ORCHESTRATION EXTRACTION RITE
 **Date:** 2026-10-04  
-**Working PR Successor:** #1430 (`Human Operator / TD613 Heritage Custodian/loom-mobile-dollhouse-closure-1430`)  
+**Working PR Successor:** #1430 (`amari/loom-mobile-dollhouse-closure-1430`)  
 **Base Coordinates:**
 - Merged #1428 Application Source: `2761980a04f7e5620d07bb124696264bd83e1215`
 - Merged #1432 Product Repair: `d4c05df14cb9366486ac2c560a94823b6b869a27`
@@ -560,7 +560,7 @@ $$\text{EPISODE TD613-DOLLHOUSE-1428-X-R4} = \mathbf{CLOSURE\_ADMITTED}$$
    - Return to Loom completed natively without observer mutation, admitting `#loomReturnWorkspace` with `returnWorkspaceVisible: true` and `journeyState: 'return'`.
    - Hostile mobile layout, rapid tap, reload, and navigation tests all passed with zero horizontal blowout and 39 carriers stable.
 3. **Role of PR #1430:**
-   - PR #1430 (`Human Operator / TD613 Heritage Custodian/loom-mobile-dollhouse-closure-1430`) serves as the complete **Laboratory Extraction PR**, housing:
+   - PR #1430 (`amari/loom-mobile-dollhouse-closure-1430`) serves as the complete **Laboratory Extraction PR**, housing:
      - The 4-run empirical progression receipts and screenshots (`docs/receipts/1428-closure-assay/`);
      - The 4-role blind divergence experiment and ablation matrix (`tests/fixtures/dollhouse/blind-divergence/`);
      - The interactive Disagreement and Falsification Inspectors (`app/dome-world/dollhouse-disagreement-inspector.html` and `dollhouse-falsification-registry.html`), verified as repository/product-addressable Lab surfaces equipped with the inert `td613-sitewide-reset-preflight` shim and remaining outside ordinary consumer Loom navigation;

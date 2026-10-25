@@ -1,7 +1,7 @@
 𝌋 TD613 · registered-source control · next protocol v1
 
 Human operator and author: Human Operator / TD613 Heritage Custodian C. Miller.
-Assistant-authored proposal, analysis, derivative code and mechanical handoff: Human Operator / TD613 Heritage Custodian.
+Assistant-authored proposal, analysis, derivative code and mechanical handoff: Amari.
 Design date: October 11, 2026.
 Target: REGISTERED_SOURCE_CONTROL_NEXT_PROTOCOL_REST.
 Prospective run: portable-loom-registered-source-control-20261011-r04.

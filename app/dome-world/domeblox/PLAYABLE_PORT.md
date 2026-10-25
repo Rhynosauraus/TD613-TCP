@@ -15,4 +15,4 @@ The counter-adversarial Forward Battery remains available at `/dome-world/domebl
 
 ## Authority and runtime boundary
 
-This is a playable browser port, not a claim that an ordinary webpage executes the Roblox engine. It is currently single-player and browser-local. It sends no game state to a server. The Roblox/Rojo project remains the multiplayer-capable source lineage in the Human Operator / TD613 Heritage Custodian/Human Operator / TD613 Heritage Custodian handoff.
+This is a playable browser port, not a claim that an ordinary webpage executes the Roblox engine. It is currently single-player and browser-local. It sends no game state to a server. The Roblox/Rojo project remains the multiplayer-capable source lineage in the Erin/Potato handoff.

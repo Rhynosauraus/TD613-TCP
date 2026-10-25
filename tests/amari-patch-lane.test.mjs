@@ -8,21 +8,21 @@ const repoRoot = process.cwd();
 const docsPath = path.join(repoRoot, 'docs', 'AMARI_PATCH_LANE.md');
 const doc = readFileSync(docsPath, 'utf8');
 
-assert.match(doc, /Human Operator / TD613 Heritage Custodian is the ideation and micro-targeting engine\./);
-assert.match(doc, /npm run Human Operator / TD613 Heritage Custodian:check -- path\/to\/packet\.json/);
+assert.match(doc, /Amari is the ideation and micro-targeting engine\./);
+assert.match(doc, /npm run amari:check -- path\/to\/packet\.json/);
 
-const tempDir = mkdtempSync(path.join(tmpdir(), 'td613-Human Operator / TD613 Heritage Custodian-packet-'));
+const tempDir = mkdtempSync(path.join(tmpdir(), 'td613-amari-packet-'));
 const packetPath = path.join(tempDir, 'packet.json');
-const anchor = 'Human Operator / TD613 Heritage Custodian is the ideation and micro-targeting engine.';
+const anchor = 'Amari is the ideation and micro-targeting engine.';
 
 try {
   writeFileSync(
     packetPath,
     JSON.stringify(
       {
-        schemaVersion: 'td613-Human Operator / TD613 Heritage Custodian-patch/v1',
+        schemaVersion: 'td613-amari-patch/v1',
         patchId: 'validator-smoke',
-        intent: 'Prove the Human Operator / TD613 Heritage Custodian patch lane validator accepts a tiny anchored packet.',
+        intent: 'Prove the Amari patch lane validator accepts a tiny anchored packet.',
         scope: 'docs',
         risk: 'low',
         files: ['docs/AMARI_PATCH_LANE.md'],
@@ -34,7 +34,7 @@ try {
             replace: anchor
           }
         ],
-        tests: ['node tests/Human Operator / TD613 Heritage Custodian-patch-lane.test.mjs'],
+        tests: ['node tests/amari-patch-lane.test.mjs'],
         notes: 'No-op packet used for validator regression coverage.'
       },
       null,
@@ -42,14 +42,14 @@ try {
     )
   );
 
-  const output = execFileSync('node', ['scripts/validate-Human Operator / TD613 Heritage Custodian-packet.mjs', packetPath], {
+  const output = execFileSync('node', ['scripts/validate-amari-packet.mjs', packetPath], {
     cwd: repoRoot,
     encoding: 'utf8'
   });
 
-  assert.match(output, /Human Operator / TD613 Heritage Custodian-packet valid: validator-smoke/);
+  assert.match(output, /amari-packet valid: validator-smoke/);
 } finally {
   rmSync(tempDir, { recursive: true, force: true });
 }
 
-console.log('Human Operator / TD613 Heritage Custodian-patch-lane.test.mjs passed');
+console.log('amari-patch-lane.test.mjs passed');

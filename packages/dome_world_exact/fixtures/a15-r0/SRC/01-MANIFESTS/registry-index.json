@@ -104,7 +104,7 @@
       "schema": "01-MANIFESTS/schemas/epistemic-object-state.schema.json"
     },
     {
-      "path": "05-OPERATIONS/hypotheses/2026-08-24-Human Operator / TD613 Heritage Custodian-recompilation-topology-seeds.jsonl",
+      "path": "05-OPERATIONS/hypotheses/2026-08-24-amari-recompilation-topology-seeds.jsonl",
       "object": "research hypothesis; never a source claim",
       "primary_key": "hypothesis_id",
       "schema": "01-MANIFESTS/schemas/architecture-hypothesis-definition.schema.json"

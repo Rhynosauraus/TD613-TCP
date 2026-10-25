@@ -5,7 +5,7 @@ aperture_residual_bridge.py
 PRODUCTION-WIRING bridge: drives the REAL, shipped ResidualLearner engine (in ../engine/)
 from Aperture v2.9.3 scan packets. This is the counterpart to vsub_aperture_training_bridge.py:
 that file is a dependency-free sympy *reference implementation* of the capture/grow decision;
-THIS file uses the actual verified engine, so Human Operator / TD613 Heritage Custodian/Human Operator / TD613 Heritage Custodian can see the genuine integration seam.
+THIS file uses the actual verified engine, so Tim/Erin can see the genuine integration seam.
 
 Pipeline per Aperture packet:
     Aperture scan packet (observation_coords in K = Q(theta))

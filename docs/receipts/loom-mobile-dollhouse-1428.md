@@ -4,7 +4,7 @@
 
 - **Repository:** `tauric-diana-613/TD613-TCP`
 - **PR:** `#1428 — Post-#1429 Loom mobile Dollhouse trial and repair`
-- **Working Branch:** `Human Operator / TD613 Heritage Custodian/loom-mobile-dollhouse-post-1427-20261003`
+- **Working Branch:** `amari/loom-mobile-dollhouse-post-1427-20261003`
 - **Reconciled Merge Base:** `0288ead1f5563a583401f4de84c8d7686b461a79` (main relock)
 - **Current Local Branch Head:** `e28de1696` (merged main)
 - **Production Target:** `https://td613.com/dome-world/holonomy-loom.html`

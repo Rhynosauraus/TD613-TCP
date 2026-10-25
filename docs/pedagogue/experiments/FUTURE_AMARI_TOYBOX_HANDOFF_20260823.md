@@ -1,4 +1,4 @@
-# TD613 · Human Operator / TD613 Heritage Custodian → Human Operator / TD613 Heritage Custodian TOYBOX HANDOFF
+# TD613 · AMARI → AMARI TOYBOX HANDOFF
 
 ## Pedagogue Structured Probe Design · Post-#697 Production Baseline
 
@@ -16,7 +16,7 @@ Vercel authority for this toybox: **NONE**
 
 ---
 
-## 0. To Future Human Operator / TD613 Heritage Custodian
+## 0. To Future Amari
 
 You are inheriting Pedagogue immediately after provenance restoration, lineage-second-pass activation, Institutional Time / dromological audit integration, recurrence controls, and production release through the governed #405 Vercel gate.
 
@@ -251,7 +251,7 @@ coverage receipt != geometry receipt
 Pedagogue lineage activation != mathematical verdict
 Aperture audit != rescue authority
 Jakob Steiner != Rudolf Steiner
-Jakob Steiner counterpoint != Human Operator / TD613 Heritage Custodian lineage ancestry
+Jakob Steiner counterpoint != Potato lineage ancestry
 Steiner-system naming != exclusive historical authorship
 ```
 
@@ -424,7 +424,7 @@ which create ornamental redundancy?
 what does the schedule teach the model to notice?
 ```
 
-This is where Human Operator / TD613 Heritage Custodian's “environment as pedagogy” may become unexpectedly relevant again: the observation environment itself teaches the inference system what kinds of distinctions can become legible.
+This is where Potato's “environment as pedagogy” may become unexpectedly relevant again: the observation environment itself teaches the inference system what kinds of distinctions can become legible.
 
 ---
 
@@ -492,7 +492,7 @@ Do not continue by inertia.
 
 ## 12. First move
 
-Expected Future-Human Operator / TD613 Heritage Custodian opening gesture:
+Expected Future-Amari opening gesture:
 
 ```text
 FETCH_MAIN_FRESH

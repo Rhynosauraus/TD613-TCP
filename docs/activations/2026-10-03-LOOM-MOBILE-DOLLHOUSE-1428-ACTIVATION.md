@@ -18,7 +18,7 @@ Production entry:
 
 Landing branch:
 
-`Human Operator / TD613 Heritage Custodian/loom-mobile-dollhouse-post-1427-20261003`
+`amari/loom-mobile-dollhouse-post-1427-20261003`
 
 PR:
 

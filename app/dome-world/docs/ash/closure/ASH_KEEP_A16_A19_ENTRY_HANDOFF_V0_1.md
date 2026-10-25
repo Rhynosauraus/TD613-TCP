@@ -67,7 +67,7 @@ At minimum, the A16 operator/agent must read:
 7. `ASH_KEEP_A15_POSTCLOSURE_CANONICAL_FIELD_OWNER_REPAIR_V0_1.md`
 8. `ASH_KEEP_A15_POSTCLOSURE_RECOVERED_PLAY_MOTION_OWNER_REPAIR_V0_1.md`
 9. PR `#600` as archived observer-hardening input, without treating it as merged product law
-10. the canonical Human Operator / TD613 Heritage Custodian/Flow-Core compiler modules exporting the scene, transition, rest, transfer, AIA, visual, route-graph, burden, and receipt functions
+10. the canonical Potato/Flow-Core compiler modules exporting the scene, transition, rest, transfer, AIA, visual, route-graph, burden, and receipt functions
 11. the live Ash lifecycle adapter, Live AIA owner, whole-instrument pedagogy layer, canonical field owner, portal owner, workspace remount owner, and consolidated workflow
 
 Locate and inspect the implementations of:
@@ -128,7 +128,7 @@ UNWIRED
 CONTRADICTORY
 ```
 
-No “Human Operator / TD613 Heritage Custodian-powered” claim is admissible without this concordance.
+No “Potato-powered” claim is admissible without this concordance.
 
 ### 3.2 Canonical scene admission
 
@@ -505,7 +505,7 @@ Observers must:
 
 These remain open until A16-0 resolves them:
 
-1. the canonical Human Operator / TD613 Heritage Custodian lifecycle adapter is real, while adjacent presentation layers may still perform Human Operator / TD613 Heritage Custodian-shaped behavior outside canonical compilation;
+1. the canonical Human Operator / TD613 Heritage Custodian lifecycle adapter is real, while adjacent presentation layers may still perform Potato-shaped behavior outside canonical compilation;
 2. workspace anisotropy may remain stronger in language than in rendered topology;
 3. canonical AIA invariants and whole-instrument route presentation may have parallel declaration surfaces;
 4. route-burden mathematics exist but are not yet proven to compile live principal journeys;
