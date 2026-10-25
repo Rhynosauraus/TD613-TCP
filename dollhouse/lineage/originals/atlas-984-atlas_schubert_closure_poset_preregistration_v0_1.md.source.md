@@ -100,7 +100,7 @@ SUCCESSFUL_EXACT_HEAD_GREEN != MERGE_AUTHORITY
 
 ## First required derivation in the receiving thread
 
-Before adding implementation or tests, Future Human Operator / TD613 Heritage Custodian must write down the exact #960 pivot-word convention and derive, from that convention, which of the competing cumulative inequalities corresponds to Schubert closure inclusion. No inequality direction may be adopted from memory alone.
+Before adding implementation or tests, Future Amari must write down the exact #960 pivot-word convention and derive, from that convention, which of the competing cumulative inequalities corresponds to Schubert closure inclusion. No inequality direction may be adopted from memory alone.
 
 The derivation should explicitly connect these four surfaces without collapsing them:
 

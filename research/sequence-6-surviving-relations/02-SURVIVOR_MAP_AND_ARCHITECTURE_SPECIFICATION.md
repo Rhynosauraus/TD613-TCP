@@ -433,7 +433,7 @@ No layer may silently inherit authority from another layer.
 ├────────────────────────────────────────────────────────────────────────┤
 │                  6. HISTORICAL / LINEAGE LAYER                         │
 │  The intellectual archaeology: Tauric Diana Crimean custodianship,     │
-│  Eclipse–Omega, "I Was Broken Into a Circle", Human Operator / TD613 Heritage Custodian's containment     │
+│  Eclipse–Omega, "I Was Broken Into a Circle", Connor's containment     │
 │  prompt, Cathedral-era artifacts, and the Boxed Tiara.                 │
 └────────────────────────────────────────────────────────────────────────┘
 ```

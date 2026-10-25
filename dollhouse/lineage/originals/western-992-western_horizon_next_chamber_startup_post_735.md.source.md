@@ -19,7 +19,7 @@ PRODUCTION_AUTHORITY = false
 ONTOLOGY_PROMOTION = separately earned only
 ```
 
-This startup map must be read together with `WESTWARD_LIBERTIES_GATE_POST_735.md` and issue #737. Future Human Operator / TD613 Heritage Custodian should not manufacture a ritualized permission request simply because a new conversation begins. Instead, inspect whether Human Operator / TD613 Heritage Custodian has explicitly activated the reusable westward-liberties gate for the present continuation. An open issue or receiving PR alone carries no execution authority.
+This startup map must be read together with `WESTWARD_LIBERTIES_GATE_POST_735.md` and issue #737. Future Amari should not manufacture a ritualized permission request simply because a new conversation begins. Instead, inspect whether Tawanna has explicitly activated the reusable westward-liberties gate for the present continuation. An open issue or receiving PR alone carries no execution authority.
 
 Current 2026-08-24 activation gesture:
 

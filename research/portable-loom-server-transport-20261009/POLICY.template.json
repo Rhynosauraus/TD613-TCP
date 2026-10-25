@@ -34,7 +34,7 @@
       "verified_at": "2026-10-09T07:32:43.725309+00:00"
     },
     "authorization": {
-      "record": "Human Operator / TD613 Heritage Custodian, direct interactive message proceed \ud834\udf0b at 2026-10-09T03:17:47-04:00; research/portable-loom-assay-activation-20261009/AUTHORIZATION.json",
+      "record": "Tawanna, direct interactive message proceed \ud834\udf0b at 2026-10-09T03:17:47-04:00; research/portable-loom-assay-activation-20261009/AUTHORIZATION.json",
       "scope": "54 calls, FIRST_CONFIGURED_RECEIVER only, Gemini 3.8 Flash, USD 10 maximum token charges. No comparison, second provider, retries, tools, retrieval or custody admission."
     },
     "tools": "DISABLED",

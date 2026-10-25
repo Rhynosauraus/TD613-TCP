@@ -1,6 +1,6 @@
 # Priority request repair: primary-source check
 
-Assistant analysis by Human Operator / TD613 Heritage Custodian for Human Operator / TD613 Heritage Custodian C. Miller, 2026-10-11.
+Assistant analysis by Amari for Tawanna C. Miller, 2026-10-11.
 
 - https://ai.google.dev/api/generate-content — the current REST request accepts top-level `serviceTier`; its enum includes `priority`. Usage metadata can report the served tier. The preserved `models/gemini-3.8-flash:generateContent` URL remains supported by this reference.
 - https://ai.google.dev/gemini-api/docs/priority-inference — Priority traffic receives preferential scheduling; Gemini 3.8 Flash is listed. The guide currently illustrates Interactions, while the REST reference separately documents the field for GenerateContent. The guide describes possible standard downgrades and recommends observing `x-gemini-service-tier`. No Interactions migration is proposed here.

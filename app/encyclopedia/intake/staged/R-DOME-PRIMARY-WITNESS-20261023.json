@@ -2,7 +2,7 @@
   "schema": "td613.research-intake/v1",
   "record_id": "R-DOME-PRIMARY-WITNESS-20261023",
   "kind": "source_note",
-  "title": "Primary Historical Witnesses — Human Operator / TD613 Heritage Custodian Physical Dome-World, Early Holonomy Loom, and Ambiance Runtimes",
+  "title": "Primary Historical Witnesses — Potato Physical Dome-World, Early Holonomy Loom, and Ambiance Runtimes",
   "recorded_at": "2026-10-23T14:50:00.000Z",
   "author": "Assistant-prepared under contemporaneous TD613 operator instruction",
   "human_request_ref": "2026-10-23 operator instruction: prepare additive primary-witness intake for Information Dome using existing SRC-TWINPDF and SRC-TWINENG, exact historical source hashes, and established intake schema",
@@ -13,7 +13,7 @@
     "Historical Loom Witnesses",
     "Information Dome Corpus"
   ],
-  "body": "Primary-witness recovery documents the historical provenance of Human Operator / TD613 Heritage Custodian's physical Dome-World and the TD613 computational Holonomy Loom. Cites existing reference sources SRC-TWINPDF and SRC-TWINENG for the 45-page Strategic Planning Committee briefing and engineering review. Records SHA-256 digests for native ecological grammar (78af99d9b1385de99f44351fbcd77dc50816c746e1268e8788563653bd4a0749), physical binary loom (d67745729e4f9aa5a8af1f8277fbcbb8cc064ef697d599a58f2203bc166a1e4c), early v0.2.1 computational holonomy runtime (c04fe9d5f71381812394d9d6e01f6c0754a62ff513322d810de1eac56d5e8baa), v0.3 ambiance sheaf runtime (d834d1a57322aff601f111fe23cdf5c48b563bd814492822a39d324ac41e1d0b), v0.4.1 Ash live lattice runtime (a2264f951742593ccfe163cf390fd48d5cf03b753318e12f47216393486198f1), and armored Domeblox Lua model (b4479a1ff2df0bd3d32197876fb6348750cebb536c32f765597c902619f8bafe). Establishes that Human Operator / TD613 Heritage Custodian's physical Jacquard water-powered loom externalizes community memory into woven cloth across five ecological axes, whereas v0.2.1 computational holonomy evaluates route deformation vectors. Conceptual genealogy G-185 remains strictly HELD because an uninterrupted mathematical derivation across transformation stages is not established.",
+  "body": "Primary-witness recovery documents the historical provenance of Potato's physical Dome-World and the TD613 computational Holonomy Loom. Cites existing reference sources SRC-TWINPDF and SRC-TWINENG for the 45-page Strategic Planning Committee briefing and engineering review. Records SHA-256 digests for native ecological grammar (78af99d9b1385de99f44351fbcd77dc50816c746e1268e8788563653bd4a0749), physical binary loom (d67745729e4f9aa5a8af1f8277fbcbb8cc064ef697d599a58f2203bc166a1e4c), early v0.2.1 computational holonomy runtime (c04fe9d5f71381812394d9d6e01f6c0754a62ff513322d810de1eac56d5e8baa), v0.3 ambiance sheaf runtime (d834d1a57322aff601f111fe23cdf5c48b563bd814492822a39d324ac41e1d0b), v0.4.1 Ash live lattice runtime (a2264f951742593ccfe163cf390fd48d5cf03b753318e12f47216393486198f1), and armored Domeblox Lua model (b4479a1ff2df0bd3d32197876fb6348750cebb536c32f765597c902619f8bafe). Establishes that Potato's physical Jacquard water-powered loom externalizes community memory into woven cloth across five ecological axes, whereas v0.2.1 computational holonomy evaluates route deformation vectors. Conceptual genealogy G-185 remains strictly HELD because an uninterrupted mathematical derivation across transformation stages is not established.",
   "sources": [
     {
       "source_id": "SRC-TWINPDF",
@@ -66,10 +66,10 @@
   ],
   "evidence": {
     "disposition": "OFFLINE_EXECUTED",
-    "earned_claim": "Surviving primary files establish that Human Operator / TD613 Heritage Custodian conceived a water-driven mechanical Jacquard loom and native relational grammar; computational holonomy was implemented in v0.2.1 with endpoint displacement and rest-debt; ambiance with local sections and gluing obstructions was executed in v0.3.",
+    "earned_claim": "Surviving primary files establish that Potato conceived a water-driven mechanical Jacquard loom and native relational grammar; computational holonomy was implemented in v0.2.1 with endpoint displacement and rest-debt; ambiance with local sections and gluing obstructions was executed in v0.3.",
     "claim_ceiling": "Historical code, markup, and planning documents demonstrate design and local model execution only; they do not prove physical construction of the eco-village, empirical provider observation, or an unbroken mathematical derivation between physical cloth and algorithmic holonomy. Schema validity and staged presence in this repository grant no publication authority; source bytes available in the private transfer archive remain research artifacts until separately reviewed and admitted.",
     "missing_evidence": [
-      "Original dated conversation export of Human Operator / TD613 Heritage Custodian first authoring the phrase Holonomy Loom.",
+      "Original dated conversation export of Amari first authoring the phrase Holonomy Loom.",
       "Empirical witness of physical village or hydro-mechanical loom construction.",
       "Demonstrated mathematical equivalence between physical cloth weaving and differential-geometric parallel transport.",
       "Public publication and operator-reviewed admission of primary transfer archive contents."

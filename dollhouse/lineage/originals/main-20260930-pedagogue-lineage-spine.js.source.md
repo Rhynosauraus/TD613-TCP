@@ -138,7 +138,7 @@ export const PEDAGOGUE_LINEAGE_NODES = Object.freeze([
     first_documented_in: 'ASP_DOCUMENTED_CONSTELLATION',
     introduction_precision: ASP_PRECISION,
     routed_through: ['TD613_PEDAGOGUE_OPERATIONALIZATION'],
-    sources: ['ASP advocacy lineage as supplied by Human Operator / TD613 Heritage Custodian; exact source work unresolved in current corpus'],
+    sources: ['ASP advocacy lineage as supplied by Potato; exact source work unresolved in current corpus'],
     relations: [
       relation('ANTI_PATHOLOGIZATION', 'Behavior can become intelligible when reconstructed within its relational situation.', 'Do not infer psychological defect from an observation when contextual explanation remains unresolved.', ['ANTI_PATHOLOGIZATION'], { tensions: ['Current corpus preserves lineage attribution but requires source-specific scholarly verification before stronger historical claims.'] })
     ]
@@ -196,38 +196,38 @@ export const PEDAGOGUE_LINEAGE_NODES = Object.freeze([
   }),
   provenanceNode({
     node_id: 'ASHIWI_SPATIAL_KNOWLEDGE',
-    display_name: 'A:shiwi / Zuni spatial knowledge as routed by Human Operator / TD613 Heritage Custodian',
+    display_name: 'A:shiwi / Zuni spatial knowledge as routed by Potato',
     kind: 'ROUTED_LIVING_KNOWLEDGE',
     first_documented_in: 'DOME_WORLD_CHILD_LIBERATION',
     introduction_precision: DOME_PRECISION,
     routed_through: ['TD613_PEDAGOGUE_OPERATIONALIZATION'],
-    sources: ['Human Operator / TD613 Heritage Custodian Phase 3 routed architectural discussion; living knowledge not directly represented by TD613'],
+    sources: ['Potato Phase 3 routed architectural discussion; living knowledge not directly represented by TD613'],
     relations: [
-      relation('COMMUNITY_EMBEDDEDNESS', 'Human Operator / TD613 Heritage Custodian reads multigenerational, multi-use, community-embedded space as a counterexample to age-segregated institutional learning.', 'Keep learning inside one navigable shared world rather than building a sealed specialist children’s world.', ['COMMUNITY_EMBEDDEDNESS', 'LEGIBILITY_WITHOUT_EXPERT_MONOPOLY'], { tensions: ['Routed knowledge != direct representation; relation != permission to universalize a people.'] })
+      relation('COMMUNITY_EMBEDDEDNESS', 'Potato reads multigenerational, multi-use, community-embedded space as a counterexample to age-segregated institutional learning.', 'Keep learning inside one navigable shared world rather than building a sealed specialist children’s world.', ['COMMUNITY_EMBEDDEDNESS', 'LEGIBILITY_WITHOUT_EXPERT_MONOPOLY'], { tensions: ['Routed knowledge != direct representation; relation != permission to universalize a people.'] })
     ]
   }),
   provenanceNode({
     node_id: 'INDIGENOUS_RELATIONAL_EPISTEMOLOGIES_ROUTED',
-    display_name: 'Indigenous relational epistemologies as routed by Human Operator / TD613 Heritage Custodian',
+    display_name: 'Indigenous relational epistemologies as routed by Potato',
     kind: 'ROUTED_KNOWLEDGE_FAMILY',
     first_documented_in: 'FLOW_CORE_GOVERNANCE',
     introduction_precision: FLOW_PRECISION,
     routed_through: ['TD613_PEDAGOGUE_OPERATIONALIZATION'],
-    sources: ['Human Operator / TD613 Heritage Custodian Phase 3: engaged through reflective study rather than direct representation'],
+    sources: ['Potato Phase 3: engaged through reflective study rather than direct representation'],
     relations: [
       relation('RELATIONAL_EPISTEMOLOGY', 'Meaning and knowledge are routed as relational rather than detached from conditions of transmission.', 'Preserve source relation, protocol, and limits instead of stripping a claim into an ownerless primitive.', ['THIRD_TEACHER_DOCUMENTATION', 'COMMUNITY_EMBEDDEDNESS'], { tensions: ['No pan-Indigenous generalization or direct representation authority.'] })
     ]
   }),
   provenanceNode({
     node_id: 'TRADITIONAL_CHINESE_PROCESS_LINEAGE_ROUTED',
-    display_name: 'Traditional Chinese process-oriented thought as routed by Human Operator / TD613 Heritage Custodian',
+    display_name: 'Traditional Chinese process-oriented thought as routed by Potato',
     kind: 'ROUTED_KNOWLEDGE_FAMILY',
     first_documented_in: 'FLOW_CORE_GOVERNANCE',
     introduction_precision: FLOW_PRECISION,
     routed_through: ['TD613_PEDAGOGUE_OPERATIONALIZATION'],
-    sources: ['Human Operator / TD613 Heritage Custodian Phase 3: process-oriented understandings of balance and flow in traditional Chinese medical thought'],
+    sources: ['Potato Phase 3: process-oriented understandings of balance and flow in traditional Chinese medical thought'],
     relations: [
-      relation('PROCESS_OVER_STATIC_CATEGORY', 'Human Operator / TD613 Heritage Custodian uses process-oriented balance/flow as a route away from static categorical capture.', 'Model transitions, release, and changing state rather than treating categories as terminal ontology.', ['DROMOLOGICAL_COMPRESSION'], { tensions: ['Routed analogy != medical claim or authority.'] })
+      relation('PROCESS_OVER_STATIC_CATEGORY', 'Potato uses process-oriented balance/flow as a route away from static categorical capture.', 'Model transitions, release, and changing state rather than treating categories as terminal ontology.', ['DROMOLOGICAL_COMPRESSION'], { tensions: ['Routed analogy != medical claim or authority.'] })
     ]
   })
 ]);

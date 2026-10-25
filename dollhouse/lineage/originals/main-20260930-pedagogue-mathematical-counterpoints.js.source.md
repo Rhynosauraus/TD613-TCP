@@ -27,7 +27,7 @@ export const PEDAGOGUE_MATHEMATICAL_COUNTERPOINTS = Object.freeze([
       'the mapping requires hidden total-field information unavailable to the declared observer'
     ]),
     forbidden_inferences: freeze([
-      'Jakob Steiner is an ancestor in Human Operator / TD613 Heritage Custodian’s pedagogue spine',
+      'Jakob Steiner is an ancestor in Potato’s pedagogue spine',
       'projective geometry proves TD613 ontology',
       'projective invariance implies semantic equivalence',
       'shared surname with Rudolf Steiner implies intellectual relation'

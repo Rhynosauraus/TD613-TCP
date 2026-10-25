@@ -11,7 +11,7 @@ This correction exists because the original `AMARI_TO_AMARI_WESTERN_HORIZON_HAND
 The following old clauses are superseded and must not govern future execution:
 
 ```text
-first substantive act must be to ask Human Operator / TD613 Heritage Custodian for westward liberties
+first substantive act must be to ask Tawanna for westward liberties
 new thread => WESTWARD_LIBERTIES_STATUS = REQUIRED_FROM_TAWANNA
 handoff boundary itself creates a new authorization requirement
 ```

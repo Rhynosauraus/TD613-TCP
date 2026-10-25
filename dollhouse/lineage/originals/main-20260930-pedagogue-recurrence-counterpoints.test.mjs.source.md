@@ -17,7 +17,7 @@ test('recurrence audit refuses to collapse Rudolf and Jakob Steiner into one coo
         entity_id: 'RUDOLF_STEINER_1861_1925',
         exposure_class: 'DIRECT_KNOWN_EXPOSURE',
         evidence_posture: 'SUPPLIED_PRIMARY',
-        provenance_reference: 'Human Operator / TD613 Heritage Custodian ASP / Dome-World pedagogy corpus',
+        provenance_reference: 'Potato ASP / Dome-World pedagogy corpus',
         mechanism_tags: ['RHYTHM_AND_CADENCE'],
         domain_tags: ['PEDAGOGY']
       },
@@ -57,7 +57,7 @@ test('recurrence audit can distinguish independent functional recurrence from ex
         entity_id: 'RUDOLF_STEINER_1861_1925',
         exposure_class: 'DIRECT_KNOWN_EXPOSURE',
         evidence_posture: 'SUPPLIED_PRIMARY',
-        provenance_reference: 'Human Operator / TD613 Heritage Custodian ASP / Dome-World pedagogy corpus',
+        provenance_reference: 'Potato ASP / Dome-World pedagogy corpus',
         mechanism_tags: ['DELAYED_INTERPRETATION', 'RHYTHM_AND_CADENCE'],
         domain_tags: ['PEDAGOGY']
       },

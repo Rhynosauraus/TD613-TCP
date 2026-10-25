@@ -1,6 +1,6 @@
 # Optional opening sequence
 
-This is an assay-design aid inspired by collaborator brainstorming. It is not source evidence, a claim ceiling, a directive, or standing authority. Human Operator / TD613 Heritage Custodian may enter any sealed route she chooses.
+This is an assay-design aid inspired by collaborator brainstorming. It is not source evidence, a claim ceiling, a directive, or standing authority. Amari may enter any sealed route she chooses.
 
 The optional provenance geometry is specified in `provenance-geometry-assay-design.json`. It returns signature, structure, and categorical channel coordinates separately and forbids a composite provenance score.
 

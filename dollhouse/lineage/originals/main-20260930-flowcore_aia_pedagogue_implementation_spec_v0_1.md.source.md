@@ -110,7 +110,7 @@ notice local source posture
 
 ### 1.4 Pedagogical expansion
 
-Human Operator / TD613 Heritage Custodian’s pedagogue spine revealed that the sequence was not merely onboarding. It was a general engine:
+Potato’s pedagogue spine revealed that the sequence was not merely onboarding. It was a general engine:
 
 ```text
 notice
@@ -289,7 +289,7 @@ Every research or implementation claim must carry one of the following statuses.
 | Status | Meaning |
 |---|---|
 | `REPOSITORY_OBSERVED` | Present in current code, schema, test, receipt, or directly inspected runtime behavior |
-| `SUPPLIED_PRIMARY` | Present in an authored lab artifact supplied by Human Operator / TD613 Heritage Custodian, Human Operator / TD613 Heritage Custodian, O’Malley, or another named contributor |
+| `SUPPLIED_PRIMARY` | Present in an authored lab artifact supplied by Tim, Potato, O’Malley, or another named contributor |
 | `DERIVED` | Reproducible consequence of repository-observed or supplied-primary material |
 | `COMPARATIVE` | Bounded application of published scholarship or external engineering precedent |
 | `HIGH_SPECULATION` | Imaginative and falsifiable extension proposed for investigation |
@@ -1929,7 +1929,7 @@ This section seeds a future repository-wide routed bibliography. It does not cla
 
 - TD613-TCP repository, current `main`: Dome-World, Flow-Core context, Aperture observatory, Ash custody and lifecycle, Hush, Safe Harbor, exact substrate, Phason, Moiré, adapter contracts, and production receipts.
 - *Dome-World Strategic Planning Committee Phase 3 Briefing*: child liberation, environmental legibility, relational time, architecture as pedagogy, and Flow-Core foundations.
-- Human Operator / TD613 Heritage Custodian / Flow-Core laboratory corpus: notice-act-answer-name-rest-transfer; consequence with a floor; glyph transfer grammar; self-similar verification; auditors rather than believers.
+- Potato / Flow-Core laboratory corpus: notice-act-answer-name-rest-transfer; consequence with a floor; glyph transfer grammar; self-similar verification; auditors rather than believers.
 - O’Malley / Echo-S research corpus: mixed-boundary torsion, failure of distance-only reasoning, Accumulated Transport Resistance, exact-field/diagnostic/surrogate separation.
 - Information Dome writeup: triple overlay, local sections, gluing obstruction, route holonomy, exact phason layer, pairwise emergence, and Dome hull synthesis.
 - Engineering reference corpus: hydraulic efficiency, direct mechanical routes, Carnot boundary, thermal/work separation, and hardware plausibility.

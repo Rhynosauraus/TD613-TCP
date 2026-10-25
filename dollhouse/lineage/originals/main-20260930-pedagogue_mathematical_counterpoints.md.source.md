@@ -2,7 +2,7 @@
 
 Status: **RESEARCH-SIDE / NON-ANCESTRAL / HUMAN-GATED**
 
-Mathematical counterpoints are not part of Human Operator / TD613 Heritage Custodian’s intellectual ancestry unless source provenance independently establishes that route.
+Mathematical counterpoints are not part of Potato’s intellectual ancestry unless source provenance independently establishes that route.
 
 They are introduced by TD613 when an external mathematical construction appears useful for attacking or sharpening an already-declared Pedagogue mechanism.
 
@@ -14,7 +14,7 @@ named object != complete authorship provenance
 
 ## Jakob Steiner
 
-Jakob Steiner (1796–1863), the Swiss projective geometer, is introduced here for the first time as a TD613 mathematical counterpoint. He is not Rudolf Steiner and is not retroactively inserted into Human Operator / TD613 Heritage Custodian’s ASP / Flow-Core / Dome-World lineage.
+Jakob Steiner (1796–1863), the Swiss projective geometer, is introduced here for the first time as a TD613 mathematical counterpoint. He is not Rudolf Steiner and is not retroactively inserted into Potato’s ASP / Flow-Core / Dome-World lineage.
 
 ### Counterpoint 1 · projective dependence
 

@@ -1,6 +1,6 @@
 # Frozen r04 replication: r05
 
-Human author and operator: Human Operator / TD613 Heritage Custodian C. Miller. Assistant-authored analysis and mechanics: Amari. Direct interactive activation; no detached delegation.
+Human author and operator: Tawanna C. Miller. Assistant-authored analysis and mechanics: Amari. Direct interactive activation; no detached delegation.
 
 1. Verify PROTOCOL.json and every referenced unchanged asset against SHA256_MANIFEST.json. Do not modify historical prompt or scoring files.
 2. Run the focused conformance suite and the six-file bounded suite. Run the budget ZIP negative regression and build-and-verify.py from a clean exact commit. Record commands, test counts and exit status. The ZIP must contain bundled pg and @neon/functions, load outside the repository and return 503/401/405 at the three offline gates.

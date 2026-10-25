@@ -176,7 +176,7 @@ Every consequential claim in this program must carry one evidence status.
 | Level | Name | Meaning |
 |---|---|---|
 | E0 | Repository-observed | Present in current code, schema, test, receipt, or directly demonstrated runtime behavior |
-| E1 | Supplied primary artifact | Present in an authored TD613, Human Operator / TD613 Heritage Custodian, O’Malley, strategic-planning, engineering, or operator laboratory artifact |
+| E1 | Supplied primary artifact | Present in an authored TD613, Potato, O’Malley, strategic-planning, engineering, or operator laboratory artifact |
 | E2 | Derived | Reproducible mathematical, logical, or architectural consequence of E0/E1 material |
 | E3 | Comparative | Bounded application of external scholarship or engineering literature |
 | E4 | High-speculation hypothesis | Imaginative, explicit, falsifiable extension proposed for experiment |
@@ -1598,7 +1598,7 @@ This is the seed ledger for the implementation program. The repository-wide cita
 - `app/engine/ash-keep-moire.js` — baseline/singleton/pair assay and pair-emergent topology residue.
 - `packages/dome_world_exact/bridge/phason_gate_exact.py` — exact icosahedral cut-and-project verification and acceptance-window custody event.
 
-### 21.2 Human Operator / TD613 Heritage Custodian / Flow-Core laboratory route
+### 21.2 Potato / Flow-Core laboratory route
 
 Routed concepts:
 

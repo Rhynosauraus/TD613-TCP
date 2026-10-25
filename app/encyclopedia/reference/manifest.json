@@ -3,8 +3,8 @@
   "edition_source_commit": "78c7ea6b974e176611fb2ed4d0c59649ebf05f62",
   "edition_version": "1.4",
   "review_base_commit": "338642a0ee4c7bf2416af65d001c1508aba8ed85",
-  "canonical_payload_sha256": "fb6ce21fbc28a78473d4aa7a858fa1ed4a015e517b0d2ec8966f9df6eb561412",
-  "retrieval_records_sha256": "933a2ae8c211cba78bfa4e0546947571901bb910fe247a0df4d32eddabe2a79f",
+  "canonical_payload_sha256": "ff0c98f564c9157f22b8603a20ddefa3ca13d843b17bdfb7e2a495408a49b4c9",
+  "retrieval_records_sha256": "00b04b7abb80b80bcec03f90b50ac44345492d452cce343a0ba90479fe79ed0a",
   "record_count": 1141,
   "facets": {
     "kind": {
@@ -4784,7 +4784,7 @@
     "admit": "node scripts/admit-encyclopedia-record.cjs proposal.json --human-review-ref exact-review-reference",
     "semantics": "Preparation is read-only and PROPOSED. Source-index accession requires separately declared human review. Public merge/deployment and scientific adjudication retain their own authority. Private input cannot enter public accession output."
   },
-  "artifact_html_sha256": "7ab385b17cb8f82912f4a75c047d0245162c5b4811f0e394d64eeb3ee455ac75",
+  "artifact_html_sha256": "118214bfe7fd69afb42fa5f3206fc365e1905210254f852b9d0e1d1f4088d62d",
   "paths": {
     "directory": "reference/directory.json",
     "graph": "reference/graph.json",
@@ -4844,8 +4844,8 @@
     },
     "61": {
       "path": "reference/terms/61.json",
-      "terms": 788,
-      "sha256": "3889d0378636c77ec46ff4522799ca547a04544c51c5bbcbe68b1c3e01691d14"
+      "terms": 789,
+      "sha256": "290c73f25d653d59ea815c508ae4806e8df429431f1878eb9c4f62d10f9bd9cb"
     },
     "62": {
       "path": "reference/terms/62.json",
@@ -4855,7 +4855,7 @@
     "63": {
       "path": "reference/terms/63.json",
       "terms": 493,
-      "sha256": "b173b8879a471c3f2129509038333eb4e4109de5cf335db482dd3c558c532826"
+      "sha256": "a8691ddc898447af515526a1f7edff696be16a2035011ebaacb542c4faa90d61"
     },
     "64": {
       "path": "reference/terms/64.json",
@@ -4880,7 +4880,7 @@
     "68": {
       "path": "reference/terms/68.json",
       "terms": 138,
-      "sha256": "f7d56b7a487c2c8e37f0c2dfa2dac7328411a402904ed52bd9b37e8dd1e85a41"
+      "sha256": "e9f43feae2eae965f46d83b5776ccf43ec421ca615c8889c19ca9943b575c9bc"
     },
     "69": {
       "path": "reference/terms/69.json",
@@ -4889,8 +4889,8 @@
     },
     "70": {
       "path": "reference/terms/70.json",
-      "terms": 500,
-      "sha256": "5b842adbba39eaac0d0b7f06d3f99b36fb8385a04d6f45699ac54ce696244ccc"
+      "terms": 501,
+      "sha256": "57a91aa291f5e56c8a5e28f94da3eb6a0f4853fd8f7d89368c1255b881614a39"
     },
     "71": {
       "path": "reference/terms/71.json",
@@ -4909,8 +4909,8 @@
     },
     "74": {
       "path": "reference/terms/74.json",
-      "terms": 251,
-      "sha256": "58664621ad553d6cf7c7ea431312efa5052361e53a5b168444cfee5193ef2080"
+      "terms": 252,
+      "sha256": "9e2c13fc612ebb524430f8b974f754440e1b0e29924c5a724b54110843bc4462"
     },
     "75": {
       "path": "reference/terms/75.json",
@@ -4950,7 +4950,7 @@
     "6f": {
       "path": "reference/terms/6f.json",
       "terms": 169,
-      "sha256": "2cff4260812078581cae2070e04fd6d7b54e574ca3773a9bf4d60893058aff35"
+      "sha256": "1cd36ef1071b25f3e0bf09b21e9abd9813c912fcbf6c04e5a2b2e52b836f093a"
     },
     "6c": {
       "path": "reference/terms/6c.json",

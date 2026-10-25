@@ -1,6 +1,6 @@
 # Fresh three-call a17 activation
 
-Human Operator / TD613 Heritage Custodian C. Miller's active interactive instruction to acquire the remaining outputs continues. On 2026-10-10 she supplied a Google AI Studio screenshot showing Tier 1 · Prepay and confirmed that TD613 uses that correct key. Record the billing association as OPERATOR_ATTESTED_PAID, with the screenshot preserved in the established evidence destination; independently observed production credential SHA-256 remains a separate receipt.
+Tawanna C. Miller's active interactive instruction to acquire the remaining outputs continues. On 2026-10-10 she supplied a Google AI Studio screenshot showing Tier 1 · Prepay and confirmed that TD613 uses that correct key. Record the billing association as OPERATOR_ATTESTED_PAID, with the screenshot preserved in the established evidence destination; independently observed production credential SHA-256 remains a separate receipt.
 
 A16 remains HELD after one provider HTTP 503 and zero answers. At 2026-10-10T05:28:35.747221Z the live ledger contained 76 reserved calls, 8,698,567,500 reserved-cost nanos and zero active runs. Four call reservations and USD 1.30143250 remain under the unchanged 80-call/USD 10 caps. Reservations represent ceilings rather than billed charges.
 

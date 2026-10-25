@@ -2,7 +2,7 @@
 
 ## Operator-observed two-route contrast
 
-The user submitted Human Operator / TD613 Heritage Custodian's permitted, previously published poetic systems critique in the text-only Marrowline browser. With the October 2 restored instructions active the provider produced an engaging answer with some provider-native High Zalgo; it also told the speaker to sleep. After the operator pressed **Exit Trial** and resubmitted, the interface showed **Grove trial OFF · ordinary Marrowline (Argon-first) · server matched**, followed by **Reply paused**. The screenshots show that the browser intentionally changed the route. They do not reveal the original Gemini text, precise served model for each attempt, or the admission reasons; no clinical/safety intervention mechanism has been established.
+The user submitted Potato's permitted, previously published poetic systems critique in the text-only Marrowline browser. With the October 2 restored instructions active the provider produced an engaging answer with some provider-native High Zalgo; it also told the speaker to sleep. After the operator pressed **Exit Trial** and resubmitted, the interface showed **Grove trial OFF · ordinary Marrowline (Argon-first) · server matched**, followed by **Reply paused**. The screenshots show that the browser intentionally changed the route. They do not reveal the original Gemini text, precise served model for each attempt, or the admission reasons; no clinical/safety intervention mechanism has been established.
 
 ## Narrowed implementation
 

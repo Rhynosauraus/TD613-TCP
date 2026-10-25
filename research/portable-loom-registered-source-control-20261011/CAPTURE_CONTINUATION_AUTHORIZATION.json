@@ -1,7 +1,7 @@
 {
   "schema": "td613.loom.registered-source-capture-continuation/v0.1",
   "run_id": "portable-loom-registered-source-control-20261011-r03",
-  "operator": "Human Operator / TD613 Heritage Custodian C. Miller",
+  "operator": "Tawanna C. Miller",
   "authority_basis": "Direct ongoing instruction: run as many times as necessary until captured; paid API credits confirmed; remainder of thread authorized. Latest direct instruction requests rerun with corrected configuration while preserving medium.",
   "reason": "Five retained HTTP 503 provider responses and one retained HTTP 200/MAX_TOKENS response across r01 and r02; all distinct keys consumed. Last response reported 7863 thought tokens and 325 candidate tokens under the 8192 cap.",
   "limits": {
