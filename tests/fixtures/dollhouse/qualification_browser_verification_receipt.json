@@ -1,0 +1,161 @@
+{
+  "schema": "td613.dollhouse-design.browser-verification-receipt/v0.1",
+  "timestamp": "2026-10-25T01:21:00.883Z",
+  "browser_engine": "Chrome/156.0.8078.47",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+  "cdp_protocol": "1.3",
+  "source_revision": "9a66a15043b5bea06ba199358741f7b169a4e554",
+  "total_assertions_checked": 32,
+  "disposition": "VERIFIED_PASS",
+  "primary_artifact": {
+    "viewport_390px": {
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "overflowPx": 0
+    },
+    "touch_targets": [
+      {
+        "id": "btnPrev",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnNext",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnFalsify",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnReset",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnRest",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnClosure",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      }
+    ],
+    "initial_state": {
+      "currentStep": 1,
+      "frictionMu": 0.2,
+      "balanceBeta": 0.25,
+      "forceZeroBalance": false,
+      "isSealReady": false,
+      "routeHistoryPreserved": true,
+      "restAffordanceAvailable": true,
+      "lastClearanceDurationMs": 0,
+      "isClearing": false
+    },
+    "terminal_state": {
+      "currentStep": 4,
+      "frictionMu": 1.2,
+      "balanceBeta": 1,
+      "forceZeroBalance": false,
+      "isSealReady": true,
+      "routeHistoryPreserved": true,
+      "restAffordanceAvailable": true,
+      "lastClearanceDurationMs": 0,
+      "isClearing": false
+    },
+    "falsified_state": {
+      "currentStep": 4,
+      "frictionMu": 0,
+      "balanceBeta": 0,
+      "forceZeroBalance": true,
+      "isSealReady": false,
+      "routeHistoryPreserved": true,
+      "restAffordanceAvailable": true,
+      "lastClearanceDurationMs": 0,
+      "isClearing": false
+    },
+    "keyboard_navigation_verified": true,
+    "exceptions_count": 0
+  },
+  "refractive_artifact": {
+    "viewport_390px": {
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "overflowPx": 0
+    },
+    "touch_targets": [
+      {
+        "id": "btnPrev",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnNext",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnFalsify",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnReset",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnRest",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      },
+      {
+        "id": "btnClosure",
+        "width": 366,
+        "height": 44,
+        "minHeightPassed": true
+      }
+    ],
+    "initial_state": {
+      "currentStation": 1,
+      "scribeFatigue": "1h",
+      "marginalGlossCount": 1,
+      "sovereignSilence": false,
+      "routeHistoryPreserved": true,
+      "restAffordanceAvailable": true
+    },
+    "terminal_state": {
+      "currentStation": 4,
+      "scribeFatigue": "48h",
+      "marginalGlossCount": 4,
+      "sovereignSilence": false,
+      "routeHistoryPreserved": true,
+      "restAffordanceAvailable": true
+    },
+    "falsified_state": {
+      "currentStation": 4,
+      "scribeFatigue": "48h",
+      "marginalGlossCount": 0,
+      "sovereignSilence": true,
+      "routeHistoryPreserved": true,
+      "restAffordanceAvailable": true
+    },
+    "keyboard_navigation_verified": true,
+    "exceptions_count": 0
+  }
+}

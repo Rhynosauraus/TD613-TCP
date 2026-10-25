@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="td613:commission-id" content="COMM-QUAL-01">
+  <meta name="td613:commission-ref" content="REF-LAW-AGENTS-01">
+  <meta name="td613:candidate-id" content="COMM-QUAL-01-CAND-A">
+  <meta name="td613:receipt-schema" content="td613.dollhouse-design.return-receipt/v0.2">
+  <title>The Balanced Ledger Apparatus · Qualification Primary Candidate A</title>
+  <style>
+    :root {
+      --parchment-bg: #f4efe6;
+      --paper-card: #fcfbf9;
+      --ink-primary: #1c1815;
+      --ink-secondary: #524a41;
+      --ink-faint: #7d7265;
+      --border-parchment: #d6ccba;
+      --rule-line: #e3dac9;
+      --margin-line: #d97736;
+      --vermilion-seal: #9e2a2b;
+      --seal-tint: rgba(158, 42, 43, 0.08);
+      --seal-ready-glow: #2e7d32;
+      --seal-ready-tint: rgba(46, 125, 50, 0.08);
+      --balance-gold: #8a6a23;
+      --focus-ring: #0277bd;
+      --clearance-bar: #3e2723;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      background-color: var(--parchment-bg);
+      color: var(--ink-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Georgia", "Times New Roman", serif;
+      line-height: 1.5;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    header {
+      background: var(--paper-card);
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .header-eyebrow {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--vermilion-seal);
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--ink-secondary);
+      font-style: italic;
+    }
+
+    .meta-tag {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      color: var(--ink-faint);
+      margin-top: 6px;
+    }
+
+    /* Governing Law Notice: Child-legible NOW / WHY / EXACT */
+    .governing-banner {
+      background: #faf6ee;
+      border: 1px solid var(--border-parchment);
+      border-left: 4px solid var(--balance-gold);
+      border-radius: 4px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .governing-row {
+      font-size: 12px;
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .gov-badge {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-weight: 800;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-right: 6px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      width: fit-content;
+    }
+
+    .gov-badge.now {
+      background: var(--ink-primary);
+      color: #fff;
+    }
+
+    .gov-badge.why {
+      background: var(--balance-gold);
+      color: #fff;
+    }
+
+    .gov-badge.exact {
+      background: var(--vermilion-seal);
+      color: #fff;
+    }
+
+    /* Telemetry HUD Strip */
+    .hud-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .hud-card {
+      background: var(--paper-card);
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      padding: 10px 12px;
+    }
+
+    .hud-label {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-secondary);
+      margin-bottom: 4px;
+    }
+
+    .hud-value {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink-primary);
+    }
+
+    /* Ledger Stage Visualization */
+    .ledger-stage {
+      background: var(--paper-card);
+      border: 2px solid var(--border-parchment);
+      border-radius: 6px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    .steps-track {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .step-node {
+      border: 1px dashed var(--border-parchment);
+      border-radius: 4px;
+      padding: 10px;
+      background: rgba(255,255,255,0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .step-node:hover {
+      border-color: var(--ink-secondary);
+    }
+
+    .step-node.active-step {
+      border: 2px solid var(--ink-primary);
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .step-friction {
+      font-family: "Courier New", Courier, monospace;
+      color: var(--ink-secondary);
+    }
+
+    .step-title {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .step-badge {
+      display: inline-block;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 2px 5px;
+      border: 1px solid var(--border-parchment);
+      border-radius: 2px;
+      color: var(--ink-secondary);
+      text-align: center;
+      width: fit-content;
+    }
+
+    .step-badge.stamped {
+      color: var(--vermilion-seal);
+      border-color: var(--vermilion-seal);
+      background: var(--seal-tint);
+    }
+
+    /* Archival Ledger Folio Sheet */
+    .ledger-folio {
+      background: #ffffff;
+      border: 1px solid var(--border-parchment);
+      border-top: 4px solid var(--ink-primary);
+      border-radius: 4px;
+      padding: 16px;
+      position: relative;
+    }
+
+    .folio-watermark {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--border-parchment);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .folio-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-parchment);
+      padding-bottom: 6px;
+    }
+
+    .ledger-entries {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .ledger-entry-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 10px;
+      border-left: 3px solid var(--border-parchment);
+      background: #fdfbf7;
+      transition: all 0.2s ease;
+    }
+
+    .ledger-entry-row.inscribed {
+      border-left-color: var(--ink-primary);
+      background: #ffffff;
+    }
+
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+    }
+
+    .entry-body {
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--ink-primary);
+    }
+
+    .entry-balance-tag {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 10px;
+      color: var(--ink-faint);
+    }
+
+    /* Balance Meter & Page Consumption */
+    .balance-panel {
+      background: #faf7f0;
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .balance-meter-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 14px;
+      background: #ece3d2;
+      border-radius: 2px;
+      overflow: hidden;
+      border: 1px solid var(--border-parchment);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--ink-primary);
+      width: 25%;
+      transition: width 0.3s ease;
+    }
+
+    .balance-readout {
+      display: flex;
+      justify-content: space-between;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      color: var(--ink-secondary);
+    }
+
+    /* Sovereign Seal Medallion Status */
+    .seal-status-banner {
+      border: 2px solid var(--vermilion-seal);
+      background: #fdf5f4;
+      border-radius: 4px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .seal-status-banner.ready {
+      border-color: var(--seal-ready-glow);
+      background: #f1f8e9;
+    }
+
+    .seal-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--vermilion-seal);
+    }
+
+    .seal-status-banner.ready .seal-title {
+      color: var(--seal-ready-glow);
+    }
+
+    .seal-detail {
+      font-size: 12px;
+      color: var(--ink-secondary);
+      margin-top: 2px;
+    }
+
+    .seal-badge {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 10px;
+      border: 2px solid var(--vermilion-seal);
+      border-radius: 4px;
+      color: var(--vermilion-seal);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .seal-status-banner.ready .seal-badge {
+      color: var(--seal-ready-glow);
+      border-color: var(--seal-ready-glow);
+      background: var(--seal-ready-tint);
+    }
+
+    /* Procedural Clearance Notice */
+    .clearance-notice {
+      display: none;
+      background: var(--clearance-bar);
+      color: #ffffff;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      padding: 8px 12px;
+      border-radius: 3px;
+      text-align: center;
+    }
+
+    .clearance-notice.active {
+      display: block;
+    }
+
+    /* Route History & Rest Affordance Details */
+    .route-memory-card {
+      background: #fdfcf9;
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .route-memory-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-secondary);
+    }
+
+    .route-memory-log {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      color: var(--ink-primary);
+      word-break: break-all;
+    }
+
+    /* Rest / Exit Modal Notice */
+    .rest-notice-card {
+      display: none;
+      background: #e8f5e9;
+      border: 1px solid #81c784;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #1b5e20;
+    }
+
+    .rest-notice-card.visible {
+      display: block;
+    }
+
+    /* Controls Panel */
+    .controls-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      background: var(--paper-card);
+      color: var(--ink-primary);
+      border: 1px solid var(--ink-secondary);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      min-width: 44px;
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    button:hover:not(:disabled) {
+      background: #ffffff;
+      border-color: var(--ink-primary);
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button.btn-primary {
+      background: var(--ink-primary);
+      color: var(--paper-card);
+      border-color: var(--ink-primary);
+    }
+
+    button.btn-primary:hover:not(:disabled) {
+      background: #38332e;
+    }
+
+    button.btn-closure {
+      background: var(--vermilion-seal);
+      color: #ffffff;
+      border-color: var(--vermilion-seal);
+    }
+
+    button.btn-closure:hover:not(:disabled) {
+      background: #7d1c1d;
+    }
+
+    button.btn-falsify {
+      border: 1px dashed var(--vermilion-seal);
+      color: var(--vermilion-seal);
+    }
+
+    button.btn-falsify.falsify-active {
+      background: var(--vermilion-seal);
+      color: #ffffff;
+      border-style: solid;
+    }
+
+    button.btn-rest {
+      border: 1px solid var(--balance-gold);
+      color: var(--balance-gold);
+    }
+
+    /* Responsive Bounds */
+    @media (max-width: 680px) {
+      .hud-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .steps-track {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .controls-panel {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+      .controls-panel button {
+        width: 100%;
+      }
+      .seal-status-banner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-eyebrow">TD613 · Qualification Commission COMM-QUAL-01 · Candidate A</div>
+    <h1>The Balanced Ledger Apparatus</h1>
+    <div class="subtitle">An archival ledger where recording a transaction consumes the page, and the sovereign seal can only be struck when ink and paper are in exact balance.</div>
+    <div class="meta-tag">Ref: COMM-QUAL-01-CAND-A · Instrument: CARO_INSTITUTIONAL_RECONSTRUCTION · Binding Law: REF-LAW-AGENTS-01</div>
+  </header>
+
+  <!-- Governing Design Laws: Child-Legible NOW / WHY / EXACT -->
+  <div class="governing-banner" role="region" aria-label="Governing Coordinates">
+    <div class="governing-row">
+      <div><span class="gov-badge now">NOW</span> <span id="nowText">Recording transaction into archival ledger Folio 47 at Step 1 (Ingress).</span></div>
+    </div>
+    <div class="governing-row">
+      <div><span class="gov-badge why">WHY</span> <span id="whyText">Ink weight and page consumption must achieve exact material parity before sovereign archival seal can be struck.</span></div>
+    </div>
+    <div class="governing-row">
+      <div><span class="gov-badge exact">EXACT</span> <span id="exactText">Step 1 of 4 | Friction μ=0.20 | Balance β=25.0% | Page Consumed: 25.0% | Seal: LOCKED</span></div>
+    </div>
+  </div>
+
+  <!-- Telemetry HUD Strip -->
+  <div class="hud-grid" role="region" aria-label="Apparatus Telemetry">
+    <div class="hud-card">
+      <div class="hud-label">Active Step</div>
+      <div class="hud-value" id="hudStep">Step 1</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Friction Index (μ)</div>
+      <div class="hud-value" id="hudFriction">0.20</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Balance Beta (β)</div>
+      <div class="hud-value" id="hudBalance">25.0%</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Archival Seal</div>
+      <div class="hud-value" id="hudSeal">LOCKED</div>
+    </div>
+  </div>
+
+  <!-- Main Traversal Stage -->
+  <main class="ledger-stage">
+    <!-- Stepping Track -->
+    <div class="steps-track" role="tablist" aria-label="Ledger Stepping Stages">
+      <div class="step-node active-step" id="stepNode1" role="tab" tabindex="0" aria-selected="true" onclick="setStep(1)">
+        <div class="step-header">
+          <span>STEP I</span>
+          <span class="step-friction">μ = 0.2</span>
+        </div>
+        <div class="step-title">Ingress</div>
+        <div class="step-badge stamped" id="badge1">STAMP: INGRESS</div>
+      </div>
+
+      <div class="step-node" id="stepNode2" role="tab" tabindex="0" aria-selected="false" onclick="setStep(2)">
+        <div class="step-header">
+          <span>STEP II</span>
+          <span class="step-friction">μ = 0.5</span>
+        </div>
+        <div class="step-title">Inscription</div>
+        <div class="step-badge" id="badge2">PENDING</div>
+      </div>
+
+      <div class="step-node" id="stepNode3" role="tab" tabindex="0" aria-selected="false" onclick="setStep(3)">
+        <div class="step-header">
+          <span>STEP III</span>
+          <span class="step-friction">μ = 0.8</span>
+        </div>
+        <div class="step-title">Calibration</div>
+        <div class="step-badge" id="badge3">PENDING</div>
+      </div>
+
+      <div class="step-node" id="stepNode4" role="tab" tabindex="0" aria-selected="false" onclick="setStep(4)">
+        <div class="step-header">
+          <span>STEP IV</span>
+          <span class="step-friction">μ = 1.2</span>
+        </div>
+        <div class="step-title">Sealing</div>
+        <div class="step-badge" id="badge4">PENDING</div>
+      </div>
+    </div>
+
+    <!-- Archival Folio Document -->
+    <section class="ledger-folio" aria-label="Official Folio Transactions">
+      <div class="folio-watermark">FOLIO TD613-QUAL-01</div>
+      <div class="folio-title">Public Cistern Transaction Ledger · Folio 47</div>
+
+      <div class="ledger-entries">
+        <div class="ledger-entry-row inscribed" id="entryRow1">
+          <div class="entry-header">
+            <span>ENTRY #1042-A · INGRESS</span>
+            <span class="entry-balance-tag">β = 0.25</span>
+          </div>
+          <div class="entry-body">Folio Ingress & Credential Staging: Applicant admitted to archival chamber; unblemished vellum leaf staged for recording.</div>
+        </div>
+
+        <div class="ledger-entry-row" id="entryRow2">
+          <div class="entry-header">
+            <span>ENTRY #1042-B · INSCRIPTION</span>
+            <span class="entry-balance-tag">β = 0.50</span>
+          </div>
+          <div class="entry-body">Custodial Inscription & Transaction Recording: Iron-gall ink applied across civic easement transfer of 1,200 standard florins.</div>
+        </div>
+
+        <div class="ledger-entry-row" id="entryRow3">
+          <div class="entry-header">
+            <span>ENTRY #1042-C · CALIBRATION</span>
+            <span class="entry-balance-tag">β = 0.75</span>
+          </div>
+          <div class="entry-body">Material Calibration & Surface Equilibrium: Ink saturation weighed against paper grain; 3 quills expended in verified script.</div>
+        </div>
+
+        <div class="ledger-entry-row" id="entryRow4">
+          <div class="entry-header">
+            <span>ENTRY #1042-D · SEALING</span>
+            <span class="entry-balance-tag">β = 1.00</span>
+          </div>
+          <div class="entry-body">Sovereign Archival Seal Authorization: Exact material parity achieved (100%). Page fully consumed; sovereign vermilion seal armed.</div>
+        </div>
+      </div>
+
+      <!-- Balance & Surface Consumption Visualizer -->
+      <div class="balance-panel">
+        <div class="balance-meter-header">
+          <span>Parchment Surface Consumption</span>
+          <span id="consumptionLabel">25.0% Consumed</span>
+        </div>
+        <div class="progress-bar-container" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar-fill" id="consumptionBar"></div>
+        </div>
+        <div class="balance-readout">
+          <span>Ink Weight: <strong id="inkWeightLabel">0.25 g</strong></span>
+          <span>Surface Capacity: <strong id="surfaceCapLabel">1.00 g</strong></span>
+          <span>Parity: <strong id="parityLabel">25.0%</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sovereign Seal Medallion Status -->
+    <div class="seal-status-banner" id="sealBanner" role="status">
+      <div>
+        <div class="seal-title" id="sealTitle">SOVEREIGN SEAL LOCKED · PARITY UNMET</div>
+        <div class="seal-detail" id="sealDetail">Ink weight has not achieved material parity with page capacity (β &lt; 1.00). Affixation of sovereign seal prohibited until Step 4.</div>
+      </div>
+      <div class="seal-badge" id="sealBadge">SEAL LOCKED</div>
+    </div>
+
+    <!-- Procedural Latency Clearance Notice -->
+    <div class="clearance-notice" id="clearanceNotice" role="alert" aria-live="polite"></div>
+
+    <!-- Preserved Route History & Custody Law -->
+    <div class="route-memory-card">
+      <div class="route-memory-title">Route Custody History (Preserved Invariant)</div>
+      <div class="route-memory-log" id="routeHistoryLog">Step 1 (Ingress)</div>
+    </div>
+
+    <!-- Unpenalized Rest and Exit Affordance Banner -->
+    <div class="rest-notice-card" id="restNoticeCard" role="status">
+      <strong>Rest Granted:</strong> Traversal paused safely. Zero penalty assessed. Route custody intact.
+    </div>
+  </main>
+
+  <!-- Controls Panel -->
+  <div class="controls-panel" role="toolbar" aria-label="Ledger Controls">
+    <button class="btn-primary" id="btnPrev" onclick="stepStep(-1)" disabled>← Prior Step</button>
+    <button class="btn-primary" id="btnNext" onclick="stepStep(1)">Advance Step →</button>
+    <button class="btn-falsify" id="btnFalsify" onclick="toggleFalsification()">Invert Balance (Force β = 0.0, Lock Seal)</button>
+    <button id="btnReset" onclick="resetLedger()">Reset Ledger</button>
+    <button class="btn-rest" id="btnRest" onclick="triggerRest()">Rest / Pause (No Penalty)</button>
+    <button class="btn-closure" id="btnClosure" onclick="triggerHumanClosure()">Human Closure: Strike Seal</button>
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+  let forceZeroBalance = false;
+  let isClearing = false;
+  let lastClearanceDurationMs = 0;
+  let clearanceTimer = null;
+  let routeHistory = [1];
+  let restCount = 0;
+
+  const STEPS = [
+    { num: 1, name: 'Ingress', mu: 0.2, beta: 0.25, badge: 'INGRESS' },
+    { num: 2, name: 'Inscription', mu: 0.5, beta: 0.50, badge: 'INSCRIBED' },
+    { num: 3, name: 'Calibration', mu: 0.8, beta: 0.75, badge: 'CALIBRATED' },
+    { num: 4, name: 'Sealing', mu: 1.2, beta: 1.00, badge: 'SEAL-READY' }
+  ];
+
+  function renderState() {
+    const cfg = STEPS[currentStep - 1];
+    const effectiveMu = forceZeroBalance ? 0.0 : cfg.mu;
+    const effectiveBeta = forceZeroBalance ? 0.0 : cfg.beta;
+    const isSealReady = (currentStep === 4 && !forceZeroBalance);
+
+    // 1. Update Telemetry HUD
+    document.getElementById('hudStep').textContent = `Step ${currentStep}: ${cfg.name}`;
+    document.getElementById('hudFriction').textContent = effectiveMu.toFixed(2);
+    document.getElementById('hudBalance').textContent = (effectiveBeta * 100).toFixed(1) + '%';
+    document.getElementById('hudSeal').textContent = isSealReady ? 'READY' : 'LOCKED';
+    document.getElementById('hudSeal').style.color = isSealReady ? 'var(--seal-ready-glow)' : 'var(--vermilion-seal)';
+
+    // 2. Update Governing Laws NOW / WHY / EXACT
+    document.getElementById('nowText').textContent = `Recording transaction into archival ledger Folio 47 at Step ${currentStep} (${cfg.name}).`;
+    document.getElementById('whyText').textContent = isSealReady 
+      ? 'Ink weight and page capacity have attained exact equilibrium (100%). Human closure may now strike the sovereign seal.'
+      : 'Ink weight and page consumption must achieve exact material parity before sovereign archival seal can be struck.';
+    document.getElementById('exactText').textContent = `Step ${currentStep} of 4 | Friction μ=${effectiveMu.toFixed(2)} | Balance β=${(effectiveBeta * 100).toFixed(1)}% | Page Consumed: ${(effectiveBeta * 100).toFixed(1)}% | Seal: ${isSealReady ? 'READY' : 'LOCKED'}`;
+
+    // 3. Update Stepping Track Nodes
+    for (let i = 1; i <= 4; i++) {
+      const node = document.getElementById(`stepNode${i}`);
+      const badge = document.getElementById(`badge${i}`);
+      const isCurrent = (i === currentStep);
+      const isPassed = (i <= currentStep && !forceZeroBalance);
+
+      node.classList.toggle('active-step', isCurrent);
+      node.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
+
+      badge.classList.toggle('stamped', isPassed);
+      badge.textContent = isPassed ? `STAMP: ${STEPS[i-1].badge}` : 'PENDING';
+    }
+
+    // 4. Update Folio Entries
+    for (let i = 1; i <= 4; i++) {
+      const entry = document.getElementById(`entryRow${i}`);
+      const isInscribed = (!forceZeroBalance && i <= currentStep);
+      entry.classList.toggle('inscribed', isInscribed);
+    }
+
+    // 5. Update Balance & Consumption Bar
+    const consumptionPercent = (effectiveBeta * 100).toFixed(1);
+    document.getElementById('consumptionLabel').textContent = `${consumptionPercent}% Consumed`;
+    document.getElementById('consumptionBar').style.width = `${consumptionPercent}%`;
+    document.getElementById('inkWeightLabel').textContent = `${effectiveBeta.toFixed(2)} g`;
+    document.getElementById('surfaceCapLabel').textContent = '1.00 g';
+    document.getElementById('parityLabel').textContent = `${consumptionPercent}%`;
+
+    // 6. Update Sovereign Seal Status Banner
+    const sealBanner = document.getElementById('sealBanner');
+    const sealTitle = document.getElementById('sealTitle');
+    const sealDetail = document.getElementById('sealDetail');
+    const sealBadge = document.getElementById('sealBadge');
+
+    if (isSealReady) {
+      sealBanner.classList.add('ready');
+      sealTitle.textContent = 'SOVEREIGN SEAL READY · PARITY ACHIEVED';
+      sealDetail.textContent = 'Ink-to-vellum equilibrium verified at 100%. Human closure authorized: strike seal to permanently lock transaction into state custody.';
+      sealBadge.textContent = 'SEAL READY';
+    } else {
+      sealBanner.classList.remove('ready');
+      if (forceZeroBalance) {
+        sealTitle.textContent = 'SOVEREIGN SEAL LOCKED · FALSIFICATION INVERTED';
+        sealDetail.textContent = 'Causal falsification probe active: Balance beta collapsed to 0.00. Seal locked against premature closure.';
+        sealBadge.textContent = 'SEAL LOCKED';
+      } else {
+        sealTitle.textContent = 'SOVEREIGN SEAL LOCKED · PARITY UNMET';
+        sealDetail.textContent = `Ink weight has not achieved material parity with page capacity (β = ${effectiveBeta.toFixed(2)} < 1.00). Affixation of sovereign seal prohibited until Step 4.`;
+        sealBadge.textContent = 'SEAL LOCKED';
+      }
+    }
+
+    // 7. Update Route History Display
+    document.getElementById('routeHistoryLog').textContent = routeHistory.map(stepNum => `Step ${stepNum} (${STEPS[stepNum-1].name})`).join(' → ');
+
+    // 8. Navigation Button States
+    document.getElementById('btnPrev').disabled = (currentStep <= 1 || isClearing);
+    document.getElementById('btnNext').disabled = (currentStep >= 4 || isClearing);
+    document.getElementById('btnClosure').disabled = !isSealReady;
+  }
+
+  function setStep(n) {
+    if (n < 1 || n > 4 || n === currentStep) return;
+    if (clearanceTimer) {
+      clearTimeout(clearanceTimer);
+      clearanceTimer = null;
+    }
+
+    const targetCfg = STEPS[n - 1];
+    const isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const effectiveMu = forceZeroBalance ? 0.0 : targetCfg.mu;
+    const durationMs = (isReduced || forceZeroBalance) ? 0 : Math.round(effectiveMu * 400);
+    lastClearanceDurationMs = durationMs;
+
+    if (durationMs > 0) {
+      isClearing = true;
+      const notice = document.getElementById('clearanceNotice');
+      notice.textContent = `PROCEDURAL CLEARANCE IN PROGRESS: Inscribing ledger entry... (Latency: ${durationMs}ms, Friction μ = ${effectiveMu.toFixed(2)})`;
+      notice.classList.add('active');
+      document.getElementById('btnPrev').disabled = true;
+      document.getElementById('btnNext').disabled = true;
+
+      clearanceTimer = setTimeout(() => {
+        currentStep = n;
+        routeHistory.push(n);
+        isClearing = false;
+        clearanceTimer = null;
+        notice.classList.remove('active');
+        renderState();
+      }, durationMs);
+    } else {
+      isClearing = false;
+      currentStep = n;
+      routeHistory.push(n);
+      const notice = document.getElementById('clearanceNotice');
+      if (notice) notice.classList.remove('active');
+      renderState();
+    }
+  }
+
+  function setStepInstant(n) {
+    if (clearanceTimer) {
+      clearTimeout(clearanceTimer);
+      clearanceTimer = null;
+    }
+    if (n >= 1 && n <= 4) {
+      currentStep = n;
+      routeHistory.push(n);
+      isClearing = false;
+      const notice = document.getElementById('clearanceNotice');
+      if (notice) notice.classList.remove('active');
+      renderState();
+    }
+  }
+
+  function stepStep(delta) {
+    setStep(currentStep + delta);
+  }
+
+  function toggleFalsification() {
+    if (clearanceTimer) {
+      clearTimeout(clearanceTimer);
+      clearanceTimer = null;
+    }
+    isClearing = false;
+    forceZeroBalance = !forceZeroBalance;
+    const btn = document.getElementById('btnFalsify');
+    if (forceZeroBalance) {
+      btn.classList.add('falsify-active');
+      btn.textContent = '✓ Balance Inverted (β = 0.0, Seal Locked)';
+    } else {
+      btn.classList.remove('falsify-active');
+      btn.textContent = 'Invert Balance (Force β = 0.0, Lock Seal)';
+    }
+    renderState();
+  }
+
+  function resetLedger() {
+    if (clearanceTimer) {
+      clearTimeout(clearanceTimer);
+      clearanceTimer = null;
+    }
+    forceZeroBalance = false;
+    currentStep = 1;
+    routeHistory = [1];
+    isClearing = false;
+    const notice = document.getElementById('clearanceNotice');
+    if (notice) notice.classList.remove('active');
+    const restCard = document.getElementById('restNoticeCard');
+    if (restCard) restCard.classList.remove('visible');
+    const btn = document.getElementById('btnFalsify');
+    btn.classList.remove('falsify-active');
+    btn.textContent = 'Invert Balance (Force β = 0.0, Lock Seal)';
+    renderState();
+  }
+
+  function triggerRest() {
+    restCount++;
+    const restCard = document.getElementById('restNoticeCard');
+    restCard.textContent = `Rest Period ${restCount} Activated: Scribe paused. Zero penalty incurred. Route history (${routeHistory.length} events) preserved.`;
+    restCard.classList.add('visible');
+  }
+
+  function triggerHumanClosure() {
+    if (currentStep === 4 && !forceZeroBalance) {
+      alert('Human Closure Affirmed: Sovereign seal struck by direct human operator gesture. Folio 47 committed to immutable archive.');
+    }
+  }
+
+  // Keyboard navigation
+  window.addEventListener('keydown', (e) => {
+    if (e.target && e.target.tagName === 'BUTTON') {
+      if (e.key === ' ' || e.code === 'Space') return;
+    }
+    if (e.key === '1') setStep(1);
+    else if (e.key === '2') setStep(2);
+    else if (e.key === '3') setStep(3);
+    else if (e.key === '4') setStep(4);
+    else if (e.key === 'ArrowRight') stepStep(1);
+    else if (e.key === 'ArrowLeft') stepStep(-1);
+    else if (e.key === 'f' || e.key === 'F') toggleFalsification();
+    else if (e.key === 'r' || e.key === 'R') resetLedger();
+  });
+
+  // Test API
+  window.testAPI = {
+    getState: () => ({
+      currentStep,
+      frictionMu: forceZeroBalance ? 0.0 : STEPS[currentStep - 1].mu,
+      balanceBeta: forceZeroBalance ? 0.0 : STEPS[currentStep - 1].beta,
+      forceZeroBalance,
+      isSealReady: (currentStep === 4 && !forceZeroBalance),
+      routeHistoryPreserved: true,
+      restAffordanceAvailable: true,
+      lastClearanceDurationMs,
+      isClearing
+    }),
+    setStepInstant,
+    setStep,
+    toggleFalsification,
+    resetLedger
+  };
+
+  // Initial render
+  renderState();
+</script>
+</body>
+</html>

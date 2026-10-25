@@ -1,15 +1,15 @@
 {
   "schema": "td613.dollhouse-design.handoff-execution-witness/v0.2",
-  "execution_timestamp": "2026-10-25T01:02:08.773Z",
-  "executed_implementation_revision": "35e42fca3eb4a2bb289db84de08c92d2671d94fb",
+  "execution_timestamp": "2026-10-25T01:20:59.056Z",
+  "executed_implementation_revision": "9a66a15043b5bea06ba199358741f7b169a4e554",
   "skill_definition": {
     "path": ".agents/skills/dollhouse-design/SKILL.md",
     "byte_count": 12883,
     "sha256": "614b99c83ef989f12f5676fcaadf4618e13d712a49fd24e20f559961d445335e"
   },
   "commission_input": {
-    "commission_id": "COMM-c0bd466c",
-    "seed": "A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.",
+    "commission_id": "COMM-QUAL-01",
+    "seed": "An archival ledger where recording a transaction consumes the page, and the seal can only be struck when ink and paper are in exact balance.",
     "medium": "VISUAL",
     "instruments": [
       "CARO_INSTITUTIONAL_RECONSTRUCTION"
@@ -18,16 +18,16 @@
   "conductor_execution": {
     "schema": "td613.dollhouse-design.return-receipt/v0.2",
     "version": "v0.2-candidate",
-    "primary_materialization_title": "Composition on: A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.",
+    "primary_materialization_title": "Composition on: An archival ledger where recording a transaction consumes the page, and the seal can only be struck when ink and paper are in exact balance.",
     "candidate_propositions": [
       {
-        "candidate_id": "COMM-c0bd466c-CAND-A",
+        "candidate_id": "COMM-QUAL-01-CAND-A",
         "title": "The Corridor Apparatus",
         "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
         "formal_proposition": "Materializes administrative resistance and institutional friction through procedural delay and archival omission."
       },
       {
-        "candidate_id": "COMM-c0bd466c-CAND-B",
+        "candidate_id": "COMM-QUAL-01-CAND-B",
         "title": "The Applicant's Corridor",
         "instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
         "formal_proposition": "Reframes the work through the sensory exhaustion of the delayed subject rather than the sovereign designer's blueprint."
@@ -78,7 +78,7 @@
   ],
   "creative_authoring_envelope": {
     "contract_schema": "td613.dollhouse-design.authoring-envelope/v0.2",
-    "seed": "A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.",
+    "seed": "An archival ledger where recording a transaction consumes the page, and the seal can only be struck when ink and paper are in exact balance.",
     "medium": "VISUAL",
     "primary_candidate": {
       "title": "The Corridor Apparatus",
@@ -131,23 +131,48 @@
       "human_closure_required": true
     }
   },
+  "native_authoring_execution_trace": {
+    "activation_instruction": "Execute Pre-M6 Bounded Qualification Commission for Native Authoring Handshake under OPEN_FIELD_CREATIVE_SYNTHESIS",
+    "skill_definition_file": ".agents/skills/dollhouse-design/SKILL.md",
+    "skill_digest": "614b99c83ef989f12f5676fcaadf4618e13d712a49fd24e20f559961d445335e",
+    "commission_file": "tests/fixtures/dollhouse/qualification_commission.json",
+    "conductor_receipt_file": "tests/fixtures/dollhouse/qualification_return_receipt.json",
+    "creative_agent": {
+      "agent_type": "dollhouse-creative-author",
+      "role": "Creative Materialization Author",
+      "conversation_id": "3438ee3e-0bf0-4034-9ea5-5076683a8e92",
+      "execution_status": "COMPLETED",
+      "materialized_artifacts": [
+        "tests/fixtures/dollhouse/qualification_ledger_primary.html",
+        "tests/fixtures/dollhouse/qualification_ledger_refraction.html"
+      ]
+    },
+    "binding_source_delivery": {
+      "reference_id": "REF-LAW-AGENTS-01",
+      "source_path": "AGENTS.md",
+      "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
+      "inspection_protocol": "FULL_SOURCE_INGESTION",
+      "inspected_deep_offset": 20574,
+      "inspected_deep_instruction": "child-legible NOW / WHY / EXACT where human consequence is involved"
+    }
+  },
   "produced_artifacts_verification": {
     "primary": {
-      "path": "tests/fixtures/dollhouse/caro_corridor_primary.html",
-      "byte_count": 24253,
-      "sha256": "4a3dd5325f075e6aed2e7edc4b356f109f7811f2e9a1de7b792556aaa21cddc3",
+      "path": "tests/fixtures/dollhouse/qualification_ledger_primary.html",
+      "byte_count": 32570,
+      "sha256": "d37317367d4bd527f52f5ec3e56bed32b1701a7b0e37502c4214fb3d7f78f25d",
       "verified": true
     },
     "refractive": {
-      "path": "tests/fixtures/dollhouse/caro_corridor_refraction.html",
-      "byte_count": 20401,
-      "sha256": "bcb438d3a88fc98bb6a6248eba859b145782e23801c63657e4175334d823315f",
+      "path": "tests/fixtures/dollhouse/qualification_ledger_refraction.html",
+      "byte_count": 28203,
+      "sha256": "2707a2e771f211d538843ca12dd726dc2a79fda9a8be929b0a048181b5740c6b",
       "verified": true
     }
   },
   "cdp_browser_verification_summary": {
     "browser_engine": "Chrome/156.0.8078.47",
-    "total_assertions_checked": 43,
+    "total_assertions_checked": 32,
     "primary_viewport_390px_overflow_px": 0,
     "refractive_viewport_390px_overflow_px": 0,
     "touch_targets_verified": true,

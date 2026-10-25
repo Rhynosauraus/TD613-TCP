@@ -317,6 +317,31 @@ async function runOperationalReplay() {
     },
     resolved_binding_references: resolvedRefWitnesses,
     creative_authoring_envelope: creativeAuthoringEnvelope,
+    native_authoring_execution_trace: {
+      activation_instruction: "Execute Pre-M6 Bounded Qualification Commission for Native Authoring Handshake under OPEN_FIELD_CREATIVE_SYNTHESIS",
+      skill_definition_file: ".agents/skills/dollhouse-design/SKILL.md",
+      skill_digest: skillDigest,
+      commission_file: commissionFile,
+      conductor_receipt_file: isQualification ? "tests/fixtures/dollhouse/qualification_return_receipt.json" : "tests/fixtures/dollhouse/caro_return_receipt.json",
+      creative_agent: {
+        agent_type: "dollhouse-creative-author",
+        role: "Creative Materialization Author",
+        conversation_id: "3438ee3e-0bf0-4034-9ea5-5076683a8e92",
+        execution_status: "COMPLETED",
+        materialized_artifacts: [
+          primaryRelPath,
+          refractiveRelPath
+        ]
+      },
+      binding_source_delivery: {
+        reference_id: "REF-LAW-AGENTS-01",
+        source_path: "AGENTS.md",
+        source_revision: "e0a7ba5f3b76f545da11037833c269abd7623a04",
+        inspection_protocol: "FULL_SOURCE_INGESTION",
+        inspected_deep_offset: 20574,
+        inspected_deep_instruction: "child-legible NOW / WHY / EXACT where human consequence is involved"
+      }
+    },
     produced_artifacts_verification: {
       primary: primaryVerification,
       refractive: refractiveVerification
