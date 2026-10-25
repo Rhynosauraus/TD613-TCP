@@ -1,0 +1,176 @@
+{
+  "schema": "td613.dollhouse-design.return-receipt/v0.2",
+  "version": "v0.2-candidate",
+  "commission_id": "COMM-c0bd466c",
+  "seed": "A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.",
+  "medium": "VISUAL",
+  "human_coordinates": {
+    "what": "Bureaucratic waiting corridor with progressive document redaction and procedural friction",
+    "who": "The applicant navigating statutory hurdles vs the sovereign archive",
+    "where": "Desktop and 390px mobile viewport in institutional parchment palette",
+    "how": "Procedural friction mu delays traversal; approval stamps lambda redact petition words to unlock the terminal door",
+    "when": "Four sequential chambers (Intake, Review, Censure, Archival) with manual still-state stepping",
+    "why": "To demonstrate procedural resistance and institutional erasure through material consequence"
+  },
+  "selected_instruments": [
+    "CARO_INSTITUTIONAL_RECONSTRUCTION"
+  ],
+  "historical_references": [
+    {
+      "reference_id": "REF-SYNTH-CARO-01",
+      "source_path": "tests/fixtures/dollhouse/caro_commission.json",
+      "source_revision": "5968eabd468a9dbc83961f3c75eb09e3d95a893f",
+      "classification": "BINDING_CUSTODY_LAW",
+      "summary": "Synthetic commission specifying 4-gate bureaucratic waiting room with petition redaction."
+    }
+  ],
+  "candidates": [
+    {
+      "id": "COMM-c0bd466c-CAND-A",
+      "concept_title": "The Corridor Apparatus",
+      "governing_instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+      "formal_proposition": "Materializes administrative resistance and institutional friction through procedural delay and archival omission.",
+      "structural_mechanisms": [
+        "Baseline Cadence: Maps corridor into a structured recursive invariant",
+        "Counter-Pressure: Introduces bureaucratic as an aperiodic strain vector",
+        "Causal Interference: Measures observable displacement where corridor and bureaucratic collide"
+      ],
+      "medium_consequence": "In VISUAL, the work refuses singular closure by presenting distinct rival paths.",
+      "scaffolding_class": "DETERMINISTIC_FRAMEWORK",
+      "proposal_origin": "COMMISSION_DERIVED",
+      "seed_anchor_terms": [
+        "corridor",
+        "bureaucratic",
+        "waiting"
+      ]
+    },
+    {
+      "id": "COMM-c0bd466c-CAND-B",
+      "concept_title": "The Applicant's Corridor",
+      "governing_instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+      "formal_proposition": "Reframes the work through the sensory exhaustion of the delayed subject rather than the sovereign designer's blueprint.",
+      "structural_mechanisms": [
+        "Procedural Inversion: Consequence displayed at ingress; terminal loss visible prior to operational cause",
+        "Friction Accounting: Each interaction demands explicit recognition of past energetic cost",
+        "Asymmetric Recovery: Historical traversal is fully recordable but structurally irreversible"
+      ],
+      "medium_consequence": "In VISUAL, the work subverts institutional arrival by foregrounding retained loss.",
+      "scaffolding_class": "DETERMINISTIC_FRAMEWORK",
+      "proposal_origin": "COMMISSION_DERIVED",
+      "seed_anchor_terms": [
+        "bureaucratic",
+        "waiting"
+      ]
+    }
+  ],
+  "primary_materialization": {
+    "selected_concept": "COMM-c0bd466c-CAND-A",
+    "title": "Composition on: A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.",
+    "medium": "VISUAL",
+    "instruments": [
+      "CARO_INSTITUTIONAL_RECONSTRUCTION"
+    ],
+    "formal_architecture": {
+      "ingress": "Coupling WHAT (Bureaucratic waiting corridor with progressive document redaction and procedural friction) with WHO (The applicant navigating statutory hurdles vs the sovereign archive)",
+      "cadence": "Choreographing WHEN (Four sequential chambers (Intake, Review, Censure, Archival) with manual still-state stepping) against WHY (To demonstrate procedural resistance and institutional erasure through material consequence)",
+      "execution": "Resolving WHERE (Desktop and 390px mobile viewport in institutional parchment palette) through HOW (Procedural friction mu delays traversal; approval stamps lambda redact petition words to unlock the terminal door)"
+    },
+    "operative_verbs": [
+      {
+        "verb": "PROPAGATION",
+        "action": "Derived dual commission-grounded proposals (The Corridor Apparatus / The Applicant's Corridor)"
+      },
+      {
+        "verb": "COMPRESSION",
+        "action": "Retained path-sensitive distinctions without decorative surplus"
+      },
+      {
+        "verb": "COUPLING",
+        "action": "Bound human coordinates into mutually consequential pairs"
+      },
+      {
+        "verb": "TRANSITION",
+        "action": "Shifted projection into declared medium without losing invariants"
+      },
+      {
+        "verb": "STABILIZATION",
+        "action": "Anchored final form with inspectable boundaries and human closure"
+      }
+    ]
+  },
+  "refractive_variant": {
+    "id": "COMM-c0bd466c-REFRACT-01",
+    "governing_instrument": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+    "mutated_parameter": "administrative_friction_inversion",
+    "mutation_description": "Inverts the vantage point from sovereign bureaucratic gatekeeper to the affected citizen traversing the corridor.",
+    "formal_consequence": "Shifts from documenting administrative machinery to measuring the human exhaustion of delay.",
+    "material_difference": "The composition is framed through the citizen waiting room rather than the executive drafting chamber.",
+    "instruction_trace": "Reconstruct the physical and procedural friction from the standpoint of the delayed applicant."
+  },
+  "comparative_analysis": {
+    "shared_invariants": [
+      "The core intellectual seed (\"A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.\") is held invariant across both realizations",
+      "Both variants inhabit the declared medium: VISUAL",
+      "No scalar utility score or automatic aesthetic crown is applied"
+    ],
+    "divergent_qualities": [
+      "Candidate A operates under primary instrument CARO_INSTITUTIONAL_RECONSTRUCTION: Materializes administrative resistance and institutional friction through procedural delay and archival omission.",
+      "Refractive Variant mutates [administrative_friction_inversion]: Shifts from documenting administrative machinery to measuring the human exhaustion of delay."
+    ],
+    "governing_interaction_topology": {
+      "spatial_interpolation": "CONTINUOUS_MANIFOLD_WHERE_REQUIRED",
+      "grammatical_state_transitions": "DISCRETE_STATE_PERMUTATIONS",
+      "motion_policy": "USER_CONTROLLED_STILL_STATE_UNDER_REDUCED_MOTION",
+      "mobile_legibility_profile": {
+        "minimum_telemetry_font_px": 12,
+        "minimum_hit_target_px": 44,
+        "viewport_stack_boundary_px": 480
+      }
+    },
+    "open_aesthetic_questions": [
+      "Does the materialization of [administrative_friction_inversion] successfully alter the observer's understanding of the seed?",
+      "Should the refractive variant be preserved as an independent counterpart or kept as development scaffolding?"
+    ]
+  },
+  "instrument_provenance": [
+    {
+      "instrument_id": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+      "lineage": "Thinkers Bin (Robert Caro / Institutional Power)",
+      "material_contribution": "Supplied procedural friction, statutory cross-referencing, and corridor resistance",
+      "causal_contract": {
+        "instrument_id": "CARO_INSTITUTIONAL_RECONSTRUCTION",
+        "governing_theory": "Robert Caro Archival Reconstruction & Procedural Resistance",
+        "target_domains": [
+          "SPATIAL_TOPOLOGY",
+          "INTERACTION_FRICTION",
+          "DOCUMENT_CUSTODY"
+        ],
+        "causal_bindings": [
+          {
+            "parameter": "procedural_friction_coefficient_mu",
+            "target_component": "navigation_interaction_velocity",
+            "transfer_law": "scroll_delta_effective = scroll_delta_raw / (1 + mu * bureaucratic_layers)",
+            "falsification_probe": "mu = 0.0 eliminates navigation resistance across corridor"
+          },
+          {
+            "parameter": "archive_omission_index_lambda",
+            "target_component": "typography_redaction_opacity",
+            "transfer_law": "text_opacity = 1.0 - lambda * sovereign_censure_level",
+            "falsification_probe": "lambda = 0.0 renders all administrative records fully visible"
+          }
+        ],
+        "causality_class": "OPERATIVE_TRANSFER"
+      }
+    }
+  ],
+  "scientific_companion_audit": null,
+  "governance": {
+    "discourse_mode": "OPEN_FIELD_CREATIVE_SYNTHESIS",
+    "scientific_proof": false,
+    "palate_status": "UNBORN",
+    "release_authority": false,
+    "deployment_authority": false,
+    "human_closure_required": true,
+    "governing_law": "Make the unresolved relation productive. Let distinct forms meet without forcing them to merge. Allow the work to discover its medium through consequence."
+  }
+}

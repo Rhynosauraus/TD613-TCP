@@ -1,0 +1,26 @@
+{
+  "commission_id": "COMM-c0bd466c",
+  "seed": "A corridor of bureaucratic waiting rooms where each stamp of approval redacts a word from the applicant's petition, and the door only unlocks when the petition becomes completely illegible.",
+  "medium": "VISUAL",
+  "human_coordinates": {
+    "what": "Bureaucratic waiting corridor with progressive document redaction and procedural friction",
+    "who": "The applicant navigating statutory hurdles vs the sovereign archive",
+    "where": "Desktop and 390px mobile viewport in institutional parchment palette",
+    "how": "Procedural friction mu delays traversal; approval stamps lambda redact petition words to unlock the terminal door",
+    "when": "Four sequential chambers (Intake, Review, Censure, Archival) with manual still-state stepping",
+    "why": "To demonstrate procedural resistance and institutional erasure through material consequence"
+  },
+  "instruments": [
+    "CARO_INSTITUTIONAL_RECONSTRUCTION"
+  ],
+  "historical_references": [
+    {
+      "reference_id": "REF-SYNTH-CARO-01",
+      "source_path": "tests/fixtures/dollhouse/caro_commission.json",
+      "source_revision": "5968eabd468a9dbc83961f3c75eb09e3d95a893f",
+      "classification": "BINDING_CUSTODY_LAW",
+      "summary": "Synthetic commission specifying 4-gate bureaucratic waiting room with petition redaction."
+    }
+  ],
+  "scientific_audit_requested": false
+}

@@ -24,14 +24,17 @@ import { runDollhouseDesignCycle, AVAILABLE_INSTRUMENTS } from '../app/engine/do
 function printHelp() {
   console.log(`
 TD613 Dollhouse Native Design Skill Runner (DD-02)
-Usage: node scripts/run-dollhouse-design.mjs [options]
+Usage:
+  node scripts/run-dollhouse-design.mjs [options]
+  cat commission.json | node scripts/run-dollhouse-design.mjs --stdin
 
 Options:
   --seed, -s <seed>          Intellectual seed / core inquiry
   --medium, -m <medium>      Output medium: VISUAL, MOTION, SCHOLARLY, THEORETICAL, PRODUCT, HYBRID (default: SCHOLARLY)
   --instrument, -i <inst>    Selectable instrument (repeatable; if omitted, contextually inferred from seed; defaults to PHASONIC_COUNTERPOINT if ambiguous)
                              Available: ${Object.keys(AVAILABLE_INSTRUMENTS).join(', ')}
-  --input <path>             Path to JSON commission file
+  --input <path>             Path to JSON commission file (or "-" for stdin)
+  --stdin                    Read full JSON commission from standard input stream
   --output, -o <path>        Path to write return receipt (.json)
   --audit                    Include advisory /dollhouse-audit check
   --format <mode>            Output format: human (default), json, or both
@@ -53,6 +56,7 @@ async function main() {
   let outputPath = null;
   let format = 'human';
   let audit = false;
+  let useStdin = args.includes('--stdin');
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -64,6 +68,8 @@ async function main() {
       instruments.push(args[++i]);
     } else if (arg === '--input') {
       inputPath = args[++i];
+    } else if (arg === '--stdin') {
+      useStdin = true;
     } else if (arg === '--output' || arg === '-o') {
       outputPath = args[++i];
     } else if (arg === '--format') {
@@ -74,12 +80,23 @@ async function main() {
   }
 
   let commissionInput = {};
-  if (inputPath) {
+  if (inputPath === '-' || useStdin || (!inputPath && !seed && !process.stdin.isTTY)) {
+    const chunks = [];
+    for await (const chunk of process.stdin) {
+      chunks.push(chunk);
+    }
+    const rawContent = Buffer.concat(chunks).toString('utf8').trim();
+    if (!rawContent) {
+      console.error('Error: Empty standard input provided');
+      process.exit(1);
+    }
+    commissionInput = JSON.parse(rawContent);
+  } else if (inputPath) {
     const rawContent = await readFile(resolve(process.cwd(), inputPath), 'utf8');
     commissionInput = JSON.parse(rawContent);
   } else {
     if (!seed) {
-      console.error('Error: Must supply --seed or --input <file.json>');
+      console.error('Error: Must supply --seed, --input <file.json>, or stream via --stdin');
       printHelp();
       process.exit(1);
     }

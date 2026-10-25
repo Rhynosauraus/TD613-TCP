@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="td613:commission-id" content="COMM-c0bd466c">
+  <meta name="td613:commission-ref" content="SYNTH-CARO-01">
+  <meta name="td613:candidate-id" content="COMM-c0bd466c-CAND-A">
+  <meta name="td613:receipt-schema" content="td613.dollhouse-design.return-receipt/v0.2">
   <title>The Corridors of Erasure · Caro Institutional Reconstruction</title>
   <style>
     :root {
@@ -363,6 +367,25 @@
       border-style: solid;
     }
 
+    /* Operative Procedural Clearance Notice (mu causal law) */
+    .clearance-notice {
+      display: none;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--stamp-red);
+      background: var(--stamp-stamp-tint);
+      border: 1px dashed var(--stamp-red);
+      border-radius: 4px;
+      padding: 8px 12px;
+      text-align: center;
+      width: 100%;
+    }
+
+    .clearance-notice.active {
+      display: block;
+    }
+
     /* Responsive Bounds */
     @media (max-width: 680px) {
       .hud-grid {
@@ -385,9 +408,12 @@
 
 <div class="container">
   <header>
-    <div class="header-eyebrow">TD613 · Dollhouse Native Design Skill · Caro Reconstruction</div>
+    <div class="header-eyebrow">TD613 · Dollhouse Native Design · COMM-c0bd466c · Candidate A</div>
     <h1>The Corridors of Erasure</h1>
     <div class="subtitle">A study in procedural resistance: the applicant's petition unlocks the terminal portal only upon its complete bureaucratic redaction.</div>
+    <div style="font-family:'Courier New', monospace; font-size:11px; color:var(--ink-secondary); margin-top:6px;">
+      Commission Ref: SYNTH-CARO-01 · Instrument: CARO_INSTITUTIONAL_RECONSTRUCTION
+    </div>
   </header>
 
   <!-- Telemetry HUD -->
@@ -452,7 +478,7 @@
 
     <!-- The Petition Document Under Bureaucratic Redaction -->
     <section class="document-card" aria-label="Official Petition Inscription">
-      <div class="doc-watermark" id="docWatermark">DOSSIER TD613-PETITION-01</div>
+      <div class="doc-watermark" id="docWatermark">COMM-c0bd466c · DOSSIER TD613-PETITION-01</div>
       <div class="doc-title">Formal Petition for Statutory Relief & Communal Easement</div>
       
       <div class="petition-body" id="petitionBody">
@@ -491,6 +517,9 @@
       </div>
       <div class="stamp-badge" id="doorBadge">GATE SEALED</div>
     </div>
+
+    <!-- Operative Procedural Friction Notice -->
+    <div class="clearance-notice" id="clearanceNotice" role="alert" aria-live="polite"></div>
   </main>
 
   <!-- Controls Panel -->
@@ -589,9 +618,57 @@
     document.getElementById('btnNext').disabled = (currentChamber >= 4);
   }
 
+  let isClearing = false;
+  let lastClearanceDurationMs = 0;
+  let clearanceTimer = null;
+
   function setChamber(n) {
+    if (n < 1 || n > 4 || n === currentChamber) return;
+    if (clearanceTimer) {
+      clearTimeout(clearanceTimer);
+      clearanceTimer = null;
+    }
+
+    const targetCfg = CHAMBERS[n - 1];
+    const effectiveMu = forceZeroRedaction ? 0.0 : targetCfg.mu;
+    const isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const durationMs = (isReduced || forceZeroRedaction) ? 0 : Math.round(effectiveMu * 400);
+    lastClearanceDurationMs = durationMs;
+
+    if (durationMs > 0) {
+      isClearing = true;
+      const notice = document.getElementById('clearanceNotice');
+      notice.textContent = `PROCEDURAL CLEARANCE IN PROGRESS: Processing latency = ${durationMs}ms (Friction μ = ${effectiveMu.toFixed(2)})`;
+      notice.classList.add('active');
+      document.getElementById('btnPrev').disabled = true;
+      document.getElementById('btnNext').disabled = true;
+
+      clearanceTimer = setTimeout(() => {
+        currentChamber = n;
+        isClearing = false;
+        clearanceTimer = null;
+        notice.classList.remove('active');
+        renderState();
+      }, durationMs);
+    } else {
+      isClearing = false;
+      currentChamber = n;
+      const notice = document.getElementById('clearanceNotice');
+      if (notice) notice.classList.remove('active');
+      renderState();
+    }
+  }
+
+  function setChamberInstant(n) {
+    if (clearanceTimer) {
+      clearTimeout(clearanceTimer);
+      clearanceTimer = null;
+    }
     if (n >= 1 && n <= 4) {
       currentChamber = n;
+      isClearing = false;
+      const notice = document.getElementById('clearanceNotice');
+      if (notice) notice.classList.remove('active');
       renderState();
     }
   }
@@ -601,6 +678,11 @@
   }
 
   function toggleFalsification() {
+    if (clearanceTimer) {
+      clearTimeout(clearanceTimer);
+      clearanceTimer = null;
+    }
+    isClearing = false;
     forceZeroRedaction = !forceZeroRedaction;
     const btn = document.getElementById('btnFalsify');
     if (forceZeroRedaction) {
@@ -614,8 +696,15 @@
   }
 
   function resetCorridor() {
+    if (clearanceTimer) {
+      clearTimeout(clearanceTimer);
+      clearanceTimer = null;
+    }
     forceZeroRedaction = false;
     currentChamber = 1;
+    isClearing = false;
+    const notice = document.getElementById('clearanceNotice');
+    if (notice) notice.classList.remove('active');
     const btn = document.getElementById('btnFalsify');
     btn.classList.remove('falsify-active');
     btn.textContent = 'Invert Authority (Force λ = 0, μ = 0)';
@@ -640,6 +729,7 @@
   // Automated Test API
   window.testAPI = {
     setChamber,
+    setChamberInstant,
     toggleFalsification,
     resetCorridor,
     getState: () => ({
@@ -647,6 +737,8 @@
       frictionMu: forceZeroRedaction ? 0.0 : CHAMBERS[currentChamber - 1].mu,
       redactionLambda: forceZeroRedaction ? 0.0 : CHAMBERS[currentChamber - 1].lambda,
       forceZeroRedaction,
+      lastClearanceDurationMs,
+      isClearing,
       redactedWordCount: document.querySelectorAll('.petition-word.redacted').length,
       legibleWordCount: document.querySelectorAll('.petition-word:not(.redacted)').length,
       isDoorUnlocked: document.getElementById('doorBanner').classList.contains('unlocked'),

@@ -227,3 +227,71 @@ test('TD613 Dollhouse Design Conductor v0.2 - Explicit Instrument Override & Amb
   const ambiguousComm = normalizeCommission({ seed: ambiguousSeed, medium: 'VISUAL' });
   assert.deepEqual(ambiguousComm.instruments, ['PHASONIC_COUNTERPOINT'], 'Genuinely ambiguous seed must fall back predictably to Phasonic');
 });
+
+test('TD613 Dollhouse Design Conductor v0.2 - Explicit Fail-Closed Validation (Counterexample A66-3)', () => {
+  // 1. Unrecognized instrument ID must fail closed with intelligible error, NOT silent fallback
+  assert.throws(
+    () => normalizeCommission({ seed: 'Valid seed', medium: 'VISUAL', instruments: ['INVALID_INSTRUMENT'] }),
+    { name: 'TypeError', message: /Unrecognized instrument "INVALID_INSTRUMENT"/ }
+  );
+
+  // 2. Non-array instruments input must throw TypeError
+  assert.throws(
+    () => normalizeCommission({ seed: 'Valid seed', medium: 'VISUAL', instruments: 'CARO_INSTITUTIONAL_RECONSTRUCTION' }),
+    { name: 'TypeError', message: /must be an array of instrument identifiers/ }
+  );
+
+  // 3. Explicit empty array must throw TypeError
+  assert.throws(
+    () => normalizeCommission({ seed: 'Valid seed', medium: 'VISUAL', instruments: [] }),
+    { name: 'TypeError', message: /must not be an empty array/ }
+  );
+
+  // 4. Invalid medium must throw TypeError
+  assert.throws(
+    () => normalizeCommission({ seed: 'Valid seed', medium: 'SCULPTURE_3D' }),
+    { name: 'TypeError', message: /Invalid medium "SCULPTURE_3D"/ }
+  );
+
+  // 5. Missing seed must throw TypeError
+  assert.throws(
+    () => normalizeCommission({ seed: '' }),
+    { name: 'TypeError', message: /requires an intellectual seed/ }
+  );
+});
+
+test('TD613 Dollhouse Design Conductor v0.2 - First-Class Historical Reference Ingestion (Section VII)', async () => {
+  const commInput = {
+    commission_id: 'TEST-LOOM-REF-01',
+    seed: 'Holonomy Loom returned-work custody under historical relation map',
+    medium: 'HYBRID',
+    historical_references: [
+      {
+        reference_id: 'REF-RELATION-MAP-01',
+        source_path: 'docs/reentry/RELATION_MAP.md',
+        source_revision: 'e0a7ba5f3b76f545da11037833c269abd7623a04',
+        classification: 'BINDING_CUSTODY_LAW',
+        summary: 'Registration, Check, Challenge, and Carrier continuation custody law.'
+      },
+      {
+        reference_id: 'REF-LOOM-SCREEN-02',
+        source_path: 'docs/reentry/LOOM_SCREENS.md',
+        source_revision: 'e0a7ba5f3b76f545da11037833c269abd7623a04',
+        classification: 'NEGOTIABLE_AESTHETIC_DIRECTION',
+        summary: 'Historical three-phase journey layout and stage progression cues.'
+      }
+    ]
+  };
+
+  const receipt = await runDollhouseDesignCycle(commInput);
+
+  assert.equal(receipt.commission_id, 'TEST-LOOM-REF-01');
+  assert.ok(Array.isArray(receipt.historical_references), 'Receipt must contain historical_references array');
+  assert.equal(receipt.historical_references.length, 2);
+  assert.equal(receipt.historical_references[0].reference_id, 'REF-RELATION-MAP-01');
+  assert.equal(receipt.historical_references[0].classification, 'BINDING_CUSTODY_LAW');
+  assert.equal(receipt.historical_references[1].reference_id, 'REF-LOOM-SCREEN-02');
+  assert.equal(receipt.historical_references[1].classification, 'NEGOTIABLE_AESTHETIC_DIRECTION');
+  assert.ok(Object.isFrozen(receipt.historical_references));
+  assert.ok(Object.isFrozen(receipt.historical_references[0]));
+});

@@ -440,13 +440,34 @@ export function normalizeCommission(raw = {}) {
     why: String(rawHc.why || rawHc.WHY || 'Teleological & consequential purpose').trim()
   });
 
-  let selectedInstruments = Array.isArray(raw.instruments) && raw.instruments.length > 0
-    ? raw.instruments.map(i => String(i).trim().toUpperCase()).filter(id => AVAILABLE_INSTRUMENTS[id])
-    : [];
-
-  if (selectedInstruments.length === 0) {
+  let selectedInstruments = [];
+  if (raw.instruments !== undefined && raw.instruments !== null) {
+    if (!Array.isArray(raw.instruments)) {
+      throw new TypeError('Commission "instruments" must be an array of instrument identifiers');
+    }
+    if (raw.instruments.length === 0) {
+      throw new TypeError('Commission "instruments" must not be an empty array. Omit "instruments" to allow contextual inference.');
+    }
+    for (const inst of raw.instruments) {
+      const cleanInst = String(inst).trim().toUpperCase();
+      if (!AVAILABLE_INSTRUMENTS[cleanInst]) {
+        throw new TypeError(`Unrecognized instrument "${inst}". Available: ${Object.keys(AVAILABLE_INSTRUMENTS).join(', ')}`);
+      }
+      selectedInstruments.push(cleanInst);
+    }
+  } else {
     selectedInstruments = inferContextualInstruments(seed);
   }
+
+  // Parse and freeze historical reference inputs (Pre-M6 Reference Ingestion)
+  const rawRefs = Array.isArray(raw.historical_references) ? raw.historical_references : [];
+  const historicalReferences = Object.freeze(rawRefs.map((ref, idx) => Object.freeze({
+    reference_id: String(ref.reference_id || `REF-${idx + 1}`),
+    source_path: String(ref.source_path || ref.path || ''),
+    source_revision: String(ref.source_revision || ref.commit || ref.revision || ''),
+    classification: String(ref.classification || 'NEGOTIABLE_AESTHETIC_DIRECTION').toUpperCase(),
+    summary: String(ref.summary || ref.description || '')
+  })));
 
   return Object.freeze({
     commission_id: String(raw.commission_id || `COMM-${sha256(seed).slice(0, 8)}`),
@@ -454,6 +475,7 @@ export function normalizeCommission(raw = {}) {
     medium,
     human_coordinates: humanCoordinates,
     instruments: Object.freeze(selectedInstruments),
+    historical_references: historicalReferences,
     candidate_overrides: deepFreeze(raw.candidate_overrides || raw.candidates || null),
     refractive_parameters: deepFreeze(raw.refractive_parameters || {}),
     scientific_audit_requested: raw.scientific_audit_requested === true
@@ -638,6 +660,7 @@ export async function runDollhouseDesignCycle(commissionInput = {}) {
     medium: commission.medium,
     human_coordinates: commission.human_coordinates,
     selected_instruments: commission.instruments,
+    historical_references: commission.historical_references,
     candidates: [candidateA, candidateB],
     primary_materialization: primaryMaterialization,
     refractive_variant: refractiveVariant,

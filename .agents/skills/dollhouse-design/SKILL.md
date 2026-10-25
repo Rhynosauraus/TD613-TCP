@@ -13,6 +13,18 @@ Rather than imposing a standard template (cards, introduction/methods/conclusion
 
 ---
 
+## Native Antigravity Activation & Invocation
+
+In the Antigravity pairing environment, `/dollhouse-design` is invoked natively through:
+1. **Direct User Prompt / Slash Command:** The operator specifies `/dollhouse-design` or requests a creative/scholarly composition from an intellectual seed.
+2. **Skill Discovery:** Antigravity matches the request against this skill declaration (`.agents/skills/dollhouse-design/SKILL.md`).
+3. **Instruction Loading:** The agent loads `SKILL.md` and relevant references (`authoring-cycle.md`, `selectable-instruments.md`).
+4. **Conductor Dispatch:** The agent executes the deterministic conductor via programmatic API (`runDollhouseDesignCycle`) or CLI runner (`scripts/run-dollhouse-design.mjs`).
+5. **Receipt Ingress:** The conductor emits a frozen, validated return receipt (`td613.dollhouse-design.return-receipt/v0.2`).
+6. **Creative Materialization:** The generative author consumes the receipt directives and materializes both Candidate A (primary) and Candidate B / Refraction (counterfactual).
+
+---
+
 ## The 8-Stage Authoring Cycle
 
 ```text
@@ -26,14 +38,34 @@ COMMISSION
   ⟶ RETURN
 ```
 
-1. **Commission:** Enter via a typed semantic seed and Human Coordinate Coupling ($\mathcal{H}_q = (\text{WHAT}, \text{WHO}, \text{WHERE}, \text{HOW}, \text{WHEN}, \text{WHY})$).
-2. **Select Instruments:** Choose from the library of available formal traditions (D₃/φ Counterpoint is selectable, never compulsory).
+1. **Commission:** Enter via a typed semantic seed, Human Coordinate Coupling ($\mathcal{H}_q = (\text{WHAT}, \text{WHO}, \text{WHERE}, \text{HOW}, \text{WHEN}, \text{WHY})$), and optional historical references.
+2. **Select Instruments:** Choose from the library of available formal traditions (D₃/φ Counterpoint is selectable, never compulsory). If omitted, inferred contextually via `THEMATIC_CLUSTERS`.
 3. **Generate Alternatives:** Propagate the problem into at least two structurally non-equivalent formal candidates before committing to layout.
 4. **Compose:** Apply the five generative verbs (Propagation, Compression, Coupling, Transition, Stabilization).
 5. **Materialize:** Generate real, executable artifacts (HTML, CSS, manuscripts, mathematical models) rather than descriptive outlines.
 6. **Refract:** Mutate exactly one governing formal decision to construct a competing counterfactual variant.
 7. **Compare:** Evaluate what was gained, what survived, and what was lost between the primary realization and its refraction.
 8. **Return:** Deliver the inspectable artifact, its refractive counterpart, and concise creative rationales to the human operator for final selection and closure.
+
+---
+
+## Historical Reference Ingestion (Pre-M6 Standard)
+
+To support rich historical design briefs (such as the Holonomy Loom pre-M6 audition) without reducing complex records to shallow keywords, commissions support structured `historical_references`:
+
+```json
+{
+  "reference_id": "REF-LOOM-CUSTODY-01",
+  "source_path": "docs/reentry/RELATION_MAP.md",
+  "source_revision": "e0a7ba5f3b76f545da11037833c269abd7623a04",
+  "classification": "BINDING_CUSTODY_LAW",
+  "summary": "Registration, Check, Challenge, and Carrier continuation custody law."
+}
+```
+
+- **`BINDING_CUSTODY_LAW` / `BINDING_CONSTRAINT`:** Invariants that the creative author must rigorously uphold.
+- **`NEGOTIABLE_AESTHETIC_DIRECTION`:** Historical visual cues or UX patterns that the author is free to reinterpret.
+- The conductor preserves these entries in `receipt.historical_references`, maintaining a clean separation between historical evidence, conductor heuristics, and author-invented forms.
 
 ---
 
@@ -67,14 +99,14 @@ A single geometric framework must never be imposed across all inquiries. The aut
 Backed by `scripts/run-dollhouse-design.mjs`:
 
 ```bash
-# Author an essay on a philosophical seed using Dialectical Tension
-node scripts/run-dollhouse-design.mjs -s "A contract that dissolves when both parties agree" -m SCHOLARLY -i DIALECTICAL_TENSION
-
-# Author an interactive visual work using Phasonic Counterpoint
+# Author via CLI flags
 node scripts/run-dollhouse-design.mjs -s "Two processes arrive at an identical endpoint, but their histories differ" -m VISUAL -i PHASONIC_COUNTERPOINT
 
-# Full commission specification from JSON file
+# Author via JSON commission file
 node scripts/run-dollhouse-design.mjs --input commission.json --output receipt.json --format both
+
+# Author via Standard Input Stream (Piped)
+cat commission.json | node scripts/run-dollhouse-design.mjs --stdin --format json
 ```
 
 ### 2. Programmatic Dispatcher API
@@ -95,8 +127,17 @@ const result = await runDollhouseDesignCycle({
     when: 'At the moment of deletion vs. the moment of recovery',
     why: 'To determine whether deletion destroys or preserves'
   },
+  historical_references: [
+    {
+      reference_id: "REF-01",
+      source_path: "docs/reentry/RELATION_MAP.md",
+      classification: "BINDING_CUSTODY_LAW",
+      summary: "Custody boundary map."
+    }
+  ],
   scientific_audit_requested: false
 });
+```
 
 console.log(result.primary_materialization);
 console.log(result.refractive_variant);
