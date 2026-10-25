@@ -1,7 +1,7 @@
 {
   "schema": "td613.loom.registered-source-control-continuation/v0.1",
   "run_id": "portable-loom-registered-source-control-20261011-r02",
-  "operator": "Tawanna C. Miller",
+  "operator": "Human Operator / TD613 Heritage Custodian C. Miller",
   "authority_basis": "Direct continuing authorization to run as many times as necessary until captured; operator confirms available paid API billing credits and instructs continuation without further billing verification.",
   "reason": "Three prior r01 provider requests returned HTTP 503 UNAVAILABLE and exhausted that run's distinct trial keys. Retain every failed reservation and response without refund or rewriting.",
   "scope": {

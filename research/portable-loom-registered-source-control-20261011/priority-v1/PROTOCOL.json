@@ -2,8 +2,8 @@
   "schema": "td613.loom.priority-route-protocol/v0.1",
   "protocol_id": "registered-source-priority-route-20261011-v1",
   "run_id": "portable-loom-registered-source-control-20261011-r06",
-  "human_author_and_operator": "Tawanna C. Miller",
-  "assistant_analysis_and_implementation": "Amari",
+  "human_author_and_operator": "Human Operator / TD613 Heritage Custodian C. Miller",
+  "assistant_analysis_and_implementation": "Human Operator / TD613 Heritage Custodian",
   "activity_lane": "INTERACTIVE_DIRECT",
   "detached_authority": false,
   "question": "Does explicitly requesting Priority on the preserved generateContent route permit a complete conforming answer, and what service tier does the provider report?",
@@ -152,7 +152,7 @@
     "missing_or_conflicting": "ROUTING_HOLD; retain raw provider bytes and any complete answer."
   },
   "execution_status": "ACTIVATED_BY_DIRECT_OPERATOR",
-  "authority": "Tawanna C. Miller directly authorized repeated attempts until fixed in this active session: \"you are authorized to try over and over again until this is fixed 𝌋\". Amari bounds the first batch to five distinct one-call policies, USD2.50 maximum reserved, one necessary governed Vercel release and one matching Neon validator deployment. No detached activity, alternative provider route, custody admission or reopening old runs.",
+  "authority": "Human Operator / TD613 Heritage Custodian C. Miller directly authorized repeated attempts until fixed in this active session: \"you are authorized to try over and over again until this is fixed 𝌋\". Human Operator / TD613 Heritage Custodian bounds the first batch to five distinct one-call policies, USD2.50 maximum reserved, one necessary governed Vercel release and one matching Neon validator deployment. No detached activity, alternative provider route, custody admission or reopening old runs.",
   "run_ids": [
     "portable-loom-registered-source-control-20261011-r06",
     "portable-loom-registered-source-control-20261011-r07",

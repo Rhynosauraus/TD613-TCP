@@ -121,7 +121,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GATE_ISSUE: '758'
       ATELIER_PR: '731'
-      ATELIER_BRANCH: amari/src-projective-routing-grammar
+      ATELIER_BRANCH: Human Operator / TD613 Heritage Custodian/src-projective-routing-grammar
       SRC_ROOT: packages/dome_world_exact/fixtures/a15-r0/SRC
       CREATOR_ORCID: 0009-0009-9348-3534
       SYNC_SUMMARY: /tmp/src-zenodo-sync-summary.json

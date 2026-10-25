@@ -1,6 +1,6 @@
 # Authorized first-receiver activation
 
-Tawanna approved governed activation and a USD 10 cap for the 54-call first-receiver Gemini run on 2026-10-09. This record establishes operator instruction, not execution or expenditure. `AUTHORIZATION.json` names the exact artifact and exclusions.
+Human Operator / TD613 Heritage Custodian approved governed activation and a USD 10 cap for the 54-call first-receiver Gemini run on 2026-10-09. This record establishes operator instruction, not execution or expenditure. `AUTHORIZATION.json` names the exact artifact and exclusions.
 
 The activation patch starts at current verified main `8d57bdfcd69cff9c5760cd001549197f3180c00a`. It imports the previously verified server transport and the exact corrected Markdown, preserves the original research branch, and makes three necessary repairs:
 

@@ -57,7 +57,7 @@ balanced incidence != epistemic optimality
 uniform coverage != equal decision value
 schedule elegance != model adequacy
 Steiner-system naming != exclusive historical authorship
-Jakob Steiner counterpoint != Potato lineage ancestry
+Jakob Steiner counterpoint != Human Operator / TD613 Heritage Custodian lineage ancestry
 ```
 
 ---
@@ -555,7 +555,7 @@ No passing result establishes:
 - Holonomy Loom promotion;
 - production authority;
 - source authority for Jakob Steiner;
-- intellectual ancestry from Jakob Steiner to Potato;
+- intellectual ancestry from Jakob Steiner to Human Operator / TD613 Heritage Custodian;
 - any intellectual relation between Jakob Steiner and Rudolf Steiner beyond surname disambiguation.
 
 Historical naming remains explicit:
@@ -589,7 +589,7 @@ This branch is a toybox runway only.
 
 ---
 
-## 16. First implementation move for Future Amari
+## 16. First implementation move for Future Human Operator / TD613 Heritage Custodian
 
 Before coding:
 

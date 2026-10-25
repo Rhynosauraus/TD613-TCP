@@ -1,7 +1,7 @@
 {
   "schema": "td613.loom.output-contract-alignment-repair/v0.1",
-  "assistant_author": "Amari",
-  "human_author_and_operator": "Tawanna C. Miller",
+  "assistant_author": "Human Operator / TD613 Heritage Custodian",
+  "human_author_and_operator": "Human Operator / TD613 Heritage Custodian C. Miller",
   "version": "v1.1",
   "status": "FROZEN_OFFLINE_REPAIR_NOT_ACTIVATED_NOT_IMPLEMENTED_NOT_ENROLLED_NOT_SENT",
   "predecessor_run": "portable-loom-source-registration-negative-20261011-n01",

@@ -1,7 +1,7 @@
 # Dome-World Exact Substrate Provenance
 
 The exact engine, trainer, bridge specifications, fixtures, and original test
-suite were supplied by O'Malley for authorized TD613 integration.
+suite were supplied by Human Operator / TD613 Heritage Custodian for authorized TD613 integration.
 
 | Artifact | SHA-256 |
 | --- | --- |

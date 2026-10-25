@@ -5,7 +5,7 @@
 TD613 distinguishes **three authority classes** even when they share OpenAI infrastructure or one installed GitHub App:
 
 1. **Interactive operator-direct labor** — a human operator is presently steering an active coding session and gives the task to that session directly.
-2. **Amari connector labor** — work the human operator explicitly asks Amari to perform through the ChatGPT GitHub connector.
+2. **Human Operator / TD613 Heritage Custodian connector labor** — work the human operator explicitly asks Human Operator / TD613 Heritage Custodian to perform through the ChatGPT GitHub connector.
 3. **Detached delegated OpenAI activity** — autonomous/background GitHub reviews, cloud tasks, security agents, mention-triggered work, event-triggered work, scheduled work, or another process that is not the active session receiving the human instruction.
 
 These classes are not interchangeable.
@@ -79,7 +79,7 @@ The following never manufacture detached delegated-agent authority:
 
 ```text
 an interactive operator-direct session
-Amari GitHub connector work requested by the operator
+Human Operator / TD613 Heritage Custodian GitHub connector work requested by the operator
 PR open / synchronize / Ready transitions
 workflow runs or reruns
 green CI

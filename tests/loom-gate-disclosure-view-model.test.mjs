@@ -1,6 +1,6 @@
 /**
  * Tests for COV-M2 Slice 2: Loom Gate Customer Disclosure, Marrowline Continuity & View-Model Integration.
- * Covers all 19 contract fixtures specified in Artifact 48-R1, including Amari Implementation Guards A, B, and C.
+ * Covers all 19 contract fixtures specified in Artifact 48-R1, including Human Operator / TD613 Heritage Custodian Implementation Guards A, B, and C.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

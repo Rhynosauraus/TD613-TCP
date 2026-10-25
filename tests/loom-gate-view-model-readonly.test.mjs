@@ -738,7 +738,7 @@ test('Third-Assay Native Witness: Genuine native finite-channel-only challenge p
   assert.equal(validateLoomGateSnapshot(snapshot), true, 'Native finite-channel report must not be rejected');
   const vm = deriveLoomGateViewModel(snapshot);
 
-  // Assertions mandated by Amari:
+  // Assertions mandated by Human Operator / TD613 Heritage Custodian:
   // 1. No fabricated measurement
   assert.equal(vm.drawer.coverage.checked_targets, 0);
   assert.equal(vm.drawer.coverage.measured_reconstruction_attempts, 0);

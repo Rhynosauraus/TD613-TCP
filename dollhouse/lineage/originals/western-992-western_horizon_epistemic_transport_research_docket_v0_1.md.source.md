@@ -774,7 +774,7 @@ claim-kill criteria
 
 It is not converted into standing self-authorization.
 
-This docket does not modify `AGENTS.md`, arm detached delegation, grant future Amari authority, authorize merge, or authorize deployment.
+This docket does not modify `AGENTS.md`, arm detached delegation, grant future Human Operator / TD613 Heritage Custodian authority, authorize merge, or authorize deployment.
 
 Required governance anti-equivalence:
 

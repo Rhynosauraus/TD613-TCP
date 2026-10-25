@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-phason_gate_exact.py — a runnable bridge from Ace's exact substrate to Tim's Ash/Phason Gate.
+phason_gate_exact.py — a runnable bridge from Ace's exact substrate to Human Operator / TD613 Heritage Custodian's Ash/Phason Gate.
 
 Two jobs, both mechanical and checkable:
 

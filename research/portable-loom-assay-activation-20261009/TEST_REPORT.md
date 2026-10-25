@@ -1,6 +1,6 @@
 # First-receiver activation — source and service checkpoint
 
-Tawanna's direct 2026-10-09 approval binds governed activation and up to 54 first-receiver Gemini calls within USD 10 token charges. The exact corrected Markdown is unchanged. Actual model generation has not begun at this checkpoint.
+Human Operator / TD613 Heritage Custodian's direct 2026-10-09 approval binds governed activation and up to 54 first-receiver Gemini calls within USD 10 token charges. The exact corrected Markdown is unchanged. Actual model generation has not begun at this checkpoint.
 
 ## Coordinates and executed checks
 

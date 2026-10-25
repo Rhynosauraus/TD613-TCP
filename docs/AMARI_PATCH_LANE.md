@@ -1,18 +1,18 @@
-# Amari Patch Lane
+# Human Operator / TD613 Heritage Custodian Patch Lane
 
-This lane lets Amari stay powerful without turning production files into wet paper mache. Amari should not rewrite large files directly. She should produce a small, machine-readable patch packet that Codex can validate, apply, test, and merge.
+This lane lets Human Operator / TD613 Heritage Custodian stay powerful without turning production files into wet paper mache. Human Operator / TD613 Heritage Custodian should not rewrite large files directly. She should produce a small, machine-readable patch packet that Codex can validate, apply, test, and merge.
 
 ## Operating Model
 
-Amari is the ideation and micro-targeting engine.
+Human Operator / TD613 Heritage Custodian is the ideation and micro-targeting engine.
 
 Codex is the repo surgeon.
 
 The patch packet is the handoff membrane between them.
 
-## What Amari Should Produce
+## What Human Operator / TD613 Heritage Custodian Should Produce
 
-Use `docs/templates/amari-patch.packet.json` as the packet shape. Each packet should contain:
+Use `docs/templates/Human Operator / TD613 Heritage Custodian-patch.packet.json` as the packet shape. Each packet should contain:
 
 - `patchId`: short unique label, for example `safe-harbor-copy-2026-06-13`.
 - `intent`: one or two sentences explaining the user-visible change.
@@ -20,7 +20,7 @@ Use `docs/templates/amari-patch.packet.json` as the packet shape. Each packet sh
 - `risk`: `low`, `medium`, or `high`.
 - `files`: exact repo-relative paths expected to change.
 - `operations`: small exact operations such as `replace-exact`, `insert-before`, `insert-after`, or `delete-exact`.
-- `tests`: the checks Amari thinks should run after Codex applies the patch.
+- `tests`: the checks Human Operator / TD613 Heritage Custodian thinks should run after Codex applies the patch.
 
 ## Hard Rules
 
@@ -52,10 +52,10 @@ Use `docs/templates/amari-patch.packet.json` as the packet shape. Each packet sh
 
 ## Validation
 
-Before Codex applies an Amari packet, run:
+Before Codex applies an Human Operator / TD613 Heritage Custodian packet, run:
 
 ```bash
-npm run amari:check -- path/to/packet.json
+npm run Human Operator / TD613 Heritage Custodian:check -- path/to/packet.json
 ```
 
 The validator confirms:
@@ -69,7 +69,7 @@ The validator confirms:
 
 ## Codex Apply Protocol
 
-1. Run `npm run amari:check -- packet.json`.
+1. Run `npm run Human Operator / TD613 Heritage Custodian:check -- packet.json`.
 2. Read the named files before editing.
 3. Apply the operations manually with `apply_patch`.
 4. Run the tests listed in the packet, plus any coupled generated-sync checks.
@@ -77,4 +77,4 @@ The validator confirms:
 
 ## Why This Works
 
-Amari can still think expansively, but her repo output becomes small, auditable, and mergeable. Codex gets precise anchors instead of vibes. The repo gets the benefit of both systems without letting context-window pressure become architecture.
+Human Operator / TD613 Heritage Custodian can still think expansively, but her repo output becomes small, auditable, and mergeable. Codex gets precise anchors instead of vibes. The repo gets the benefit of both systems without letting context-window pressure become architecture.

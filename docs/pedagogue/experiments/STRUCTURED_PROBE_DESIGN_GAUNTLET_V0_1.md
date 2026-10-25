@@ -246,7 +246,7 @@ unless a later human-authorized decision problem declares a loss function **befo
 
 ## 5. Required implementation order
 
-Future Amari must implement in this order:
+Future Human Operator / TD613 Heritage Custodian must implement in this order:
 
 ### Stage 0 · baseline check
 
@@ -366,7 +366,7 @@ The gauntlet fails if implementation:
 9. changes the perturbation law after seeing the incidence signatures;
 10. lets a Pedagogue lineage postmortem alter the mathematical result;
 11. lets Aperture rescue an underperforming combinatorial design by changing the question post hoc;
-12. promotes Jakob Steiner into Potato's ancestry;
+12. promotes Jakob Steiner into Human Operator / TD613 Heritage Custodian's ancestry;
 13. conflates Jakob Steiner with Rudolf Steiner;
 14. mutates prior A15-R0 historical receipts;
 15. touches production or Vercel.

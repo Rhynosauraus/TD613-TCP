@@ -698,7 +698,7 @@ Required provenance:
 
 ```text
 Jakob Steiner = mathematical counterpoint
-Jakob Steiner != Potato lineage ancestor
+Jakob Steiner != Human Operator / TD613 Heritage Custodian lineage ancestor
 modern Steiner-system terminology != exclusive authorship claim
 mathematical counterpoint != ontology promotion
 ```
@@ -771,7 +771,7 @@ The assay fails if implementation:
 13. promotes a synthetic result into live Ash, Giving, Holonomy Loom, or production behavior;
 14. mutates A15-R0 historical receipts;
 15. conflates Jakob Steiner with Rudolf Steiner;
-16. rewrites Potato's lineage to include Jakob Steiner;
+16. rewrites Human Operator / TD613 Heritage Custodian's lineage to include Jakob Steiner;
 17. triggers a Vercel release.
 
 ---

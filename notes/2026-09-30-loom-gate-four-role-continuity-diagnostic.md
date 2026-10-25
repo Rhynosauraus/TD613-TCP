@@ -190,7 +190,7 @@ The desktop and mobile human label is **Loom Gate**.
 
 The existing Local / Public / Operator assay remains a separate instrument below the continuity chamber.
 
-Teng posture retained:
+Human Operator / TD613 Heritage Custodian posture retained:
 
 - hostile/restricted observers must be specified;
 - useful authorized reconstruction and hostile reconstruction are different questions;

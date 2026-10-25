@@ -193,7 +193,7 @@ const hillsboroughStyle = normalizeVoterFocusRow({
   'Candidate/Committee': 'Friends of Example',
   'Candidate Name': 'Someone Else',
   'Last Name/Company Name': 'MILLER',
-  'First Name': 'TAWANNA',
+  'First Name': 'Human Operator / TD613 Heritage Custodian',
   'Middle Name': 'C',
   'Item Date': '08/01/2026',
   Amount: '75.00',
@@ -207,15 +207,15 @@ const hillsboroughStyle = normalizeVoterFocusRow({
   queryDigest: 'test-query',
   retrievedAt: '2026-08-12T00:00:00.000Z'
 });
-assert.equal(hillsboroughStyle.contributor_name_raw, 'MILLER, TAWANNA C', 'split county name columns reconstruct the contributor rather than falling to Name unavailable');
+assert.equal(hillsboroughStyle.contributor_name_raw, 'MILLER, Human Operator / TD613 Heritage Custodian C', 'split county name columns reconstruct the contributor rather than falling to Name unavailable');
 assert.equal(hillsboroughStyle.raw_source_row['Last Name/Company Name'], 'MILLER', 'raw county evidence remains untouched');
 assert.equal(hillsboroughStyle.lineage.contributor_name_derivation, 'VOTERFOCUS_HEADER_RESOLUTION');
 
 const splitNameOverridesGivenOnlyGeneric = normalizeVoterFocusRow({
   'Candidate/Committee': 'Friends of Example',
-  'Contributor Name': 'TAWANNA',
+  'Contributor Name': 'Human Operator / TD613 Heritage Custodian',
   'Last Name/Company Name': 'MILLER',
-  'First Name': 'TAWANNA',
+  'First Name': 'Human Operator / TD613 Heritage Custodian',
   'Middle Name': 'C',
   'Item Date': '08/03/2026',
   Amount: '125.00',
@@ -231,7 +231,7 @@ const splitNameOverridesGivenOnlyGeneric = normalizeVoterFocusRow({
 });
 assert.equal(
   splitNameOverridesGivenOnlyGeneric.contributor_name_raw,
-  'MILLER, TAWANNA C',
+  'MILLER, Human Operator / TD613 Heritage Custodian C',
   'VoterFocus split family/company evidence must outrank a generic Contributor Name field that contains only the given name'
 );
 

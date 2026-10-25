@@ -1,6 +1,6 @@
 # 𝌋 TD613 · Loom 𝄐 06 Adversarial Product Acceptance
 
-Operator and human author: Tawanna C. Miller. Assistant execution: Amari.
+Operator and human author: Human Operator / TD613 Heritage Custodian C. Miller. Assistant execution: Human Operator / TD613 Heritage Custodian.
 Date: October 12, 2026 UTC. Base source: 0cdce8e9a3c36db128dc77e536f92c138038dee1.
 Status: BROWSER_STRUCTURAL_CANDIDATE_PASS; HUMAN_AND_PHYSICAL_ACCEPTANCE_HELD.
 

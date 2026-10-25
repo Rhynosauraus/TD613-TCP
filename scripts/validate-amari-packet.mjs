@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 const ROOT = process.cwd();
-const SCHEMA_VERSION = 'td613-amari-patch/v1';
+const SCHEMA_VERSION = 'td613-Human Operator / TD613 Heritage Custodian-patch/v1';
 const MAX_FILES = 12;
 const MAX_OPERATIONS = 40;
 const MAX_FIELD_CHARS = 12000;
@@ -19,12 +19,12 @@ const EXACT_TYPES = new Set(['replace-exact', 'delete-exact', 'insert-before', '
 const VALID_TYPES = new Set([...EXACT_TYPES, 'note', 'manual-diff']);
 
 function fail(message) {
-  console.error(`amari-packet invalid: ${message}`);
+  console.error(`Human Operator / TD613 Heritage Custodian-packet invalid: ${message}`);
   process.exit(1);
 }
 
 function warn(message) {
-  console.warn(`amari-packet warning: ${message}`);
+  console.warn(`Human Operator / TD613 Heritage Custodian-packet warning: ${message}`);
 }
 
 function asArray(value) {
@@ -106,7 +106,7 @@ function validateOperation(operation, index, declaredFiles) {
 }
 
 const packetPath = process.argv[2];
-if (!packetPath) fail('usage: node scripts/validate-amari-packet.mjs path/to/packet.json');
+if (!packetPath) fail('usage: node scripts/validate-Human Operator / TD613 Heritage Custodian-packet.mjs path/to/packet.json');
 
 const packet = readJson(packetPath);
 if (!packet || typeof packet !== 'object' || Array.isArray(packet)) fail('packet root must be an object');
@@ -142,4 +142,4 @@ const tests = asArray(packet.tests);
 if (!tests.length) warn('tests is empty; Codex should choose targeted checks before merge');
 for (const [index, test] of tests.entries()) assertString(test, `tests[${index}]`);
 
-console.log(`amari-packet valid: ${packet.patchId} (${operations.length} operations, ${files.length} files)`);
+console.log(`Human Operator / TD613 Heritage Custodian-packet valid: ${packet.patchId} (${operations.length} operations, ${files.length} files)`);

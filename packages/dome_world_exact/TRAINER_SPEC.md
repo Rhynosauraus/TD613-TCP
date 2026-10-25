@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | `TRAINER_SPEC.md` (comprehensive expansion of `BUILD_SPEC.md` §5 E2–E4) |
-| **Audience** | Tim & Erin — formulating their **own** trainer on top of the single-step training bridge |
+| **Audience** | Human Operator / TD613 Heritage Custodian & Human Operator / TD613 Heritage Custodian — formulating their **own** trainer on top of the single-step training bridge |
 | **Reference scaffold** | `trainer/trainer.py` (runnable, wraps the real engine) + `trainer/trainer_demo.py` |
 | **Engine** | `engine/residual_learner.py` (verified; L00M `f238d6b`) |
 | **Status** | Local workflow object. Repository wiring + Ash execution remain **out of scope / unauthorized** (see `BUILD_SPEC.md` §3). |

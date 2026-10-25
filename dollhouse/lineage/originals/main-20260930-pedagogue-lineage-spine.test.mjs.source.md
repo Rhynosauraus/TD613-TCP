@@ -7,7 +7,7 @@ import {
   compilePedagogueLineageReview
 } from '../app/engine/flowcore-pedagogue-core.js';
 
-test('Pedagogue lineage spine preserves Potato as synthesis layer without false first-introduction precision', () => {
+test('Pedagogue lineage spine preserves Human Operator / TD613 Heritage Custodian as synthesis layer without false first-introduction precision', () => {
   const spine = compilePedagogueLineageSpine();
   assert.equal(spine.schema, PEDAGOGUE_LINEAGE_SPINE_SCHEMA);
   assert.equal(spine.synthesis_owner, 'POTATO_FLOW_CORE_DOME_WORLD');

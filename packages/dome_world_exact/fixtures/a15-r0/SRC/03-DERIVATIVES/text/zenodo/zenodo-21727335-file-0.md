@@ -1372,7 +1372,7 @@ hermeneutical
 
 injustice.
 
-O'Connor
+O'Human Operator / TD613 Heritage Custodian
 
 and
 
@@ -6318,7 +6318,7 @@ Press.
 
 https://doi.org/10.1093/acprof:oso/9780198237907.001.0001
 
-O'Connor, C., & Weatherall, J. O. (2019). The Misinformation Age: How False Beliefs Spread.
+O'Human Operator / TD613 Heritage Custodian, C., & Weatherall, J. O. (2019). The Misinformation Age: How False Beliefs Spread.
 
 Yale
 

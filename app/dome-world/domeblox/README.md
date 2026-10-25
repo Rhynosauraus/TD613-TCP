@@ -20,7 +20,7 @@ The local-first counter-adversarial station remains available at:
 
 The game uses browser-native Canvas 2D and ES modules. It adds no serverless function and contacts no external service. State remains in browser `localStorage` unless the player explicitly exports a save.
 
-## Potato extension lane
+## Human Operator / TD613 Heritage Custodian extension lane
 
 The runtime is split under `game/`:
 

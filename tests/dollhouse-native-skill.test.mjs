@@ -2,7 +2,7 @@
  * @fileoverview TD613 Dollhouse Native Antigravity Skill Verification Test Suite.
  *
  * Verifies all positive, adversarial, and governance requirements specified in
- * THE CONVERGENCE COVENANT — REVISION 2 and Amari's Artifact 38 Corrective Redline:
+ * THE CONVERGENCE COVENANT — REVISION 2 and Human Operator / TD613 Heritage Custodian's Artifact 38 Corrective Redline:
  *   1. Standalone invocation of each of the 5 specialists
  *   2. Successful Orchestrator invocation with actual specialist results
  *   3. Distinct role-specific findings retained without collapsing

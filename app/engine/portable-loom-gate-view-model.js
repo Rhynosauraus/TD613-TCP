@@ -446,7 +446,7 @@ export function validateLoomGateSnapshot(snapshot) {
  * Pure derivation adapter mapping an immutable Loom Gate snapshot into a customer-legible,
  * 6-dimensional presentation view-model.
  *
- * TRUST BOUNDARY GUARANTEE (Correction A / Amari Redpen):
+ * TRUST BOUNDARY GUARANTEE (Correction A / Human Operator / TD613 Heritage Custodian Redpen):
  * An unverified report NEVER produces an unqualified authoritative PASS through a machine-readable field.
  * - declared_source_status: exact declared status from the source report.
  * - status: presentation/admission posture; an unverified pass maps to 'HELD_UNVERIFIED_DECLARATION'.

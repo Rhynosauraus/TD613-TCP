@@ -3,7 +3,7 @@
 𝌋 U+10D613
 
 Base: `6bfdb854bdfdeabdadf49d63f1afa4fc4289392e`.
-Interactive operator-directed Amari connector work. No detached agent invoked.
+Interactive operator-directed Human Operator / TD613 Heritage Custodian connector work. No detached agent invoked.
 
 ## Preserved live observation
 The preceding live desktop browser trial returned Demo 3 in 22.6 seconds.

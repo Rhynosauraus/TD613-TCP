@@ -11,7 +11,7 @@ const base='research/portable-loom-registered-source-control-20261011/priority-v
 export function preparePriorityRun(directory, activationFile, runId) {
   requireThat(directory && activationFile && !existsSync(directory),'ASSAY_PRIORITY_PREPARATION_ARGUMENTS');
   const activation=JSON.parse(readFileSync(activationFile)), protocolBytes=readFileSync(base+'PROTOCOL.json');
-  requireThat(activation.status==='ACTIVATED_BY_DIRECT_OPERATOR' && activation.operator==='Tawanna C. Miller'
+  requireThat(activation.status==='ACTIVATED_BY_DIRECT_OPERATOR' && activation.operator==='Human Operator / TD613 Heritage Custodian C. Miller'
     && activation.authority_class==='INTERACTIVE_OPERATOR_DIRECT' && typeof activation.instruction==='string' && activation.instruction.length>0
     && Number.isFinite(Date.parse(activation.recorded_at)) && Date.parse(activation.recorded_at)<=Date.now()
     && Date.now()-Date.parse(activation.recorded_at)<=6*60*60*1000

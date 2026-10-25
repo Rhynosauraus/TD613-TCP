@@ -1,4 +1,4 @@
-// Assistant implementation: Amari. Output assembly is a bounded declaration
+// Assistant implementation: Human Operator / TD613 Heritage Custodian. Output assembly is a bounded declaration
 // contract. Syntax matches never establish source authenticity or custody.
 const freeze = value => { if (value && typeof value === 'object') { Object.values(value).forEach(freeze); Object.freeze(value); } return value; };
 export const PORTABLE_LOOM_RECEIVER_OUTPUT_CONTRACT = freeze({

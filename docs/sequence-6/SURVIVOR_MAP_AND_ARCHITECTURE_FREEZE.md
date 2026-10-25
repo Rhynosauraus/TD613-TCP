@@ -143,7 +143,7 @@ graph TD
 
 1. **PRODUCT CORE**  
    *Jurisdiction:* Runtime capabilities directly required for the operator to conduct governed work.  
-   *Rule:* Enforces zero unearned authority; strictly separates interactive operator direct actions, Amari connector requests, and detached delegated operations. Hosts the active Issue #405 production release membrane.  
+   *Rule:* Enforces zero unearned authority; strictly separates interactive operator direct actions, Human Operator / TD613 Heritage Custodian connector requests, and detached delegated operations. Hosts the active Issue #405 production release membrane.  
    *Inhabitants:* Loom intake, Marrowline continuation, Native Return, Cistern Law, Rest/Exit, predecessor chaining (`INV-05`), default-deny (`INV-01`), explicit authorization (`INV-02`), ephemeral auth (`INV-03`), re-entry mandate (`INV-04`), provenance separation (`INV-06`), missing evidence HOLD (`INV-07`), retry route preservation (`INV-08`), temporal non-retroactivity (`INV-11`), Issue #405 release membrane.
 
 2. **RESEARCH LAB**  

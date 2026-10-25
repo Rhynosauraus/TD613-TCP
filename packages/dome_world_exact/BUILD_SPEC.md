@@ -6,7 +6,7 @@
 | **Component** | Exact admissibility / training kernel for the Dome-World ↔ Aperture v2.9.3 bridge |
 | **Version** | 1.0 (build target for Dome-World Flow-Core **v0.4.3**, follows v0.4.2b) |
 | **Status** | Local workflow object. **Repository wiring at `/dome-world` remains unauthorized until explicit approval.** Step-2 boundaries (below) hold. |
-| **Owners** | Tim (runtime / bridge), Erin (lattice / tactile + math review) |
+| **Owners** | Human Operator / TD613 Heritage Custodian (runtime / bridge), Human Operator / TD613 Heritage Custodian (lattice / tactile + math review) |
 | **Upstream** | Dome-World/Flow-Core v0.4.2b (`dome_ambiance_core.js`); TD613 Aperture v2.9.3; the verified Vector-Substrate / residual-return package (L00M `f238d6b`) |
 
 **Claim ceilings (binding on every deliverable):**

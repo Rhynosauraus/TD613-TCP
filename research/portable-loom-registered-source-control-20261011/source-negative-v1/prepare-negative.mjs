@@ -16,7 +16,7 @@ const protocol=JSON.parse(read('PROTOCOL.json'));
 const a=JSON.parse(readFileSync(activationFile));
 const at=Date.now(),recorded=Date.parse(a.recorded_at);
 assert.equal(a.status,'ACTIVATED_BY_DIRECT_OPERATOR');
-assert.equal(a.operator,'Tawanna C. Miller');
+assert.equal(a.operator,'Human Operator / TD613 Heritage Custodian C. Miller');
 assert.equal(a.authority_class,'INTERACTIVE_OPERATOR_DIRECT');
 assert(typeof a.instruction==='string'&&a.instruction.trim());
 assert(Number.isFinite(recorded)&&recorded<=at&&at-recorded<=6*3600000);

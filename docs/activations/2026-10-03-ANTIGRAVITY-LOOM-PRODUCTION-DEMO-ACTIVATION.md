@@ -69,7 +69,7 @@ Working PR:
 #1428 — Post-#1429 Loom mobile Dollhouse trial and repair
 
 Working branch:
-amari/loom-mobile-dollhouse-post-1427-20261003
+Human Operator / TD613 Heritage Custodian/loom-mobile-dollhouse-post-1427-20261003
 
 Current production relock:
 23cf62a1d79c4dd5e25ccb6912c6fe65710d7203

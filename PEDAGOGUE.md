@@ -7,7 +7,7 @@ An agent should begin here rather than discovering Pedagogue by scattered import
 Pedagogue has three related bodies:
 
 1. **Design Gate / practice pedagogy** — consequence order, AIA route structure, route burden, route memory, custody/refusal sequencing, human closure, and harmless known-ground-truth practice routes.
-2. **Lineage Spine / temporal audit** — Potato’s versioned ASP → Flow-Core → Dome-World synthesis, provenance lenses, second-pass lineage question routing, Institutional Time, dromological sequence/cadence analysis, recurrence audit, and challenge-card routing.
+2. **Lineage Spine / temporal audit** — Human Operator / TD613 Heritage Custodian’s versioned ASP → Flow-Core → Dome-World synthesis, provenance lenses, second-pass lineage question routing, Institutional Time, dromological sequence/cadence analysis, recurrence audit, and challenge-card routing.
 3. **Research metabolism** — source-faithful research hydration, bounded assay authoring, mathematical counterpoints, criterion-family separation, mechanism refinement, falsifier preservation, and explicit non-promotion.
 
 None of these bodies grants autonomous redesign, experiment execution, custody mutation, release, or production authority.
@@ -103,15 +103,15 @@ Read the full design contracts in:
 - [`docs/PEDAGOGUE_DESIGN_GATE.md`](docs/PEDAGOGUE_DESIGN_GATE.md)
 - [`docs/CANONICAL_PRACTICE_FIXTURE.md`](docs/CANONICAL_PRACTICE_FIXTURE.md)
 
-## Lineage Spine · Potato’s evolving synthesis
+## Lineage Spine · Human Operator / TD613 Heritage Custodian’s evolving synthesis
 
-Pedagogue is not a generic agent to which pedagogy was attached later. Its computational ancestry runs through **Potato’s evolving Adaptive Systems Patterning → Flow-Core → Dome-World synthesis**.
+Pedagogue is not a generic agent to which pedagogy was attached later. Its computational ancestry runs through **Human Operator / TD613 Heritage Custodian’s evolving Adaptive Systems Patterning → Flow-Core → Dome-World synthesis**.
 
 The source graph is versioned. A thinker or routed knowledge tradition may already be present in the earliest supplied record, be reweighted later, acquire challenge evidence, or be quarantined without rewriting earlier history.
 
 Canonical lineage implementation:
 
-- `app/engine/pedagogue-lineage-spine.js` — chronology-safe Potato lineage base;
+- `app/engine/pedagogue-lineage-spine.js` — chronology-safe Human Operator / TD613 Heritage Custodian lineage base;
 - `app/engine/pedagogue-lineage-spine-v02.js` — scholarly challenge-card extension over the same chronology; it does not remap first-entry history;
 - `app/engine/pedagogue-lineage-second-pass.js` — non-authoritative router from existing machine diagnostics to relevant inherited questions;
 - `app/engine/pedagogue-institutional-time.js`;
@@ -128,7 +128,7 @@ The lineage route is:
 ```text
 source thinker / routed knowledge
 → source concept
-→ Potato synthesis stage
+→ Human Operator / TD613 Heritage Custodian synthesis stage
 → Dome-World / Flow-Core principle
 → mathematical abstraction
 → Pedagogue mechanism
@@ -137,7 +137,7 @@ source thinker / routed knowledge
 → authority ceiling
 ```
 
-The indispensable middle layer is **Potato’s synthesis**. Do not flatten the graph into:
+The indispensable middle layer is **Human Operator / TD613 Heritage Custodian’s synthesis**. Do not flatten the graph into:
 
 ```text
 thinker list -> Pedagogue
@@ -184,11 +184,11 @@ Later Flow-Core / Dome-World documentary routes additionally include:
 
 Routed knowledge lines additionally include:
 
-- A:shiwi / Zuni spatial knowledge as routed by Potato;
-- Indigenous relational epistemologies as routed by Potato;
-- traditional Chinese process-oriented thought as routed by Potato.
+- A:shiwi / Zuni spatial knowledge as routed by Human Operator / TD613 Heritage Custodian;
+- Indigenous relational epistemologies as routed by Human Operator / TD613 Heritage Custodian;
+- traditional Chinese process-oriented thought as routed by Human Operator / TD613 Heritage Custodian.
 
-Jakob Steiner remains outside Potato’s ancestry as a later TD613 mathematical counterpoint.
+Jakob Steiner remains outside Human Operator / TD613 Heritage Custodian’s ancestry as a later TD613 mathematical counterpoint.
 
 ### Provenance lenses
 
@@ -245,7 +245,7 @@ EPISTEMIC_REFRACTION
 RACIAL_HIERARCHY_QUARANTINE
 ```
 
-Modern challenge cards additionally examine the Goethe→Steiner active-observation lineage: sustained observation, postponement of theoretical judgment, imaginative reconstruction of transformation, and the relation between perception and concept. These cards are scholarly challenges/counterpoints, not proof that Potato derived Pedagogue from this exact source route and not empirical validation of Anthroposophic metaphysics.
+Modern challenge cards additionally examine the Goethe→Steiner active-observation lineage: sustained observation, postponement of theoretical judgment, imaginative reconstruction of transformation, and the relation between perception and concept. These cards are scholarly challenges/counterpoints, not proof that Human Operator / TD613 Heritage Custodian derived Pedagogue from this exact source route and not empirical validation of Anthroposophic metaphysics.
 
 The governing anti-equivalences are:
 
@@ -357,7 +357,7 @@ Current counterpoints live in:
 
 ### Jakob Steiner
 
-Jakob Steiner (1796–1863), the Swiss projective geometer, is a **new TD613 research coordinate** and is not retroactively inserted into Potato’s lineage.
+Jakob Steiner (1796–1863), the Swiss projective geometer, is a **new TD613 research coordinate** and is not retroactively inserted into Human Operator / TD613 Heritage Custodian’s lineage.
 
 Two bounded cards are currently admitted:
 

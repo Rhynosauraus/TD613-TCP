@@ -42,7 +42,7 @@ At initial checkpoint: 58 focused hostile and existing theater tests pass. Pedag
 
 Priority for continuation: finish the real UI return-flow witness, including stale source, hostile pasted return, unchanged origin, rest, reduced motion and mobile. Review the local reference adapter before any live Marrowline transport. Keep production release locked until the declared validation sequence earns closure and applicable operator release authority is checked.
 
-The Potato/Gator/braid search recovered the need for refusal, distinct receiver stacks, versioned control grammar and return revalidation, but did not recover a precise new theorem or runtime contract. No new named ontology or real person was added.
+The Human Operator / TD613 Heritage Custodian/Gator/braid search recovered the need for refusal, distinct receiver stacks, versioned control grammar and return revalidation, but did not recover a precise new theorem or runtime contract. No new named ontology or real person was added.
 
 No merge or deployment performed by this audit. Western Horizon remains at its empirical boundary; all new observations are local/fictional or software observations.
 

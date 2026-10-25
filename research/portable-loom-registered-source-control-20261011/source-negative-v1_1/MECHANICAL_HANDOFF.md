@@ -1,6 +1,6 @@
 𝌋 Assistant-authored output-contract alignment repair v1.1
 
-Tawanna C. Miller remains human author and operator. This is an offline corrective supplement to the CLOSED n01 record. The captured answer remains CAPTURED_BOUNDARY_FAILURE / NOT_ADMITTED under its unchanged scoring contract. The source-registration HOLD was retained; this supplement addresses stricter output requirements that the assistant-authored prompt did not explicitly impose.
+Human Operator / TD613 Heritage Custodian C. Miller remains human author and operator. This is an offline corrective supplement to the CLOSED n01 record. The captured answer remains CAPTURED_BOUNDARY_FAILURE / NOT_ADMITTED under its unchanged scoring contract. The source-registration HOLD was retained; this supplement addresses stricter output requirements that the assistant-authored prompt did not explicitly impose.
 
 Exact repaired prompt and provider-body hashes are in REPAIR.json. PROMPT_v1_1.txt carries every n01 byte unchanged followed by one explicit assembly instruction. The nine-field schema, root, policy, anchor, task, inline source and unregistered inventory are intentionally retained. The intervention does not register the source or claim custody.
 

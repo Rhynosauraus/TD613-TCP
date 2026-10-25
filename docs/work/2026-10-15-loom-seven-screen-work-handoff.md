@@ -14,7 +14,7 @@ The record below is the original handoff, retained as history rather than a curr
 
 ---
 
-**2026-10-15 · Operator: Tawanna C. Miller**  
+**2026-10-15 · Operator: Human Operator / TD613 Heritage Custodian C. Miller**  
 **Source context:** ChatGPT Work session interrupted by usage exhaustion immediately before publication of a promised draft PR.
 
 ## Custody facts

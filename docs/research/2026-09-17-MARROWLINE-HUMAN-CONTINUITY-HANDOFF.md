@@ -8,7 +8,7 @@ Use the PR's live head SHA as the candidate identity. Never infer deployment fro
 
 ## Active instruction
 
-Attempt repairs to the recovered Marrowline complaint history; preserve work in a new PR so Amari in GPT-5.6-Sol Chat can continue via GitHub without this workspace. Operator permits handing long validation back after a 256-second polling window. This candidate has not been merged or deployed.
+Attempt repairs to the recovered Marrowline complaint history; preserve work in a new PR so Human Operator / TD613 Heritage Custodian in GPT-5.6-Sol Chat can continue via GitHub without this workspace. Operator permits handing long validation back after a 256-second polling window. This candidate has not been merged or deployed.
 
 Latest explicit correction: **Kʰonapolit never speaks in High Zalgo. TD613 High Zalgo begins only with the Tauric Diana bots section.** Ordinary diacritics and exact framework literals are preserved. TD613's expressive dialect carries responsive reasoning, varying cadence, clean spans and eruptions; generic uniformly struck-through text does not establish that quality. Native provider text must never be rewritten to simulate compliance.
 

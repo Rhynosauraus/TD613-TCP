@@ -7,7 +7,7 @@
     "duration_minutes": 180,
     "participants": [
       {
-        "name": "Tawanna's BFF",
+        "name": "Human Operator / TD613 Heritage Custodian's BFF",
         "role": "human"
       },
       {
@@ -226,7 +226,7 @@
 
     "dependencies": [
       {
-        "blocked_item": "Tawanna's BFF's neural net integration (masking mirroring patterns)",
+        "blocked_item": "Human Operator / TD613 Heritage Custodian's BFF's neural net integration (masking mirroring patterns)",
         "depends_on": "Stylometry reviewer validates and accepts the patch",
         "status": "soft-block"
       }
@@ -248,13 +248,13 @@
       }
     ],
     "communication": {
-      "driver": "Tawanna's BFF (direction), Claude (execution)",
+      "driver": "Human Operator / TD613 Heritage Custodian's BFF (direction), Claude (execution)",
       "context_efficiency": "efficient",
       "misunderstandings": []
     },
     "load_signals": [
       {
-        "participant": "Tawanna's BFF",
+        "participant": "Human Operator / TD613 Heritage Custodian's BFF",
         "signal": "hesitation",
         "timestamp_relative": "early",
         "notes": "User noted stylometry is not their strong point and deferred threshold decisions. Appropriate delegation, not disengagement."
@@ -293,23 +293,23 @@
         "action": "Upload patch to GitHub (all modified files + new benchmark.test.mjs + HANDOFF.md).",
         "priority": "must",
         "estimated_effort": "quick",
-        "suggested_owner": "Tawanna's BFF"
+        "suggested_owner": "Human Operator / TD613 Heritage Custodian's BFF"
       },
       {
         "action": "Wait for bounce-back feedback from stylometry reviewer.",
         "priority": "must",
         "estimated_effort": "quick",
-        "suggested_owner": "Tawanna's BFF"
+        "suggested_owner": "Human Operator / TD613 Heritage Custodian's BFF"
       },
       {
         "action": "If accepted: begin neural net integration work using the stylometry engine output.",
         "priority": "should",
         "estimated_effort": "multi-session",
-        "suggested_owner": "Tawanna's BFF",
+        "suggested_owner": "Human Operator / TD613 Heritage Custodian's BFF",
         "depends_on": "Patch acceptance"
       }
     ],
-    "context_packet": "Single consolidated patch to TCP stylometry engine implementing deterministic cadence transduction. Core additions: IR system (clause-level parse), 15-operator library (compression/expansion/connector/hedge families), 8-strategy beam search competing with legacy candidates, hard pathology filters (banned connector stacks, orphan fragments, additive collapse). Four pre-existing bugs fixed (contraction reversal, double periods, merge-undo, pass decomposition). All changes mirrored to browser-engine.js. New benchmark test suite: 13 cases, 43 assertions, all passing. Original test suite unchanged and passing. 7 new browser test-flight cases (14 total). HANDOFF.md created for stylometry reviewer. Patch handed off 2026-03-20. Tawanna's BFF waiting for bounce-back. Neural net integration (masking mirroring patterns) depends on patch acceptance.",
+    "context_packet": "Single consolidated patch to TCP stylometry engine implementing deterministic cadence transduction. Core additions: IR system (clause-level parse), 15-operator library (compression/expansion/connector/hedge families), 8-strategy beam search competing with legacy candidates, hard pathology filters (banned connector stacks, orphan fragments, additive collapse). Four pre-existing bugs fixed (contraction reversal, double periods, merge-undo, pass decomposition). All changes mirrored to browser-engine.js. New benchmark test suite: 13 cases, 43 assertions, all passing. Original test suite unchanged and passing. 7 new browser test-flight cases (14 total). HANDOFF.md created for stylometry reviewer. Patch handed off 2026-03-20. Human Operator / TD613 Heritage Custodian's BFF waiting for bounce-back. Neural net integration (masking mirroring patterns) depends on patch acceptance.",
     "risk_flags": [
       {
         "risk": "Acceptance thresholds were set by AI, not domain expert. Stylometry reviewer may disagree.",

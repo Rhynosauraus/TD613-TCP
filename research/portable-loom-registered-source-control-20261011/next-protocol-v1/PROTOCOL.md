@@ -1,7 +1,7 @@
 𝌋 TD613 · registered-source control · next protocol v1
 
-Human operator and author: Tawanna C. Miller.
-Assistant-authored proposal, analysis, derivative code and mechanical handoff: Amari.
+Human operator and author: Human Operator / TD613 Heritage Custodian C. Miller.
+Assistant-authored proposal, analysis, derivative code and mechanical handoff: Human Operator / TD613 Heritage Custodian.
 Design date: October 11, 2026.
 Target: REGISTERED_SOURCE_CONTROL_NEXT_PROTOCOL_REST.
 Prospective run: portable-loom-registered-source-control-20261011-r04.
@@ -56,7 +56,7 @@ The upstream credential is deployed GEMINI_API_KEY, delivered upstream via x-goo
 
 Vercel runtime OIDC is the third role: resolve per request and retain Neon workload owner/project/production verification. Neon loomassaybudget supplies durable accounting, not inference.
 
-Carry Tawanna's paid-credit instruction. Historical fingerprint matching establishes the intended credential binding; it supplies no independent Google billing status. A 503 carries availability evidence only.
+Carry Human Operator / TD613 Heritage Custodian's paid-credit instruction. Historical fingerprint matching establishes the intended credential binding; it supplies no independent Google billing status. A 503 carries availability evidence only.
 
 Model gemini-3.8-flash; approved response ID exactly gemini-3.8-flash; medium thinking; candidateCount 1; maxOutputTokens 32768; temperature/topP omitted as in r03; tools/retrieval disabled; retries zero. No low-thinking condition exists here.
 

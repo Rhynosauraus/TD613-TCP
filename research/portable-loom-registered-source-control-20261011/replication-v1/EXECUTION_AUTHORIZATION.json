@@ -1,8 +1,8 @@
 {
   "schema": "td613.loom.prospective-execution-authority/v0.1",
   "status": "ACTIVATED_BY_DIRECT_OPERATOR",
-  "human_operator_and_author": "Tawanna C. Miller",
-  "assistant_analysis_and_mechanics": "Amari",
+  "human_operator_and_author": "Human Operator / TD613 Heritage Custodian C. Miller",
+  "assistant_analysis_and_mechanics": "Human Operator / TD613 Heritage Custodian",
   "protocol_id": "registered-source-r04-replication-20261011-v1",
   "run_id": "portable-loom-registered-source-control-20261011-r05",
   "prompt_sha256": "d703dcebb9869152df5d95541bbe5400d1ed9b92d1f11565aa10c9382cfd35c6",

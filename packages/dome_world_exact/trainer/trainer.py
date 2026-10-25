@@ -2,7 +2,7 @@
 """
 trainer.py -- REFERENCE TRAINER scaffold for the vector-substrate training bridge.
 
-This is the streaming loop Tim & Erin asked to build on top of the single-step bridge
+This is the streaming loop Human Operator / TD613 Heritage Custodian & Human Operator / TD613 Heritage Custodian asked to build on top of the single-step bridge
 (bridge/vsub_aperture_training_bridge.py and bridge/aperture_residual_bridge.py).
 It wraps the REAL, verified ResidualLearner (../engine) and turns "one observe/grow step"
 into a full training session over a stream of Aperture scan packets, with metrics,

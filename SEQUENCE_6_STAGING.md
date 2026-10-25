@@ -14,7 +14,7 @@ Research commits are evidence and design inputs. Product code enters Sequence 6 
 
 ## Three governing goals
 
-### Goal 1 · Laboratory / Amari
+### Goal 1 · Laboratory / Human Operator / TD613 Heritage Custodian
 Carry forward only relations or controls that survive the research program with an earned claim ceiling. Preserve nulls, harms, receiver-conditional effects, and unresolved results.
 
 ### Goal 2 · Product / Operator

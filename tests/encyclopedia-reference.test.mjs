@@ -69,7 +69,7 @@ test('current edition carries direct theory sources and distinct contribution ev
   assert(source.page_text.length>=2);assert(source.page_text.every(p=>p.page>=1&&p.text.length>100));
   assert.equal(source.evidence_class,'DIRECT_PRIMARY_DOCUMENT_INSPECTION');
   assert.equal(source.author_byline,null);
-  assert.equal(source.contributions[0].name,'Tawanna C. Miller');
+  assert.equal(source.contributions[0].name,'Human Operator / TD613 Heritage Custodian C. Miller');
   assert.equal(source.contributions[0].evidence_class,'CONTEMPORANEOUS_OPERATOR_ACCOUNT');
   assert(api.get(id).source_keys.includes(key));
   assert(api.citedBy('SRC-'+key).some(r=>r.source===id));

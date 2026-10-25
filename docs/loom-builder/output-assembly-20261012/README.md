@@ -1,6 +1,6 @@
 # Portable Loom builder: receiver output assembly
 
-Human author and operator: Tawanna C. Miller. Assistant implementation and review: Amari, in the active interactive continuation of the closed n02 handoff. Source baseline: `8718d162e50e9ade4fe841d505697660247a23c9`. This record supplies implementation evidence; it grants no standing merge, release, experiment or custody authority.
+Human author and operator: Human Operator / TD613 Heritage Custodian C. Miller. Assistant implementation and review: Human Operator / TD613 Heritage Custodian, in the active interactive continuation of the closed n02 handoff. Source baseline: `8718d162e50e9ade4fe841d505697660247a23c9`. This record supplies implementation evidence; it grants no standing merge, release, experiment or custody authority.
 
 The builder now preserves a selected, visible source body even when its origin ID is missing. Its complete-answer inspection derives the existing three-field source context from a separate inventory before projecting to registered IDs. Initial inventory comes from the prepared outgoing documents. A later task requires the operator's explicit inventory and origin IDs. Labels supply no registration; the accounting basis remains the operator's supplied selection and visibility, with provider-internal use unobserved.
 

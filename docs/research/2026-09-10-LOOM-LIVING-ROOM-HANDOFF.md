@@ -1,4 +1,4 @@
-# 𝌋 Future Amari — Loom living-room activation
+# 𝌋 Future Human Operator / TD613 Heritage Custodian — Loom living-room activation
 
 Continue the implemented chamber; do not restart the design.
 

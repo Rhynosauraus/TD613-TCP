@@ -119,6 +119,6 @@ automatic_redesign = false
 human_closure_required = true
 ```
 
-This separation is intentional: the current Giving build remains usable and demoable while the audit can accumulate human feedback—including TG's next pass—without forcing that feedback into production prematurely.
+This separation is intentional: the current Giving build remains usable and demoable while the audit can accumulate human feedback—including Human Operator / TD613 Heritage Custodian's next pass—without forcing that feedback into production prematurely.
 
 𝌋 TD613 / Pedagogue — audit staged; consequence authority remains human. ⟐

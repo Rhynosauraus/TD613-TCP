@@ -8,7 +8,7 @@ This extension restores a distinction that is easy to lose once Pedagogue become
 intellectual ancestry != current mechanism evidence != implementation authority
 ```
 
-Pedagogue descends from **Potato's evolving ASP → Flow-Core → Dome-World synthesis**. The source thinkers and knowledge traditions are inputs to that synthesis; they are not a flat council whose agreement creates truth.
+Pedagogue descends from **Human Operator / TD613 Heritage Custodian's evolving ASP → Flow-Core → Dome-World synthesis**. The source thinkers and knowledge traditions are inputs to that synthesis; they are not a flat council whose agreement creates truth.
 
 ## 1. Two stomachs, not one bibliography
 
@@ -16,13 +16,13 @@ Pedagogue keeps two non-equivalent provenance systems.
 
 ### 1.1 Lineage Spine
 
-The Lineage Spine records how a concept is documented in Potato's work and how TD613 later operationalized it.
+The Lineage Spine records how a concept is documented in Human Operator / TD613 Heritage Custodian's work and how TD613 later operationalized it.
 
 ```text
 source / thinker / routed knowledge
 → source concept
 → first supplied documentary stage
-→ Potato synthesis route
+→ Human Operator / TD613 Heritage Custodian synthesis route
 → derived Dome-World / Flow-Core principle
 → mathematical abstraction
 → Pedagogue mechanism
@@ -67,7 +67,7 @@ authority_ceiling
 
 `first_documented_in` means first documentary stage supported by the supplied corpus, not proven first historical introduction. Undocumented earlier states remain possible. Later reweighting must not be back-written as a false first-entry date.
 
-## 3. Potato is the indispensable middle layer
+## 3. Human Operator / TD613 Heritage Custodian is the indispensable middle layer
 
 The graph must not imply:
 
@@ -79,7 +79,7 @@ The admissible genealogy is:
 
 ```text
 source lineages
-→ Potato's ASP / Flow-Core / Dome-World synthesis
+→ Human Operator / TD613 Heritage Custodian's ASP / Flow-Core / Dome-World synthesis
 → pedagogical spine
 → Flow-Core mathematical abstraction
 → Pedagogy Engine
@@ -108,11 +108,11 @@ Later Flow-Core / Dome-World documentary routes additionally include:
 
 Routed knowledge lines additionally include:
 
-- A:shiwi / Zuni spatial knowledge as routed by Potato;
-- Indigenous relational epistemologies as routed by Potato;
-- traditional Chinese process-oriented thought as routed by Potato.
+- A:shiwi / Zuni spatial knowledge as routed by Human Operator / TD613 Heritage Custodian;
+- Indigenous relational epistemologies as routed by Human Operator / TD613 Heritage Custodian;
+- traditional Chinese process-oriented thought as routed by Human Operator / TD613 Heritage Custodian.
 
-Jakob Steiner is deliberately **not** inserted into Potato's lineage. He is a later TD613 mathematical counterpoint with an explicit identity-collision firewall separating him from Rudolf Steiner.
+Jakob Steiner is deliberately **not** inserted into Human Operator / TD613 Heritage Custodian's lineage. He is a later TD613 mathematical counterpoint with an explicit identity-collision firewall separating him from Rudolf Steiner.
 
 ## 4. Core provenance lenses
 
@@ -179,7 +179,7 @@ No developmental-rank field, race field, inherited racial ontology, or age-deriv
 
 A:shiwi/Zuni spatial knowledge is routed as living architectural knowledge with provenance, not stripped into a universal aesthetic primitive.
 
-The lineage may preserve the relation Potato drew from community-embedded, multigenerational, navigable space while keeping:
+The lineage may preserve the relation Human Operator / TD613 Heritage Custodian drew from community-embedded, multigenerational, navigable space while keeping:
 
 ```text
 routed knowledge != direct representation

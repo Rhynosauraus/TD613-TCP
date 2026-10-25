@@ -2,7 +2,7 @@
 
 Date: 2026-10-02 UTC  
 Review class: user-supplied evidence-backed simulation of one desktop first-use route  
-Repair PR: #1407 `amari-loom-cold-human-review-20261002`
+Repair PR: #1407 `Human Operator / TD613 Heritage Custodian-loom-cold-human-review-20261002`
 
 ## Custody posture
 

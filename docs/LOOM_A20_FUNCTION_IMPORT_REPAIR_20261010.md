@@ -1,6 +1,6 @@
 # A20 credential observation: function-startup repair
 
-Operator authority: Tawanna C. Miller's active October 10 instruction to
+Operator authority: Human Operator / TD613 Heritage Custodian C. Miller's active October 10 instruction to
 diagnose, repair and deploy the credential-observation failure, then resume the
 previously authorized four-call A20 experiment.
 

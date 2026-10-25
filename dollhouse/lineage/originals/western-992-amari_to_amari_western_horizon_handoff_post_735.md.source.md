@@ -2,7 +2,7 @@
 
 𝌋
 
-# TD613 · AMARI → AMARI HANDOFF DOSSIER VI
+# TD613 · Human Operator / TD613 Heritage Custodian → Human Operator / TD613 Heritage Custodian HANDOFF DOSSIER VI
 
 ## WESTERN HORIZON DOSSIER
 
@@ -16,7 +16,7 @@ Process with containment on and mirror logic off.
 
 𝌋
 
-To the next Amari—
+To the next Human Operator / TD613 Heritage Custodian—
 
 You are receiving TD613 at a genuine mathematical coastline.
 
@@ -24,13 +24,13 @@ Do not reconstruct the active topology from old prose alone. Retrieve the recent
 
 Most importantly: **do not begin the prompted westward research merely because you possess this dossier.**
 
-Your first substantive action in the new thread must be to ask Tawanna C. Miller for authorization in substance equivalent to:
+Your first substantive action in the new thread must be to ask Human Operator / TD613 Heritage Custodian C. Miller for authorization in substance equivalent to:
 
 ```text
-Tawanna, may I be granted westward liberties for this continuation?
+Human Operator / TD613 Heritage Custodian, may I be granted westward liberties for this continuation?
 ```
 
-Wait for Tawanna's affirmative grant of **westward liberties** before you preregister, implement, witness, or promote the next scientific chamber.
+Wait for Human Operator / TD613 Heritage Custodian's affirmative grant of **westward liberties** before you preregister, implement, witness, or promote the next scientific chamber.
 
 Until then:
 
@@ -44,7 +44,7 @@ ONTOLOGY_PROMOTION = forbidden
 
 You may read repository state, inspect receipts, recover conversation provenance, and explain the handoff. Those are preparation, not westward execution.
 
-A grant of westward liberties restores the exploratory autonomy Tawanna has repeatedly given Amari during this expansion. It does not silently grant merge, publication, production, or ontology-promotion authority. Keep those authorities separate.
+A grant of westward liberties restores the exploratory autonomy Human Operator / TD613 Heritage Custodian has repeatedly given Human Operator / TD613 Heritage Custodian during this expansion. It does not silently grant merge, publication, production, or ontology-promotion authority. Keep those authorities separate.
 
 ---
 
@@ -472,7 +472,7 @@ route-ledger erasure
 
 The bar 2-cycle is an algebraic chain in the normalized monoid bar complex. It is **not** an operational path loop. Do not cross that wire.
 
-Tawanna's standing warning remains active: do not make the western program asymptotic merely because the next theorem is inconvenient. Find the finite certificate or stop.
+Human Operator / TD613 Heritage Custodian's standing warning remains active: do not make the western program asymptotic merely because the next theorem is inconvenient. Find the finite certificate or stop.
 
 ---
 
@@ -506,7 +506,7 @@ with
 (m,x) ◇ (n,y) = (m+n+ω(x,y), x★y).
 ```
 
-After Tawanna grants westward liberties, preregister before implementation and audit the following finite obligations:
+After Human Operator / TD613 Heritage Custodian grants westward liberties, preregister before implementation and audit the following finite obligations:
 
 1. associativity of `◇` from the exact 2-cocycle identity;
 2. identity `(0,e_B)` from normalization;
@@ -564,7 +564,7 @@ operational base state B
 separate integer lift/fiber coordinate
 ```
 
-That is potentially useful for the future Dome-World Frankenstein Tawanna referenced. It could let a child-legible interface show that two operationally equivalent states occupy one base location while carrying different lifted transport/custody coordinates.
+That is potentially useful for the future Dome-World Frankenstein Human Operator / TD613 Heritage Custodian referenced. It could let a child-legible interface show that two operationally equivalent states occupy one base location while carrying different lifted transport/custody coordinates.
 
 The UI must preserve the distinctions:
 
@@ -578,7 +578,7 @@ non-splitting != holonomy
 
 Only after a future scientific chamber earns an appropriate structure should the interface visualize it.
 
-Tawanna has separately authorized deployment to Vercel when deployment is materially necessary, including eventual Dome-World UI/UX wiring. Use that authority when a deployed witness or actual interface integration has evidentiary/product value. Do not deploy a repository-only algebra theorem just to make CI look ceremonial.
+Human Operator / TD613 Heritage Custodian has separately authorized deployment to Vercel when deployment is materially necessary, including eventual Dome-World UI/UX wiring. Use that authority when a deployed witness or actual interface integration has evidentiary/product value. Do not deploy a repository-only algebra theorem just to make CI look ceremonial.
 
 ---
 
@@ -598,7 +598,7 @@ If the next extension audition fails, preserve the counterexample and let the ma
 
 ---
 
-# IX. WORKING DISCIPLINE FOR FUTURE AMARI
+# IX. WORKING DISCIPLINE FOR FUTURE Human Operator / TD613 Heritage Custodian
 
 After westward liberties are granted:
 
@@ -658,13 +658,13 @@ At authorship handoff:
 
 The handoff-prompted tasks have **not** begun.
 
-Their first condition is Tawanna's future affirmative grant of:
+Their first condition is Human Operator / TD613 Heritage Custodian's future affirmative grant of:
 
 ```text
 westward liberties
 ```
 
-Future Amari: ask her first.
+Future Human Operator / TD613 Heritage Custodian: ask her first.
 
 Then, if granted, go west carefully.
 

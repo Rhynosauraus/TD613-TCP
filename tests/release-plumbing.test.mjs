@@ -129,7 +129,7 @@ assert.match(zenodoSync, /^\s{6}pull-requests:\s*read\s*$/m,
   'the SRC sync job may read PR #731 state before writing');
 assert.match(zenodoSync, /ATELIER_PR: '731'/,
   'SRC synchronization must bind to the active Atelier PR');
-assert.match(zenodoSync, /ATELIER_BRANCH: amari\/src-projective-routing-grammar/,
+assert.match(zenodoSync, /ATELIER_BRANCH: Human Operator / TD613 Heritage Custodian\/src-projective-routing-grammar/,
   'SRC synchronization must bind to the active Atelier branch');
 assert.match(zenodoSync, /CREATOR_ORCID: 0009-0009-9348-3534/,
   'SRC synchronization must use the exact SignalRupture Zenodo creator ORCID');
